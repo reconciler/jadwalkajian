@@ -1,0 +1,25 @@
+# Konfigurasi build Netlify untuk Jadwal Kajian.
+# Situs statis murni — tidak ada proses build, hanya publikasi index.html.
+#
+# TUJUAN: memisahkan "menyimpan data" dari "menerbitkan situs".
+#
+# Netlify Free = 300 kredit/bulan; setiap deploy produksi = 15 kredit
+# (plafon ~20 deploy/bulan). Tanpa aturan di bawah, setiap push memicu
+# deploy — sehingga commit harian akan menghabiskan jatah dengan cepat.
+
+[build]
+  publish = "."
+
+  # exit 0 = build DIBATALKAN. Karena perintah ini selalu mengembalikan 0,
+  # TIDAK ADA push yang pernah memicu deploy. Commit sebebasnya setiap hari:
+  # nol kredit terpakai.
+  #
+  # Lalu bagaimana situs terbit? Lewat build hook, yang menurut dokumentasi
+  # Netlify MENGABAIKAN perintah ignore ini dan tetap membangun situs.
+  # Hook dipicu oleh .github/workflows/weekly-deploy.yml sesuai jadwal,
+  # atau manual kapan pun lewat tab Actions.
+  #
+  # Untuk kembali ke perilaku "deploy tiap kali index.html berubah",
+  # ganti baris di bawah dengan:
+  #   ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- index.html"
+  ignore = "exit 0"
