@@ -75,7 +75,7 @@ Satu event = satu baris di array `allEvents`, format object literal:
 | `timeLabel` | Jam eksak (`19.30 WIB`, `10.00 – 11.45 WIB`) atau waktu sholat (`Ba'da Subuh`, `Dhuha`, `Ba'da Zuhur`, `Ba'da Ashar`, `Ba'da Maghrib`) |
 | `timeOrder` | Jam desimal untuk sorting. Subuh 4.5 · Dhuha 9 · Zuhur 12.5 · Ashar 15.5 · Maghrib 18. Untuk jam eksak, pakai jam mulai (19.30 → 19.5) |
 | `area` | Persis salah satu: `Depok` `Bogor` `Jakarta` `Bekasi` `Jawa Tengah` `Jawa Barat` `Online` |
-| `audience` | `Terbuka untuk umum` atau `Khusus Akhwat` |
+| `audience` | `Terbuka untuk umum`, `Khusus Akhwat`, atau `Khusus Ikhwan` |
 | `isRutin` | `true` bila flyer menyebut kajian rutin/berkala |
 
 Bulan singkat: Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des
