@@ -1,0 +1,38 @@
+name: Prune jadwal harian
+
+# 17:05 UTC = 00:05 WIB keesokan harinya.
+# Dijalankan tiap hari; bisa juga dipicu manual dari tab Actions.
+on:
+  schedule:
+    - cron: "5 17 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ambil repo
+        uses: actions/checkout@v4
+
+      - name: Siapkan Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Jalankan pruning
+        run: python scripts/prune.py
+
+      - name: Commit bila ada perubahan
+        run: |
+          if [ -z "$(git status --porcelain index.html)" ]; then
+            echo "Tidak ada perubahan — tidak ada commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Prune otomatis: hapus event yang sudah lewat ($(TZ=Asia/Jakarta date +%Y-%m-%d))"
+          git push
