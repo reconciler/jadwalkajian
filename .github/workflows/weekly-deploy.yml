@@ -1,0 +1,122 @@
+name: Prune & deploy mingguan (Jumat 15:00 WIB)
+
+# Menggantikan daily-prune.yml (hapus file lama itu).
+#
+# CARA KERJA
+#   Push ke repo tidak pernah memicu deploy — dicegah oleh `ignore = "exit 0"`
+#   di netlify.toml. Jadi Anda bebas commit event baru setiap hari tanpa
+#   memakai kredit sama sekali.
+#
+#   Workflow inilah satu-satunya yang menerbitkan situs, dengan memanggil
+#   Netlify build hook. Build hook mengabaikan aturan ignore, sehingga
+#   deploy tetap berjalan.
+#
+# JADWAL
+#   "0 8 * * 5" = Jumat 08:00 UTC = JUMAT 15:00 WIB, sekali seminggu.
+#   Dipilih supaya jadwal akhir pekan sudah tayang sebelum orang
+#   merencanakan Sabtu-Ahad. Batas commit Anda: Jumat sebelum jam 3 sore.
+#
+#   Ganti baris cron untuk mengubah irama. Beberapa pilihan:
+#     "0 8 * * 5"      -> 1x/minggu, Jumat 15:00 WIB (~4-5 deploy/bln, 60-75 kredit)
+#     "0 8 * * 2,5"    -> 2x/minggu, Selasa + Jumat 15:00 WIB (~9/bln, 135 kredit)
+#     "0 8 1 * *"      -> 1x/bulan, tanggal 1 pukul 15:00 WIB (1/bln, 15 kredit)
+#
+#   Hati-hati: angka jam di cron adalah UTC. 08:00 UTC masih hari yang sama
+#   di WIB, tapi jam >= 17:00 UTC akan mendarat di HARI BERIKUTNYA WIB.
+#
+# PEMICU MANUAL
+#   Kalau ada kajian mendesak yang harus segera tayang, jalankan workflow ini
+#   manual: tab Actions -> "Prune & deploy mingguan" -> Run workflow.
+#   Biayanya 15 kredit, langsung terbit tanpa menunggu jadwal.
+#
+# PRASYARAT
+#   Secret NETLIFY_BUILD_HOOK berisi URL build hook Netlify.
+#   Buat di: Netlify -> Project configuration -> Developer settings ->
+#            Continuous deployment -> Build hooks -> Add build hook (branch: main)
+#   Simpan di: GitHub -> Settings -> Secrets and variables -> Actions
+
+on:
+  schedule:
+    - cron: "0 8 * * 5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prune-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ambil repo (beserta tag)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Siapkan Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Jalankan pruning
+        run: python scripts/prune.py
+
+      - name: Commit hasil prune bila ada perubahan
+        run: |
+          if [ -z "$(git status --porcelain index.html)" ]; then
+            echo "Prune: tidak ada event kedaluwarsa."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Prune otomatis: hapus event yang sudah lewat ($(TZ=Asia/Jakarta date +%Y-%m-%d))"
+          git push
+          echo "Prune: perubahan di-commit."
+
+      - name: Cek apakah ada yang perlu diterbitkan
+        id: cek
+        run: |
+          LAST=$(git rev-parse --verify -q refs/tags/last-deploy || echo "")
+          if [ -z "$LAST" ]; then
+            echo "Belum pernah deploy lewat workflow ini — akan menerbitkan."
+            echo "perlu=true" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet "$LAST" HEAD -- index.html; then
+            echo "index.html tidak berubah sejak deploy terakhir. Dilewati — hemat 15 kredit."
+            echo "perlu=false" >> "$GITHUB_OUTPUT"
+          else
+            N=$(git rev-list --count "$LAST"..HEAD -- index.html)
+            echo "Ada $N commit yang mengubah index.html sejak deploy terakhir."
+            echo "Semuanya akan terbit dalam SATU deploy (15 kredit, bukan $((N * 15)))."
+            git log --oneline "$LAST"..HEAD -- index.html
+            echo "perlu=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pastikan build hook tersedia
+        if: steps.cek.outputs.perlu == 'true'
+        run: |
+          if [ -z "${{ secrets.NETLIFY_BUILD_HOOK }}" ]; then
+            echo "::error::Secret NETLIFY_BUILD_HOOK belum diisi. Situs tidak akan terbit."
+            exit 1
+          fi
+
+      - name: Picu deploy Netlify
+        if: steps.cek.outputs.perlu == 'true'
+        run: |
+          CODE=$(curl -sS -o /tmp/resp.txt -w "%{http_code}" \
+                 -X POST -d '{}' "${{ secrets.NETLIFY_BUILD_HOOK }}")
+          echo "HTTP $CODE"
+          cat /tmp/resp.txt || true
+          if [ "$CODE" -lt 200 ] || [ "$CODE" -ge 300 ]; then
+            echo "::error::Build hook gagal (HTTP $CODE). Situs tidak terbit."
+            exit 1
+          fi
+          echo "Deploy dipicu. 15 kredit terpakai."
+
+      - name: Tandai commit yang sudah diterbitkan
+        if: steps.cek.outputs.perlu == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f last-deploy HEAD
+          git push -f origin last-deploy
+          echo "Tag last-deploy dipindahkan ke $(git rev-parse --short HEAD)."
