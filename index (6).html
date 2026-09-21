@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jadwal Kajian · Jul–Des 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Mono','Courier New',monospace;background:#0d1117;min-height:100vh;color:#e8e3d8}
+  ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:#2a3040;border-radius:2px}
+  .btn{background:transparent;border:1px solid #2a3a50;color:#8899bb;padding:7px 14px;border-radius:3px;cursor:pointer;font-family:'DM Mono',monospace;font-size:13px;letter-spacing:.04em;transition:all .12s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+  .btn:hover{border-color:#5a7a9a;color:#ccd8e8}
+  .btn.on{background:#e8e3d8;border-color:#e8e3d8;color:#0d1117;font-weight:500}
+  .btn.bogor{background:#5c4a2d;border-color:#d4a55a;color:#f0d4a8}
+  .btn.depok{background:#2d4a5c;border-color:#5a9fd4;color:#c0dff5}
+  .btn.jakarta{background:#2a1e4a;border-color:#b07ad4;color:#dcc0f5}
+  .btn.bekasi{background:#5c2a1e;border-color:#d4705a;color:#f5b8a8}
+  .btn.jawa{background:#1e5c3a;border-color:#5ad49a;color:#a8f5cc}
+  .btn.jawabarat{background:#5c1e35;border-color:#d45a8a;color:#f5b8d4}
+  .btn.online{background:#2d2d5c;border-color:#8a8ad4;color:#c8c8f5}
+  .card{border:1px solid #1e2c40;border-radius:4px;background:#0f1520;margin-bottom:9px;cursor:pointer;transition:border-color .12s;overflow:hidden}
+  .card:hover,.card.open{border-color:#2e4560}
+  .card.rutin-card{border-style:dashed;border-color:#2a4a2a}
+  .card-body{padding:13px 14px;display:flex;gap:11px}
+  .card-time{min-width:90px;flex-shrink:0}
+  .card-divider{width:1px;background:#1e2c40;flex-shrink:0}
+  .card-content{flex:1;min-width:0}
+  .card-title-row{display:flex;justify-content:space-between;gap:6px}
+  .card-title{font-family:'Libre Baskerville',serif;font-size:15px;font-weight:700;color:#d8e0ec;line-height:1.3;margin-bottom:3px}
+  .card-ustadz{font-size:12px;color:#9aaabf;margin-bottom:4px}
+  .card-tags{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+  .area-tag{font-size:11px;padding:2px 8px;border-radius:2px;display:inline-flex;align-items:center;gap:4px}
+  .masjid-tag{font-size:11px;color:#7a9cc0}
+  .card-time-label{font-family:'Libre Baskerville',serif;font-size:12px;color:#8898b8;line-height:1.4}
+  .card-date{font-family:'Libre Baskerville',serif;font-size:13px;font-weight:700;color:#d8e0ec;line-height:1.3;margin-bottom:2px}
+  .rutin-label{font-size:10px;color:#6aaa7a;letter-spacing:.1em;margin-bottom:2px}
+  .chevron{color:#5a7a9a;font-size:13px;flex-shrink:0;user-select:none}
+  .detail{border-top:1px solid #1e2c40;background:#080d16;padding:13px 16px 13px 110px;display:none}
+  .detail.open{display:block}
+  .dl{display:grid;grid-template-columns:80px 1fr;gap:7px 0;font-size:13px}
+  .dt{color:#7a8eaa;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding-top:2px}
+  .dd{color:#a8b8cc;line-height:1.5}.dd.note{color:#c89050}
+  .row{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;flex-wrap:nowrap}
+  .row::-webkit-scrollbar{height:2px}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
+  .dot-sm{width:5px;height:5px;border-radius:50%;display:inline-block;flex-shrink:0}
+  .header{background:#070c10;border-bottom:1px solid #1e2c40;padding:20px 16px 16px;position:sticky;top:0;z-index:10}
+  .header-sub{font-size:11px;color:#7a9abb;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px}
+  .header-title{font-family:'Libre Baskerville',serif;font-size:26px;font-weight:700;color:#e8e3d8}
+  .archive-link{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:7px 13px;background:#3a3020;border:1px solid #6a5838;border-radius:4px;color:#c9ad78;text-decoration:none;font-size:12px;font-weight:500;letter-spacing:.03em;transition:all .12s}
+  .archive-link:hover{background:#4a3d28;border-color:#8a7548;color:#e0c896}
+  .header-meta{font-size:12px;color:#7a8eaa;margin-top:3px}
+  .filters{padding:12px 16px 0}
+  .filter-row{display:flex;gap:5px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+  .filter-label{font-size:11px;color:#7a9abb;letter-spacing:.1em;text-transform:uppercase;margin-right:2px}
+  .empty{color:#8898b0;text-align:center;padding:32px 0;font-size:14px}
+  .empty a{color:#5a9fd4;cursor:pointer;text-decoration:underline}
+  .legend{margin-top:16px;border-top:1px solid #1e2c40;padding-top:10px;display:flex;gap:12px;flex-wrap:wrap}
+  .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#7a8eaa}
+  .legend-note{font-size:11px;color:#6a7e98;margin-left:auto}
+  #cards-container{padding:0 16px 16px}
+  @media(max-width:480px){.detail{padding:12px}.dl{grid-template-columns:70px 1fr}}
+  .page-footer{border-top:1px solid #1e2c40;margin-top:4px}
+  .submit-bar{background:#0a1020;padding:14px 16px;border-bottom:1px solid #1e2c40}
+  .submit-title{font-size:11px;color:#7a9abb;letter-spacing:.12em;text-transform:uppercase;margin-bottom:5px}
+  .submit-body{font-size:13px;color:#a8b8cc;line-height:1.7}
+  .submit-body a{color:#b07ad4;text-decoration:none}
+  .submit-body a:hover{text-decoration:underline}
+  .meta-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;padding:11px 16px;font-size:11px;color:#6a7e98;background:#070c10}
+  .meta-left{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .visitor-badge{color:#8899bb;font-variant-numeric:tabular-nums}
+  .update-stamp{color:#6a7e98}
+  .credit{color:#5a6a7a}
+  .credit a{color:#7a8aaa;text-decoration:none}
+  .credit a:hover{color:#b07ad4}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-sub">Jabodetabek & Sekitarnya · Jul–Des 2026</div>
+  <div class="header-title">Jadwal Kajian</div>
+  <div class="header-meta" id="header-meta"></div>
+  <a class="archive-link" href="https://catatankajian.netlify.app" target="_blank" rel="noopener">📝 Catatan Kajian — arsip sesi yang sudah dihadiri →</a>
+</div>
+<div class="filters">
+  <div class="filter-row">
+    <span class="filter-label">Area:</span>
+    <button class="btn on" onclick="setArea('ALL')" id="btn-area-ALL">Semua</button>
+    <button class="btn" onclick="setArea('Depok')"       id="btn-area-Depok"      ><span class="dot" style="background:#5a9fd4"></span>Depok</button>
+    <button class="btn" onclick="setArea('Bogor')"       id="btn-area-Bogor"      ><span class="dot" style="background:#d4a55a"></span>Bogor</button>
+    <button class="btn" onclick="setArea('Jakarta')"     id="btn-area-Jakarta"    ><span class="dot" style="background:#b07ad4"></span>Jakarta</button>
+    <button class="btn" onclick="setArea('Bekasi')"      id="btn-area-Bekasi"     ><span class="dot" style="background:#d4705a"></span>Bekasi</button>
+    <button class="btn" onclick="setArea('Jawa Tengah')" id="btn-area-Jawa Tengah"><span class="dot" style="background:#5ad49a"></span>Jawa Tengah</button>
+    <button class="btn" onclick="setArea('Jawa Barat')"  id="btn-area-Jawa Barat" ><span class="dot" style="background:#d45a8a"></span>Jawa Barat</button>
+    <button class="btn" onclick="setArea('Online')"      id="btn-area-Online"    ><span class="dot" style="background:#8a8ad4"></span>Online</button>
+  </div>
+  <div class="row" id="masjid-row" style="margin-bottom:8px"></div>
+  <div class="row" id="date-row"   style="margin-bottom:12px"></div>
+</div>
+<div id="cards-container"></div>
+<script>
+const AC={Bogor:{accent:"#d4a55a",badge:"#5c4a2d",dot:"#d4a55a"},Depok:{accent:"#5a9fd4",badge:"#2d4a5c",dot:"#5a9fd4"},Jakarta:{accent:"#b07ad4",badge:"#3a2a5c",dot:"#b07ad4"},Bekasi:{accent:"#d4705a",badge:"#5c2a1e",dot:"#d4705a"},"Jawa Tengah":{accent:"#5ad49a",badge:"#1e5c3a",dot:"#5ad49a"},"Jawa Barat":{accent:"#d45a8a",badge:"#5c1e35",dot:"#d45a8a"},Online:{accent:"#8a8ad4",badge:"#2d2d5c",dot:"#8a8ad4"}};
+const allEvents=[
+  {id:378,date:"2026-10-16",dayShort:"Jum 16 Okt",timeLabel:"19.30 WIB",              timeOrder:19.5,title:"Kenduri Cinta — Edisi Oktober 2026",                   ustadz:"Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta",masjid:"Taman Ismail Marzuki (TIM)",area:"Jakarta",address:"Taman Ismail Marzuki, Cikini, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Venue spesifik belum diumumkan. @kenduricinta",isRutin:true},
+  {id:379,date:"2026-11-13",dayShort:"Jum 13 Nov",timeLabel:"19.30 WIB",              timeOrder:19.5,title:"Kenduri Cinta — Edisi November 2026",                  ustadz:"Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta",masjid:"Taman Ismail Marzuki (TIM)",area:"Jakarta",address:"Taman Ismail Marzuki, Cikini, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Venue spesifik belum diumumkan. @kenduricinta",isRutin:true},
+  {id:380,date:"2026-12-11",dayShort:"Jum 11 Des",timeLabel:"19.30 WIB",              timeOrder:19.5,title:"Kenduri Cinta — Edisi Desember 2026",                  ustadz:"Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta",masjid:"Taman Ismail Marzuki (TIM)",area:"Jakarta",address:"Taman Ismail Marzuki, Cikini, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Venue spesifik belum diumumkan. @kenduricinta",isRutin:true},
+  {id:653,date:"2026-09-21",dayShort:"Sen 21 Sep",timeLabel:"09.00 – 10.00 WIB",timeOrder:9,title:"Fiqh Al-Muyassar",ustadz:"Derma Permana, Lc.",masjid:"Masjid Jami' Al-Barkah",area:"Bogor",address:"Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Barkah Cileungsi. @masjidalbarkahcileungsi",isRutin:true},
+  {id:654,date:"2026-09-21",dayShort:"Sen 21 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Al-Burhan min Qososhil Qur'an",ustadz:"Abu Ya'la Kurnaedi, Lc.",masjid:"Masjid Jami' Al-Barkah",area:"Bogor",address:"Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Barkah Cileungsi. @masjidalbarkahcileungsi",isRutin:true},
+  {id:655,date:"2026-09-21",dayShort:"Sen 21 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Adabul Mufrad",ustadz:"Ustadz Rafael Afrianto, Lc.",masjid:"Masjid Nurullah Kalibata City",area:"Jakarta",address:"Kalibata City, Jakarta Selatan",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Nurullah, Periode 1447-1448H. Info: 0812-8988-9900.",isRutin:true},
+  {id:656,date:"2026-09-22",dayShort:"Sel 22 Sep",timeLabel:"Ba'da Subuh",timeOrder:4.5,title:"Fiqih Dzikir dan Doa",ustadz:"Dr. Ali Saman Hasan, Lc., MA",masjid:"Masjid Al-Adhim",area:"Depok",address:"Jl. Andara Raya No.32, Pangkalan Jati Baru, Cinere, Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Adhim. www.masjidaladhim.org",isRutin:true},
+  {id:657,date:"2026-09-22",dayShort:"Sel 22 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Fiqih Doa & Dzikir",ustadz:"Badru Salam, Lc.",masjid:"Masjid Jami' Al-Barkah",area:"Bogor",address:"Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Barkah Cileungsi. @masjidalbarkahcileungsi",isRutin:true},
+  {id:658,date:"2026-09-23",dayShort:"Rab 23 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Iqtidha' Shiratal Mustaqim",ustadz:"Ustadz Joni Qodariyanto, Lc.",masjid:"Masjid Nurullah Kalibata City",area:"Jakarta",address:"Kalibata City, Jakarta Selatan",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Nurullah, Periode 1447-1448H. Info: 0812-8988-9900.",isRutin:true},
+  {id:659,date:"2026-09-23",dayShort:"Rab 23 Sep",timeLabel:"20.00 WIB",timeOrder:20,title:"Lisan Arab",ustadz:"Mas'ud Mahmud, Lc.",masjid:"Masjid Jami' Al-Barkah",area:"Bogor",address:"Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Barkah Cileungsi. @masjidalbarkahcileungsi",isRutin:true},
+  {id:660,date:"2026-09-24",dayShort:"Kam 24 Sep",timeLabel:"Ba'da Ashar",timeOrder:15.5,title:"Syarah Hadits Arbain Nawawi",ustadz:"Arman Amri, Lc.",masjid:"Masjid Jami' Al-Barkah",area:"Bogor",address:"Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",audience:"Untuk Muslimah",note:"Jadwal Kajian Rutin Masjid Al-Barkah Cileungsi. @masjidalbarkahcileungsi",isRutin:true},
+  {id:661,date:"2026-09-24",dayShort:"Kam 24 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Ushulus Sunnah",ustadz:"Ustadz Dr. Ahmad Sujai, M.Si.",masjid:"Masjid Nurullah Kalibata City",area:"Jakarta",address:"Kalibata City, Jakarta Selatan",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Nurullah, Periode 1447-1448H. Info: 0812-8988-9900.",isRutin:true},
+  {id:662,date:"2026-09-25",dayShort:"Jum 25 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Kaidah-Kaidah Akad",ustadz:"Irham Maulana, M.H.I.",masjid:"Masjid Jami' Al-Barkah",area:"Bogor",address:"Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Barkah Cileungsi. @masjidalbarkahcileungsi",isRutin:true},
+  {id:663,date:"2026-09-25",dayShort:"Jum 25 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Minhajul Firqatun Najiyah",ustadz:"Ustadz Dzikrullah Arza",masjid:"Masjid Nurullah Kalibata City",area:"Jakarta",address:"Kalibata City, Jakarta Selatan",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Nurullah, Periode 1447-1448H. Info: 0812-8988-9900.",isRutin:true},
+  {id:664,date:"2026-09-26",dayShort:"Sab 26 Sep",timeLabel:"Ba'da Shubuh",timeOrder:4.5,title:"Tahsin: Kitab Metode Asy-Syafi'i",ustadz:"Ustadz Muhammad Iqbal ibnu Said, S.Pd",masjid:"Masjid Al-Hidayah",area:"Jakarta",address:"Taman Pulo Gebang, Cakung, Jakarta Timur",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Hidayah. Info: 0812-9863-4292.",isRutin:true},
+  {id:665,date:"2026-09-26",dayShort:"Sab 26 Sep",timeLabel:"Ba'da Subuh",timeOrder:4.5,title:"Shahih Fadhail Amal",ustadz:"Ustadz Azhar Khalid Seff, M.A.",masjid:"Masjid Nurullah Kalibata City",area:"Jakarta",address:"Kalibata City, Jakarta Selatan",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Nurullah, Periode 1447-1448H. Info: 0812-8988-9900.",isRutin:true},
+  {id:666,date:"2026-09-26",dayShort:"Sab 26 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Aqidah: Kitab Al-Wala' Wal-Bara'",ustadz:"Ustadz Dr. Abu Jarir Ari Triono, Lc., M.A.",masjid:"Masjid Al-Hidayah",area:"Jakarta",address:"Taman Pulo Gebang, Cakung, Jakarta Timur",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Hidayah. Info: 0812-9863-4292.",isRutin:true},
+  {id:667,date:"2026-09-26",dayShort:"Sab 26 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Minhajul Firqatin Najiyah",ustadz:"Abdullah Taslim, M.A.",masjid:"Masjid Jami' Al-Barkah",area:"Bogor",address:"Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Barkah Cileungsi. @masjidalbarkahcileungsi",isRutin:true},
+  {id:668,date:"2026-09-26",dayShort:"Sab 26 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Tafsir Ibnu Katsir",ustadz:"Rizki Nasution, Lc., M.SI",masjid:"Masjid Al-Adhim",area:"Depok",address:"Jl. Andara Raya No.32, Pangkalan Jati Baru, Cinere, Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Adhim. www.masjidaladhim.org",isRutin:true},
+  {id:669,date:"2026-09-26",dayShort:"Sab 26 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Riyadhus Shalihin",ustadz:"Ustadz Prof. Daud Rasyid",masjid:"Masjid Nurullah Kalibata City",area:"Jakarta",address:"Kalibata City, Jakarta Selatan",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Nurullah, Periode 1447-1448H. Info: 0812-8988-9900.",isRutin:true},
+  {id:670,date:"2026-09-27",dayShort:"Ahd 27 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Tafsir: Shahih Tafsir Ibnu Katsir Juz 'Amma",ustadz:"Ustadz Abu Yazid Novtriadi, Lc., M.Pd.",masjid:"Masjid Al-Hidayah",area:"Jakarta",address:"Taman Pulo Gebang, Cakung, Jakarta Timur",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Hidayah. Info: 0812-9863-4292.",isRutin:true},
+  {id:671,date:"2026-09-27",dayShort:"Ahd 27 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Mukhtashor Shahih Muslim",ustadz:"Badru Salam, Lc.",masjid:"Masjid Jami' Al-Barkah",area:"Bogor",address:"Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Barkah Cileungsi. @masjidalbarkahcileungsi",isRutin:true},
+  {id:672,date:"2026-09-27",dayShort:"Ahd 27 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Sirah Nabawiyah",ustadz:"Muhammad Setiawan",masjid:"Masjid Al-Adhim",area:"Depok",address:"Jl. Andara Raya No.32, Pangkalan Jati Baru, Cinere, Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Adhim. www.masjidaladhim.org",isRutin:true},
+  {id:673,date:"2026-09-27",dayShort:"Ahd 27 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Ad Daa' wa Ad Dawa",ustadz:"Ustadz Luthfi Abdul Jabbar, Lc.",masjid:"Masjid Nurullah Kalibata City",area:"Jakarta",address:"Kalibata City, Jakarta Selatan",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Nurullah, Periode 1447-1448H. Info: 0812-8988-9900.",isRutin:true},
+  {id:674,date:"2026-09-28",dayShort:"Sen 28 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Al-Burhan min Qososhil Qur'an",ustadz:"Abu Ya'la Kurnaedi, Lc.",masjid:"Masjid Jami' Al-Barkah",area:"Bogor",address:"Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Barkah Cileungsi. @masjidalbarkahcileungsi",isRutin:true},
+  {id:675,date:"2026-09-28",dayShort:"Sen 28 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Adabul Mufrad",ustadz:"Ustadz Rafael Afrianto, Lc.",masjid:"Masjid Nurullah Kalibata City",area:"Jakarta",address:"Kalibata City, Jakarta Selatan",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Nurullah, Periode 1447-1448H. Info: 0812-8988-9900.",isRutin:true},
+  {id:676,date:"2026-09-29",dayShort:"Sel 29 Sep",timeLabel:"Ba'da Subuh",timeOrder:4.5,title:"Fiqih Dzikir dan Doa",ustadz:"Dr. Ali Saman Hasan, Lc., MA",masjid:"Masjid Al-Adhim",area:"Depok",address:"Jl. Andara Raya No.32, Pangkalan Jati Baru, Cinere, Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Adhim. www.masjidaladhim.org",isRutin:true},
+  {id:677,date:"2026-09-30",dayShort:"Rab 30 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Ahaditsul Akhlaq",ustadz:"Gigih Surya Nugraha, S.H.",masjid:"Masjid Jami' Al-Barkah",area:"Bogor",address:"Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Barkah Cileungsi. @masjidalbarkahcileungsi",isRutin:true},
+  {id:678,date:"2026-09-30",dayShort:"Rab 30 Sep",timeLabel:"20.00 WIB",timeOrder:20,title:"Lisan Arab",ustadz:"Mas'ud Mahmud, Lc.",masjid:"Masjid Jami' Al-Barkah",area:"Bogor",address:"Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin Masjid Al-Barkah Cileungsi. @masjidalbarkahcileungsi",isRutin:true},
+  {id:704,date:"2026-10-25",dayShort:"Min 25 Okt",timeLabel:"09.30 – 11.00 WIB",timeOrder:9.5,title:"Fikih Zakat (Islamic Pillars Series: Zakat #1)",ustadz:"Ustadz Fatahillah Aly, S.Ag.",masjid:"Rumah Quran Al-Ihsan",area:"Jakarta",address:"Masjid Raya Universitas Borobudur, Cipinang Melayu, Jakarta Timur",audience:"Terbuka untuk umum",note:"Islamic Pillars Series, Rumah Quran Al-Ihsan. Diselenggarakan pekan ke-3/ke-4 tiap bulan, 09.30-11.00 WIB.",isRutin:true},
+  {id:705,date:"2026-11-22",dayShort:"Min 22 Nov",timeLabel:"09.30 – 11.00 WIB",timeOrder:9.5,title:"Fikih Puasa (Islamic Pillars Series: Puasa #1)",ustadz:"Ustadz Harist Abu Naufal",masjid:"Rumah Quran Al-Ihsan",area:"Jakarta",address:"Masjid Raya Universitas Borobudur, Cipinang Melayu, Jakarta Timur",audience:"Terbuka untuk umum",note:"Islamic Pillars Series, Rumah Quran Al-Ihsan. Diselenggarakan pekan ke-3/ke-4 tiap bulan, 09.30-11.00 WIB.",isRutin:true},
+  {id:706,date:"2027-01-24",dayShort:"Min 24 Jan",timeLabel:"09.30 – 11.00 WIB",timeOrder:9.5,title:"Kesalahan-Kesalahan Puasa & Konsekuensinya (Islamic Pillars Series: Puasa #2)",ustadz:"Belum ditentukan",masjid:"Rumah Quran Al-Ihsan",area:"Jakarta",address:"Masjid Raya Universitas Borobudur, Cipinang Melayu, Jakarta Timur",audience:"Terbuka untuk umum",note:"Islamic Pillars Series, Rumah Quran Al-Ihsan. Diselenggarakan pekan ke-3/ke-4 tiap bulan, 09.30-11.00 WIB. Pemateri belum tercantum di flyer.",isRutin:true},
+  {id:707,date:"2027-02-28",dayShort:"Min 28 Feb",timeLabel:"09.30 – 11.00 WIB",timeOrder:9.5,title:"Keutamaan 10 Akhir Ramadhan (Islamic Pillars Series: Puasa #3)",ustadz:"Belum ditentukan",masjid:"Rumah Quran Al-Ihsan",area:"Jakarta",address:"Masjid Raya Universitas Borobudur, Cipinang Melayu, Jakarta Timur",audience:"Terbuka untuk umum",note:"Islamic Pillars Series, Rumah Quran Al-Ihsan. Diselenggarakan pekan ke-3/ke-4 tiap bulan, 09.30-11.00 WIB. Pemateri belum tercantum di flyer.",isRutin:true},
+  {id:708,date:"2027-03-28",dayShort:"Min 28 Mar",timeLabel:"09.30 – 11.00 WIB",timeOrder:9.5,title:"Awal Mula Disyariatkan Haji & Wasiat Nabi Pada Hajjatul Wada' (Islamic Pillars Series: Haji #1)",ustadz:"Belum ditentukan",masjid:"Rumah Quran Al-Ihsan",area:"Jakarta",address:"Masjid Raya Universitas Borobudur, Cipinang Melayu, Jakarta Timur",audience:"Terbuka untuk umum",note:"Islamic Pillars Series, Rumah Quran Al-Ihsan. Diselenggarakan pekan ke-3/ke-4 tiap bulan, 09.30-11.00 WIB. Pemateri belum tercantum di flyer.",isRutin:true},
+  {id:709,date:"2027-04-25",dayShort:"Min 25 Apr",timeLabel:"09.30 – 11.00 WIB",timeOrder:9.5,title:"Memahami Fikih Haji: Ikhtiar Terbaikku Terhadap Ibadah Haji (Islamic Pillars Series: Haji #3)",ustadz:"Belum ditentukan",masjid:"Rumah Quran Al-Ihsan",area:"Jakarta",address:"Masjid Raya Universitas Borobudur, Cipinang Melayu, Jakarta Timur",audience:"Terbuka untuk umum",note:"Islamic Pillars Series, Rumah Quran Al-Ihsan. Diselenggarakan pekan ke-3/ke-4 tiap bulan, 09.30-11.00 WIB. Pemateri belum tercantum di flyer.",isRutin:true},
+  {id:750,date:"2026-09-23",dayShort:"Rab 23 Sep",timeLabel:"09.30 WIB – Selesai",timeOrder:9.5,title:"Kajian Kitab Al Kabair: Dosa-dosa yang Membinasakan",ustadz:"Ustadz Sidqi Kamal Zimah",masjid:"Masjid Baiturrahman Pondok Pinang",area:"Jakarta",address:"Jl. Buana Raya, Pondok Pinang, Jakarta Selatan",audience:"Terbuka untuk umum",note:"Jadwal Kajian MTI Rasuna Epicentrum, September 2026.",isRutin:true},
+  {id:751,date:"2026-09-23",dayShort:"Rab 23 Sep",timeLabel:"09.30 WIB – Selesai (Online)",timeOrder:9.5,title:"Kajian Tematik",ustadz:"Ustadz Subhan Bawazier",masjid:"MTI Rasuna Epicentrum (Live YouTube)",area:"Online",address:"Online via YouTube (MTI Rasuna Epicentrum)",audience:"Terbuka untuk umum",note:"Jadwal Kajian MTI Rasuna Epicentrum, September 2026. Berlangsung bersamaan dengan sesi lain di Masjid Baiturrahman.",isRutin:false},
+  {id:778,date:"2026-09-22",dayShort:"Sel 22 Sep",timeLabel:"13.00 – 15.00 WIB",timeOrder:13,title:"Kajian Rutin",ustadz:"Ustadz Nur Ihsan Jundullah, Lc.",masjid:"Baitusyaakiriin Depok",area:"Depok",address:"Jl. Pamoras 12, Abadijaya, Sukmajaya, Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin MT Baitusyaakiriin Depok, September 2026. Alamat dari postingan terkait di channel yang sama.",isRutin:true},
+  {id:779,date:"2026-09-24",dayShort:"Kam 24 Sep",timeLabel:"13.00 – 15.00 WIB",timeOrder:13,title:"Kajian Rutin",ustadz:"Ustadz Fatahillah Aly, S.Ag.",masjid:"Baitusyaakiriin Depok",area:"Depok",address:"Jl. Pamoras 12, Abadijaya, Sukmajaya, Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Rutin MT Baitusyaakiriin Depok, September 2026. Alamat dari postingan terkait di channel yang sama.",isRutin:true},
+  {id:822,date:"2026-09-22",dayShort:"Sel 22 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Kitab 50 Sebab Terhindar dari Siksa Kubur",ustadz:"Ustadz Najmi Umar Bakkar",masjid:"Masjid Daarussalaam GTA",area:"Depok",address:"Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Masjid Daarussalaam GTA, September 2026.",isRutin:true},
+  {id:823,date:"2026-09-23",dayShort:"Rab 23 Sep",timeLabel:"Dhuha",timeOrder:9,title:"Tadabbur Al-Qur'ani",ustadz:"Ustadz Herfi G Faizi, Lc., M.Ag",masjid:"Masjid Daarussalaam GTA",area:"Depok",address:"Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Masjid Daarussalaam GTA, September 2026.",isRutin:true},
+  {id:824,date:"2026-09-25",dayShort:"Jum 25 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Ensiklopedia Akhir Zaman",ustadz:"Ustadz M Ihsan Tandjung, Lc",masjid:"Masjid Daarussalaam GTA",area:"Depok",address:"Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Masjid Daarussalaam GTA, September 2026.",isRutin:true},
+  {id:825,date:"2026-09-26",dayShort:"Sab 26 Sep",timeLabel:"Ba'da Shubuh",timeOrder:4.5,title:"Ngaji Sambil Ngopi",ustadz:"DR. K.H. Amang Syafrudin, Lc., M.M",masjid:"Masjid Daarussalaam GTA",area:"Depok",address:"Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Masjid Daarussalaam GTA, September 2026.",isRutin:true},
+  {id:826,date:"2026-09-26",dayShort:"Sab 26 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Serial Kisah Teladan Para Tabi'in",ustadz:"Ustadz Nur Fajri Ramadhan, Lc., M.A",masjid:"Masjid Daarussalaam GTA",area:"Depok",address:"Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Masjid Daarussalaam GTA, September 2026.",isRutin:true},
+  {id:827,date:"2026-09-27",dayShort:"Ahd 27 Sep",timeLabel:"Ba'da Shubuh",timeOrder:4.5,title:"Kitab al-Nashaih al-Diniyyah",ustadz:"Dr. Muhammad Ardiansyah",masjid:"Masjid Daarussalaam GTA",area:"Depok",address:"Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Masjid Daarussalaam GTA, September 2026.",isRutin:true},
+  {id:828,date:"2026-09-27",dayShort:"Ahd 27 Sep",timeLabel:"Ba'da Maghrib",timeOrder:18,title:"Tafsir Ijmali Surah Al-Qur'an",ustadz:"Ustadz Imamuddin Mukhtar, B.Sh., M.SI",masjid:"Masjid Daarussalaam GTA",area:"Depok",address:"Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Masjid Daarussalaam GTA, September 2026.",isRutin:true},
+  {id:829,date:"2026-09-28",dayShort:"Sen 28 Sep",timeLabel:"Dhuha",timeOrder:9,title:"Biografi Shahabiyah Nabi",ustadz:"Ustadzah Poppy Yuditya",masjid:"Masjid Daarussalaam GTA",area:"Depok",address:"Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok",audience:"Khusus Akhwat",note:"Jadwal Kajian Masjid Daarussalaam GTA, September 2026.",isRutin:true},
+  {id:830,date:"2026-09-29",dayShort:"Sel 29 Sep",timeLabel:"Dhuha",timeOrder:9,title:"15 Sebab Mencintai Allah",ustadz:"Ustadz Najmi Umar Bakkar",masjid:"Masjid Daarussalaam GTA",area:"Depok",address:"Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Masjid Daarussalaam GTA, September 2026.",isRutin:true},
+  {id:831,date:"2026-09-30",dayShort:"Rab 30 Sep",timeLabel:"Dhuha",timeOrder:9,title:"Tadabbur Al-Qur'ani",ustadz:"Ustadz Herfi G Faizi, Lc., M.Ag",masjid:"Masjid Daarussalaam GTA",area:"Depok",address:"Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok",audience:"Terbuka untuk umum",note:"Jadwal Kajian Masjid Daarussalaam GTA, September 2026.",isRutin:true},
+  {id:847,date:"2026-09-21",dayShort:"Sen 21 Sep",timeLabel:"Ba'da Zuhur",timeOrder:12.5,title:"Dialog Zuhur: Kajian Akhlaq: Khuluqul Muslim",ustadz:"KH. Abdurrahman Bustomi, M.A.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Dialog Zuhur Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:848,date:"2026-09-21",dayShort:"Sen 21 Sep",timeLabel:"Ba'da Ashar",timeOrder:15.5,title:"Hawamisy: Al Fiqhul Manhaji",ustadz:"H. Jamaluddin F. Hasyim, S.H., M.H.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Kajian Hawamisy Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:849,date:"2026-09-21",dayShort:"Sen 21 Sep",timeLabel:"Ba'da Subuh",timeOrder:4.5,title:"Kajian Subuh: Memerangi Kebodohan",ustadz:"Dr. Ahmad Sunhaji, M.Pd.I.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Kajian Subuh Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:850,date:"2026-09-22",dayShort:"Sel 22 Sep",timeLabel:"Ba'da Zuhur",timeOrder:12.5,title:"Dialog Zuhur: Kajian Fiqh — Kitab Fiqhul Mawarits",ustadz:"Dr. KH. Abdul Halim Sholeh, M.M.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Dialog Zuhur Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:851,date:"2026-09-22",dayShort:"Sel 22 Sep",timeLabel:"Ba'da Ashar",timeOrder:15.5,title:"Hawamisy: Asrarus Shalat",ustadz:"H. Mas'ud Halimin, M.A.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Kajian Hawamisy Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:852,date:"2026-09-22",dayShort:"Sel 22 Sep",timeLabel:"Ba'da Subuh",timeOrder:4.5,title:"Kajian Subuh: Merenungi Kebesaran Allah",ustadz:"Dr. KH. Mahkamah Mahdin, Lc., M.A.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Kajian Subuh Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:853,date:"2026-09-23",dayShort:"Rab 23 Sep",timeLabel:"Ba'da Zuhur",timeOrder:12.5,title:"Dialog Zuhur: Kitab Tafsir Ibnu Katsir",ustadz:"Dr. Budi Utomo, Lc., M.A.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Dialog Zuhur Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:854,date:"2026-09-23",dayShort:"Rab 23 Sep",timeLabel:"Ba'da Ashar",timeOrder:15.5,title:"Hawamisy: Kaifa Nata'amal Ma'al Qur'an (Tafsir)",ustadz:"Dr. H. Mulawarman Hannase, Lc., M.Hum.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Kajian Hawamisy Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:855,date:"2026-09-23",dayShort:"Rab 23 Sep",timeLabel:"Ba'da Subuh",timeOrder:4.5,title:"Kajian Subuh: Pentingnya Pendidikan Adab dan Akhlak",ustadz:"Dr. (HC) H. Sholeh Asri, M.A.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Kajian Subuh Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:856,date:"2026-09-24",dayShort:"Kam 24 Sep",timeLabel:"Ba'da Zuhur",timeOrder:12.5,title:"Dialog Zuhur: Kitab Nashoihud Diniyah wal Washoya Al-Imaniyyah",ustadz:"Drs. H.A. Dzulfatah Yasin, M.Ag.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Dialog Zuhur Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:857,date:"2026-09-24",dayShort:"Kam 24 Sep",timeLabel:"Ba'da Ashar",timeOrder:15.5,title:"Hawamisy: Tafsir Al-Razi",ustadz:"Prof. Dr. H. Hamka Hasan, Lc., M.A.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Kajian Hawamisy Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:858,date:"2026-09-24",dayShort:"Kam 24 Sep",timeLabel:"Ba'da Subuh",timeOrder:4.5,title:"Kajian Subuh: Menjauhi Makanan yang Haram",ustadz:"Dr. KH. Agam Bayu Suyanto, M.B.A.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Kajian Subuh Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:859,date:"2026-09-25",dayShort:"Jum 25 Sep",timeLabel:"Ba'da Ashar",timeOrder:15.5,title:"Hawamisy: Fiqh Sunnah Lin Nisa'",ustadz:"Dr. Hj. Sri Sabbahatun, Lc., M.E.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Kajian Hawamisy Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+  {id:860,date:"2026-09-25",dayShort:"Jum 25 Sep",timeLabel:"Ba'da Subuh",timeOrder:4.5,title:"Kajian Subuh: Berbakti Kepada Kedua Orangtua",ustadz:"Dr. H. Abdul Muid Nawawi, M.A.",masjid:"Masjid Istiqlal",area:"Jakarta",address:"Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",audience:"Terbuka untuk umum",note:"Program rutin harian Kajian Subuh Masjid Istiqlal. Dapat disaksikan live streaming di YouTube Masjid Istiqlal TV.",isRutin:true},
+];
+let state={area:"ALL",masjid:"ALL",date:"ALL",expanded:null};
+function getTodayStr(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+function isEventPast(e){const t=getTodayStr();if(e.date<t)return true;if(e.date>t)return false;return e.timeOrder<new Date().getHours()-0.5;}
+function ms(m){return m.replace("Masjid ","").replace("Jami' ","").replace("Jami ","");}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function jse(s){return esc(s).replace(/'/g,"\\'");}
+function up(){return allEvents.filter(e=>!isEventPast(e));}
+function fi(){return up().filter(e=>state.area==="ALL"||e.area===state.area).filter(e=>state.masjid==="ALL"||e.masjid===state.masjid).filter(e=>state.date==="ALL"||e.date===state.date).sort((a,b)=>a.date!==b.date?a.date.localeCompare(b.date):a.timeOrder-b.timeOrder);}
+function render(){
+  const u=up(),f=fi();
+  document.getElementById("header-meta").textContent=`${u.filter(e=>!e.isRutin).length} event · ${u.filter(e=>e.isRutin).length} rutin · ${[...new Set(u.map(e=>e.masjid))].length} masjid`;
+  const areasPresent=new Set(u.map(e=>e.area));
+  if(state.area!=="ALL"&&!areasPresent.has(state.area)){state.area="ALL";state.masjid="ALL";state.date="ALL";}
+  ["ALL","Depok","Bogor","Jakarta","Bekasi","Jawa Tengah","Jawa Barat","Online"].forEach(a=>{const b=document.getElementById("btn-area-"+a);if(!b)return;b.style.display=(a==="ALL"||areasPresent.has(a))?"":"none";b.className="btn"+(state.area===a?(a==="ALL"?" on":" "+(a==="Jawa Tengah"?"jawa":a==="Jawa Barat"?"jawabarat":a.toLowerCase())):"");});
+  const ap=u.filter(e=>state.area==="ALL"||e.area===state.area);
+  document.getElementById("masjid-row").innerHTML=`<button class="btn${state.masjid==="ALL"?" on":""}" onclick="setMasjid('ALL')">Semua Masjid</button>`+[...new Set(ap.map(e=>e.masjid))].sort().map(m=>{const c=AC[ap.find(e=>e.masjid===m)?.area]?.dot||"#8899bb";return`<button class="btn${state.masjid===m?" on":""}" onclick="setMasjid('${jse(m)}')">`+`<span class="dot" style="background:${c}"></span>${esc(ms(m))}</button>`;}).join("");
+  const mp=ap.filter(e=>state.masjid==="ALL"||e.masjid===state.masjid);
+  document.getElementById("date-row").innerHTML=`<button class="btn${state.date==="ALL"?" on":""}" onclick="setDate('ALL')">Semua (${f.length})</button>`+[...new Set(mp.map(e=>e.date))].sort().map(d=>{const ev=allEvents.find(e=>e.date===d);return`<button class="btn${state.date===d?" on":""}" onclick="setDate('${d}')">${esc(ev?.dayShort||d)} (${mp.filter(e=>e.date===d).length})</button>`;}).join("");
+  const c=document.getElementById("cards-container");
+  if(!f.length){c.innerHTML=`<div class="empty">Tidak ada kajian. <a onclick="resetFilters()">Reset filter</a></div>`+leg();return;}
+  c.innerHTML=f.map(e=>{const col=AC[e.area]||AC.Depok,o=state.expanded===e.id;return`<div class="card${o?" open":""}${e.isRutin?" rutin-card":""}" onclick="toggleCard(${e.id})"><div class="card-body"><div class="card-time">${e.isRutin?`<div class="rutin-label">RUTIN</div>`:""}<div class="card-date">${esc(e.dayShort)}</div><div class="card-time-label">${esc(e.timeLabel)}</div></div><div class="card-divider"></div><div class="card-content"><div class="card-title-row"><div><div class="card-title">${esc(e.title)}</div><div class="card-ustadz">${esc(e.ustadz)}</div><div class="card-tags"><span class="area-tag" style="background:${col.badge};color:${col.accent}"><span class="dot-sm" style="background:${col.accent}"></span>${esc(e.area)}</span><span class="masjid-tag">${esc(e.masjid)}</span></div></div><span class="chevron">${o?"▲":"▼"}</span></div></div></div><div class="detail${o?" open":""}"><div class="dl"><div class="dt">Tanggal</div><div class="dd">${esc(e.dayShort)} · ${esc(e.timeLabel)}</div><div class="dt">Masjid</div><div class="dd">${esc(e.masjid)}</div><div class="dt">Alamat</div><div class="dd">${esc(e.address)}</div><div class="dt">Peserta</div><div class="dd">${esc(e.audience)}</div>${e.note?`<div class="dt">Catatan</div><div class="dd note">${esc(e.note)}</div>`:""}</div></div></div>`;}).join("")+leg();
+}
+function leg(){return`<div class="legend">${Object.entries(AC).map(([a,c])=>`<div class="legend-item"><span class="dot" style="background:${c.dot}"></span>${a}</div>`).join("")}<div class="legend-note">Past events auto-hidden</div></div>`;}
+function setArea(a){state.area=a;state.masjid="ALL";state.date="ALL";render();}
+function setMasjid(m){state.masjid=(state.masjid===m?"ALL":m);state.date="ALL";render();}
+function setDate(d){state.date=(state.date===d?"ALL":d);render();}
+function resetFilters(){state.area="ALL";state.masjid="ALL";state.date="ALL";render();}
+function toggleCard(id){state.expanded=(state.expanded===id?null:id);render();}
+render();
+</script>
+<div class="page-footer">
+  <div class="submit-bar">
+    <div class="submit-title">Ingin menambahkan info kajian?</div>
+    <div class="submit-body">
+      Kirim flyer atau detail kajian ke
+      <a href="mailto:akhmad.amal@gmail.com">akhmad.amal@gmail.com</a>
+      atau mention/DM Instagram
+      <a href="https://instagram.com/amalwoodworking" target="_blank">@amalwoodworking</a>
+    </div>
+  </div>
+  <div class="meta-bar">
+    <div class="meta-left">
+      <span class="visitor-badge">👁 <span id="visitor-count">—</span></span>
+      <span class="update-stamp">Diperbarui: 21 Sep 2026</span>
+    </div>
+    <div class="credit">by <a href="https://instagram.com/amalwoodworking" target="_blank">@amalwoodworking</a></div>
+  </div>
+</div>
+<script>
+fetch('https://api.countapi.xyz/hit/jadwalkajian-amal/pengunjung')
+  .then(r=>r.json())
+  .then(d=>{const el=document.getElementById('visitor-count');if(el)el.textContent=Number(d.value).toLocaleString('id-ID')+' kunjungan';})
+  .catch(()=>{const el=document.getElementById('visitor-count');if(el)el.textContent='—';});
+</script>
+</body>
+</html>
