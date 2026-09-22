@@ -69,10 +69,40 @@ Konsekuensi untuk sesi ini:
   **Sarankan ini bila relevan, tapi jangan jalankan tanpa persetujuan Amal** —
   setiap eksekusi memakan 15 kredit.
 
+### JEDA SEMENTARA — kredit tim Netlify habis (sejak 22 Sep 2026)
+
+Kredit **tim** Netlify "Amal" (dipakai bersama `jadwalkajian` **dan**
+`catatankajian` — satu tim yang sama) tersisa 14,9/300 pada 22 Sep 2026,
+di bawah 15 kredit yang dibutuhkan satu deploy. Regrant berikutnya: **12
+Oktober 2026**.
+
+Ditambahkan step **"Cek masa jeda kredit Netlify"** di `weekly-deploy.yml`
+(commit `4e7ddc0`, oleh sesi lain — "Integrasi dua project kajian") yang
+melewati pemicuan build hook + penandaan tag `last-deploy` sampai 12 Okt
+2026. **Prune dan build tetap jalan normal tiap Jumat (gratis)** — cuma
+penerbitan situsnya yang ditunda.
+
+- Jumat **25 Sep, 2 Okt, 9 Okt 2026**: workflow jalan, tapi deploy
+  **sengaja dilewati** — ini bukan kegagalan.
+- Jumat **16 Okt 2026** dan seterusnya: jalan normal lagi tanpa perlu
+  diubah manual.
+- **Jangan hapus/revert gerbang ini atau coba trigger manual sebelum 12
+  Okt**, kecuali Amal memintanya secara eksplisit (dan kalau diminta,
+  ingatkan bahwa itu kemungkinan besar akan gagal karena saldo tidak
+  cukup, atau Amal perlu upgrade plan Netlify dulu).
+- Setelah 12 Okt dan kredit dipastikan sehat, step "Cek masa jeda kredit"
+  dan kondisi `steps.jeda.outputs.boleh == 'true'` di tiga step terakhir
+  boleh dihapus.
+
 ## Anggaran biaya
 
 Netlify Free = **300 kredit/bulan**, hard limit, tidak carry-over, situs
 dijeda kalau habis. Deploy produksi = **15 kredit**. Plafon ~20 deploy/bulan.
+
+**Kredit ini per-tim, bukan per-situs** — dipakai bersama situs
+`catatankajian` (tim Netlify "Amal" yang sama). Deploy di salah satu situs
+mengurangi jatah untuk situs satunya juga. Lihat bagian "JEDA SEMENTARA" di
+atas untuk status kredit terkini.
 
 Karena push tidak memicu deploy, **jumlah commit tidak lagi memengaruhi biaya
 sama sekali.** Yang memakan kredit hanya eksekusi workflow deploy. Jadi tidak
