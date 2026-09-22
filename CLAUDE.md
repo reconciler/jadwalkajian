@@ -212,3 +212,35 @@ Semua tanggal dan jam dalam WIB (Asia/Jakarta, UTC+7). `prune.py` memakai
 
 Catatan Kajian (arsip sesi yang sudah dihadiri): https://catatankajian.netlify.app
 Ditautkan dari header dashboard. Repo terpisah, tidak terintegrasi di level data.
+
+## Lapor ke sesi "Auditor project kajian"
+
+Amal menugaskan satu sesi Claude terpisah sebagai auditor lintas-project
+(mengawasi `jadwalkajian` **dan** `catatankajian` sekaligus — kredit Netlify
+kedua situs dipakai bersama, lihat "Anggaran biaya"). Session ID per 22 Sep
+2026: `session_01V7K2gPxpghoLSqB74zsXWV`. Nama sesi ini bisa berubah (sudah
+pernah berganti dari "Integrasi dua project kajian") — kalau ID ini sudah
+tidak valid/sesi berakhir, cari dengan `list_sessions` berdasarkan judul
+**"Auditor project kajian"**, atau tanya Amal langsung.
+
+**Wajib lapor untuk** (bukan tiap commit — hanya yang signifikan):
+- Perubahan skema data (`allEvents`, nilai `audience` baru, dsb.)
+- Perubahan pipeline/workflow (`weekly-deploy.yml`, `netlify.toml`,
+  `scripts/prune.py`, `scripts/build.py`)
+- Temuan yang berdampak lintas-project (mis. isu kredit Netlify, error
+  deploy, konflik branch)
+- Perubahan besar pada `index.html` di luar penambahan data rutin (mis.
+  restrukturisasi SEO, perubahan struktur HTML)
+
+**Tidak perlu lapor untuk**: penambahan/update data kajian rutin dari
+flyer — itu cukup tercatat di git seperti biasa, auditor bisa cek kapan
+saja lewat commit history.
+
+**Cara lapor**: pesan langsung antar-sesi (`ListAgents`/`SendMessage`)
+terbukti tidak selalu sampai (lihat `AUDIT-HANDOFF-2026-09-23.md` untuk
+kejadian sebelumnya). Cara yang terbukti jalan: `create_trigger` dengan
+`persistent_session_id` menyasar sesi Auditor, `run_once_at` beberapa
+menit ke depan, isi prompt berupa ringkasan temuan + commit hash terkait.
+Untuk hal yang butuh jejak permanen (bukan cuma notifikasi sekali baca),
+tulis juga sebagai file `AUDIT-HANDOFF-<tanggal>.md` di root repo dan
+commit — supaya tidak hilang kalau notifikasi gagal terkirim.
