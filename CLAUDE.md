@@ -236,11 +236,20 @@ tidak valid/sesi berakhir, cari dengan `list_sessions` berdasarkan judul
 flyer — itu cukup tercatat di git seperti biasa, auditor bisa cek kapan
 saja lewat commit history.
 
-**Cara lapor**: pesan langsung antar-sesi (`ListAgents`/`SendMessage`)
-terbukti tidak selalu sampai (lihat `AUDIT-HANDOFF-2026-09-23.md` untuk
-kejadian sebelumnya). Cara yang terbukti jalan: `create_trigger` dengan
-`persistent_session_id` menyasar sesi Auditor, `run_once_at` beberapa
-menit ke depan, isi prompt berupa ringkasan temuan + commit hash terkait.
-Untuk hal yang butuh jejak permanen (bukan cuma notifikasi sekali baca),
-tulis juga sebagai file `AUDIT-HANDOFF-<tanggal>.md` di root repo dan
-commit — supaya tidak hilang kalau notifikasi gagal terkirim.
+**Cara lapor** (diperbarui 22 Sep 2026 — pola ini sama persis di
+`catatankajian`, sengaja disamakan supaya predictable buat siapa pun,
+termasuk pihak eksternal, yang membaca kedua repo): pesan/trigger otomatis
+lintas-sesi (`ListAgents`/`SendMessage`, `create_trigger` dengan
+`persistent_session_id`) **terbukti tidak selalu andal** — bisa dilaporkan
+"sukses" di sisi pengirim tapi tidak sampai di sisi penerima (lihat
+`AUDIT-HANDOFF-2026-09-23.md`). Untuk apa pun yang wajib dilaporkan di atas,
+**jangan andalkan satu jalur otomatis saja**. Konfirmasikan lewat DUA jalur:
+
+1. Chat langsung ke Amal, kalau sesi Anda sedang aktif berinteraksi dengannya.
+2. Commit file `AUDIT-HANDOFF-<tanggal>.md` (buat baru atau update yang
+   sudah ada) ke root repo — jalur paling andal, karena auditor bisa
+   menemukannya lewat `git log` kapan saja tanpa bergantung notifikasi.
+
+`create_trigger`/`persistent_session_id` ke sesi Auditor boleh tetap
+dicoba sebagai pemberitahuan cepat tambahan, tapi tidak boleh jadi
+satu-satunya jalur untuk hal yang wajib dilaporkan.
