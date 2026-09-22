@@ -60,18 +60,21 @@ jobs:
       - name: Jalankan pruning
         run: python scripts/prune.py
 
-      - name: Commit hasil prune bila ada perubahan
+      - name: Generate HTML statis + JSON-LD untuk SEO
+        run: python scripts/build.py
+
+      - name: Commit hasil prune/build bila ada perubahan
         run: |
           if [ -z "$(git status --porcelain index.html)" ]; then
-            echo "Prune: tidak ada event kedaluwarsa."
+            echo "Tidak ada perubahan dari prune atau build."
             exit 0
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Prune otomatis: hapus event yang sudah lewat ($(TZ=Asia/Jakarta date +%Y-%m-%d))"
+          git commit -m "Prune + build otomatis ($(TZ=Asia/Jakarta date +%Y-%m-%d))"
           git push
-          echo "Prune: perubahan di-commit."
+          echo "Perubahan di-commit."
 
       - name: Cek apakah ada yang perlu diterbitkan
         id: cek

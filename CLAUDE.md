@@ -8,9 +8,40 @@ Live: https://jadwalkajian.netlify.app · Pemilik: Amal (@amalwoodworking)
 ```
 index.html                           # seluruh dashboard — HTML+CSS+JS satu file
 netlify.toml                         # konfigurasi build; MEMATIKAN deploy-on-push
+robots.txt                           # izinkan semua crawler, tunjuk ke sitemap.xml
+sitemap.xml                          # daftar URL untuk Google Search Console (1 URL, single-page)
+favicon.svg                          # ikon tab browser
 scripts/prune.py                     # hapus event lewat + perbarui stempel footer
-.github/workflows/weekly-deploy.yml  # prune + terbitkan situs, Jumat 15:00 WIB
+scripts/build.py                     # generate HTML statis + JSON-LD (SEO) dari allEvents
+.github/workflows/weekly-deploy.yml  # prune + build + terbitkan situs, Jumat 15:00 WIB
 ```
+
+## SEO — konten statis & JSON-LD (jangan edit manual)
+
+`index.html` punya dua blok yang di-generate otomatis oleh `scripts/build.py`,
+ditandai komentar HTML:
+
+- `<!--LD_JSON_START-->...<!--LD_JSON_END-->` di `<head>` — JSON-LD
+  `schema.org/Event` untuk semua kajian upcoming.
+- `<!--STATIC_EVENTS_START-->...<!--STATIC_EVENTS_END-->` di dalam
+  `#cards-container` — HTML statis daftar kajian, supaya crawler yang tidak
+  menjalankan JavaScript tetap melihat isi kajian. JS `render()` tetap
+  menimpa ini saat halaman dibuka (progressive enhancement) — tidak
+  mengubah interaktivitas filter untuk pengunjung biasa.
+
+**Jangan edit isi antara marker ini secara manual** — akan tertimpa saat
+`build.py` jalan lagi. Kalau perlu ubah tampilan/struktur kartu statis, edit
+`render_static_card()` di `scripts/build.py`, bukan HTML-nya langsung.
+
+`build.py` dijalankan otomatis di `weekly-deploy.yml` setelah `prune.py`,
+jadi tidak perlu dijalankan manual tiap kali menambah event — **kecuali**
+saat validasi lokal sebelum commit (lihat bagian Validasi di bawah), supaya
+`index.html` yang di-commit sudah konsisten dengan data terbaru.
+
+Meta tag statis (`description`, `og:*`, `twitter:*`, `canonical`) ditulis
+manual sekali di `<head>`, tidak berubah tiap event — tidak perlu diupdate
+rutin. **Belum ada `og:image`** (butuh aset gambar banner asli dari Amal,
+belum dibuat).
 
 `index.html` **wajib** di root dengan nama persis itu — Netlify menyajikannya
 sebagai homepage.
@@ -121,10 +152,16 @@ grep -o '{id:[0-9]*' index.html | sed 's/{id://' | sort -n | uniq -d   # harus k
 
 # 3. prune masih cocok dengan struktur file
 python3 scripts/prune.py
+
+# 4. regenerate HTML statis + JSON-LD (SEO) supaya konsisten dengan data terbaru
+python3 scripts/build.py
 ```
 
-Catatan: perintah ke-3 akan **mengubah** index.html bila ada event kedaluwarsa.
-Itu perilaku yang benar — commit hasilnya sekalian.
+Catatan: perintah ke-3 dan ke-4 akan **mengubah** index.html (event
+kedaluwarsa terhapus, blok statis/JSON-LD di-regenerate). Itu perilaku yang
+benar — commit hasilnya sekalian. Urutan penting: jalankan `build.py`
+**setelah** `prune.py`, supaya HTML statis tidak memuat event yang baru saja
+dihapus.
 
 ## Preferensi Amal saat melapor
 
