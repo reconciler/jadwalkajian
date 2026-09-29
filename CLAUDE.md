@@ -74,6 +74,35 @@ Konsekuensi untuk sesi ini:
   bermasalah). Kalau situs lama tidak ter-update setelah Jumat 15:00 WIB,
   cek tab Actions dulu sebelum menyimpulkan ada yang rusak.
 
+### WAJIB: deploy manual segera setelah push yang memperbaiki bug di situs
+
+**Insiden 29 Sep 2026**: commit `0e0c688` memperbaiki link rusak (menunjuk
+ke domain Netlify lama) di tombol Catatan Kajian, tapi tidak langsung
+di-deploy — situs live tetap menampilkan link rusak selama ±1 jam sampai
+ada yang sadar dan trigger manual. Root cause: publikasi memang sengaja
+tidak otomatis tiap push (lihat di atas), tapi itu berlaku untuk **data
+kajian rutin**, bukan untuk **bug/defect yang sedang tayang di situs**.
+
+Aturan untuk mencegah ini terulang — **berlaku untuk sesi kerja repo ini
+DAN untuk siapa pun yang push ke `main`**:
+
+- Kalau commit yang baru di-push **memperbaiki sesuatu yang salah/rusak di
+  situs live** (link mati, salah domain, bug tampilan, kesalahan struktur
+  HTML, dll.) — **langsung trigger workflow manual** (tab Actions →
+  *Prune & deploy mingguan* → Run workflow) begitu selesai push. Jangan
+  tunggu Jumat, dan jangan asumsikan sesi/orang lain akan melakukannya.
+- Ini **berbeda** dari commit yang menambah/mengubah **data kajian rutin**
+  dari flyer — itu tetap boleh menunggu jadwal mingguan seperti biasa,
+  sesuai desain irama publikasi yang sudah dipilih Amal.
+- Bedanya: data basi (event lama belum ke-prune) tidak terlihat pengunjung
+  karena `isEventPast`/`up()` di JS sudah menyaring sisi browser — jadi
+  aman ditunda. **Bug/link rusak justru terlihat langsung** — menunda
+  publikasinya berarti sengaja membiarkan situs live rusak lebih lama dari
+  perlu, padahal deploy manual gratis dan instan.
+- Setelah trigger manual, **verifikasi run-nya `success`** (cek tab
+  Actions atau `list_workflow_runs`) sebelum melapor ke Amal bahwa
+  perbaikan sudah tayang — jangan asumsikan trigger otomatis berhasil.
+
 ## Riwayat migrasi Netlify → GitHub Pages (29 Sep 2026)
 
 Sebelumnya situs ini di Netlify, dengan mekanisme `netlify.toml`
