@@ -189,7 +189,7 @@ Semua tanggal dan jam dalam WIB (Asia/Jakarta, UTC+7). `prune.py` memakai
 
 ## Situs terkait
 
-Catatan Kajian (arsip sesi yang sudah dihadiri): https://catatankajian.netlify.app
+Catatan Kajian (arsip sesi yang sudah dihadiri): https://reconciler.github.io/catatankajian/
 Ditautkan dari header dashboard. Repo terpisah, tidak terintegrasi di level data.
 
 ## Lapor ke sesi "Auditor project kajian"
