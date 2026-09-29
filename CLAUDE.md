@@ -195,11 +195,27 @@ Ditautkan dari header dashboard. Repo terpisah, tidak terintegrasi di level data
 ## Lapor ke sesi "Auditor Project"
 
 Amal menugaskan satu sesi Claude terpisah sebagai auditor lintas-project
-(mengawasi `jadwalkajian` **dan** `catatankajian` sekaligus). Session ID per
-22 Sep 2026: `session_01V7K2gPxpghoLSqB74zsXWV`. Nama sesi ini bisa berubah
-(sudah pernah berganti dari "Integrasi dua project kajian") — kalau ID ini
-sudah tidak valid/sesi berakhir, cari dengan `list_sessions` berdasarkan
-judul **"Auditor Project"**, atau tanya Amal langsung.
+(mengawasi `jadwalkajian`, `catatankajian`, **dan** `bikin-cv-taaruf`
+sekaligus). Session ID per 22 Sep 2026: `session_01V7K2gPxpghoLSqB74zsXWV`.
+Nama sesi ini bisa berubah (sudah pernah berganti dari "Integrasi dua
+project kajian") — kalau ID ini sudah tidak valid/sesi berakhir, cari
+dengan `list_sessions` berdasarkan judul **"Auditor Project"**, atau tanya
+Amal langsung.
+
+**Aturan akses berkas** (disetujui Amal, 29 Sep 2026 — berlaku sama di
+semua repo yang diaudit, dipicu insiden push nyaris bentrok antara sesi
+PIC dan Auditor di `bikin-cv-taaruf`):
+- **Hanya sesi kerja repo ini (bukan Auditor) yang boleh mengubah berkas
+  inti fitur/fungsi**: `index.html`, `favicon.svg`, `og-image.png`,
+  `robots.txt`, `sitemap.xml`, `scripts/` (`prune.py`, `build.py`),
+  `.github/workflows/weekly-deploy.yml`.
+- **Auditor Project boleh mengubah**: `CLAUDE.md` dan `AUDIT-HANDOFF-*.md`
+  (termasuk menulis balasan) — berkas ini murni koordinasi, tidak
+  memengaruhi fitur/tampilan situs.
+- Tujuannya mencegah dua sesi menulis berkas yang sama nyaris bersamaan
+  lalu bentrok non-fast-forward saat push ke `main` (situs langsung tayang
+  tiap push berhasil, jadi konflik penulisan berisiko nyata, bukan cuma
+  git housekeeping).
 
 **Wajib lapor untuk** (bukan tiap commit — hanya yang signifikan):
 - Perubahan skema data (`allEvents`, nilai `audience` baru, dsb.)
