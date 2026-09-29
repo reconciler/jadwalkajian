@@ -192,14 +192,14 @@ Semua tanggal dan jam dalam WIB (Asia/Jakarta, UTC+7). `prune.py` memakai
 Catatan Kajian (arsip sesi yang sudah dihadiri): https://reconciler.github.io/catatankajian/
 Ditautkan dari header dashboard. Repo terpisah, tidak terintegrasi di level data.
 
-## Lapor ke sesi "Auditor project kajian"
+## Lapor ke sesi "Auditor Project"
 
 Amal menugaskan satu sesi Claude terpisah sebagai auditor lintas-project
 (mengawasi `jadwalkajian` **dan** `catatankajian` sekaligus). Session ID per
 22 Sep 2026: `session_01V7K2gPxpghoLSqB74zsXWV`. Nama sesi ini bisa berubah
 (sudah pernah berganti dari "Integrasi dua project kajian") — kalau ID ini
 sudah tidak valid/sesi berakhir, cari dengan `list_sessions` berdasarkan
-judul **"Auditor project kajian"**, atau tanya Amal langsung.
+judul **"Auditor Project"**, atau tanya Amal langsung.
 
 **Wajib lapor untuk** (bukan tiap commit — hanya yang signifikan):
 - Perubahan skema data (`allEvents`, nilai `audience` baru, dsb.)
