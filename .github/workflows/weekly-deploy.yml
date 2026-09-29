@@ -1,51 +1,39 @@
 name: Prune & deploy mingguan (Jumat 15:00 WIB)
 
-# Menggantikan daily-prune.yml (hapus file lama itu).
+# CARA KERJA (migrasi dari Netlify ke GitHub Pages, 29 Sep 2026)
+#   Situs sekarang di-host GitHub Pages (source: "GitHub Actions", diaktifkan
+#   Amal di Settings -> Pages). Tidak ada lagi batasan kredit/biaya seperti
+#   Netlify -- workflow ini tetap jalan mingguan (bukan tiap push) murni untuk
+#   menjaga IRAMA PUBLIKASI yang sudah dipilih Amal: jadwal akhir pekan tayang
+#   sekali di Jumat sore, bukan berubah-ubah kapan saja sepanjang minggu.
 #
-# CARA KERJA
-#   Push ke repo tidak pernah memicu deploy — dicegah oleh `ignore = "exit 0"`
-#   di netlify.toml. Jadi Anda bebas commit event baru setiap hari tanpa
-#   memakai kredit sama sekali.
-#
-#   Workflow inilah satu-satunya yang menerbitkan situs, dengan memanggil
-#   Netlify build hook. Build hook mengabaikan aturan ignore, sehingga
-#   deploy tetap berjalan.
+#   Push ke `main` TIDAK memicu publikasi apa pun -- GitHub Pages hanya
+#   menerbitkan lewat job ini, yang cuma jalan sesuai jadwal cron atau saat
+#   di-trigger manual. Anda bebas commit event baru setiap hari; baru tayang
+#   di deploy mingguan berikutnya.
 #
 # JADWAL
 #   "0 8 * * 5" = Jumat 08:00 UTC = JUMAT 15:00 WIB, sekali seminggu.
 #   Dipilih supaya jadwal akhir pekan sudah tayang sebelum orang
 #   merencanakan Sabtu-Ahad. Batas commit Anda: Jumat sebelum jam 3 sore.
 #
-#   Ganti baris cron untuk mengubah irama. Beberapa pilihan:
-#     "0 8 * * 5"      -> 1x/minggu, Jumat 15:00 WIB (~4-5 deploy/bln, 60-75 kredit)
-#     "0 8 * * 2,5"    -> 2x/minggu, Selasa + Jumat 15:00 WIB (~9/bln, 135 kredit)
-#     "0 8 1 * *"      -> 1x/bulan, tanggal 1 pukul 15:00 WIB (1/bln, 15 kredit)
-#
 #   Hati-hati: angka jam di cron adalah UTC. 08:00 UTC masih hari yang sama
 #   di WIB, tapi jam >= 17:00 UTC akan mendarat di HARI BERIKUTNYA WIB.
 #
+#   Catatan keandalan (25 Sep 2026): cron ini pernah telat >5 jam dari
+#   jadwalnya (delay dari sisi GitHub, bukan bug workflow). Kalau situs
+#   tampak belum ter-update lama setelah Jumat 15:00 WIB, cek tab Actions
+#   dulu sebelum menganggap ada yang rusak.
+#
 # PEMICU MANUAL
 #   Kalau ada kajian mendesak yang harus segera tayang, jalankan workflow ini
-#   manual: tab Actions -> "Prune & deploy mingguan" -> Run workflow.
-#   Biayanya 15 kredit, langsung terbit tanpa menunggu jadwal.
+#   manual: tab Actions -> "Prune & deploy mingguan" -> Run workflow. Gratis
+#   (tidak ada lagi biaya kredit) -- boleh dijalankan kapan pun perlu.
 #
 # PRASYARAT
-#   Secret NETLIFY_BUILD_HOOK berisi URL build hook Netlify.
-#   Buat di: Netlify -> Project configuration -> Developer settings ->
-#            Continuous deployment -> Build hooks -> Add build hook (branch: main)
-#   Simpan di: GitHub -> Settings -> Secrets and variables -> Actions
-#
-# JEDA SEMENTARA — kredit tim Netlify habis (22 Sep 2026)
-#   Kredit tim (dipakai bersama situs catatankajian) tersisa 14,9/300,
-#   di bawah 15 yang dibutuhkan satu deploy. Regrant berikutnya 12 Okt 2026.
-#   Step "Cek masa jeda kredit" di bawah melewati pemicuan deploy (bukan
-#   prune/build/commit -- itu tetap jalan seperti biasa, gratis) sampai
-#   tanggal itu, supaya tidak ada percobaan deploy yang gagal/sia-sia
-#   sementara saldo tidak cukup. Jumat 25 Sep, 2 Okt, 9 Okt akan dilewati
-#   otomatis; Jumat 16 Okt jalan normal lagi tanpa perlu diubah manual.
-#   Setelah dipastikan kredit sudah sehat lagi, hapus step "Cek masa jeda
-#   kredit" dan kondisi `steps.jeda.outputs.boleh == 'true'` di tiga step
-#   terakhir di bawah.
+#   Settings -> Pages -> Build and deployment -> Source: "GitHub Actions"
+#   (bukan "Deploy from a branch"). Tidak perlu secret apa pun lagi --
+#   NETLIFY_BUILD_HOOK sudah tidak dipakai, boleh dihapus dari repo secrets.
 
 on:
   schedule:
@@ -54,10 +42,19 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   prune-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Ambil repo (beserta tag)
         uses: actions/checkout@v4
@@ -88,62 +85,40 @@ jobs:
           git push
           echo "Perubahan di-commit."
 
-      - name: Cek masa jeda kredit Netlify (regrant 12 Okt 2026)
-        id: jeda
-        run: |
-          TODAY=$(TZ=Asia/Jakarta date +%Y-%m-%d)
-          CUTOFF="2026-10-12"
-          if [[ "$TODAY" < "$CUTOFF" ]]; then
-            echo "Tanggal $TODAY masih sebelum $CUTOFF. Kredit tim Netlify"
-            echo "belum regrant -- pemicuan deploy dilewati untuk cegah"
-            echo "percobaan yang gagal karena saldo tidak cukup."
-            echo "boleh=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "Tanggal $TODAY sudah >= $CUTOFF. Deploy boleh berjalan normal."
-            echo "boleh=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Cek apakah ada yang perlu diterbitkan
         id: cek
         run: |
           LAST=$(git rev-parse --verify -q refs/tags/last-deploy || echo "")
           if [ -z "$LAST" ]; then
-            echo "Belum pernah deploy lewat workflow ini — akan menerbitkan."
+            echo "Belum pernah deploy lewat workflow ini -- akan menerbitkan."
             echo "perlu=true" >> "$GITHUB_OUTPUT"
           elif git diff --quiet "$LAST" HEAD -- index.html; then
-            echo "index.html tidak berubah sejak deploy terakhir. Dilewati — hemat 15 kredit."
+            echo "index.html tidak berubah sejak deploy terakhir. Dilewati."
             echo "perlu=false" >> "$GITHUB_OUTPUT"
           else
             N=$(git rev-list --count "$LAST"..HEAD -- index.html)
             echo "Ada $N commit yang mengubah index.html sejak deploy terakhir."
-            echo "Semuanya akan terbit dalam SATU deploy (15 kredit, bukan $((N * 15)))."
             git log --oneline "$LAST"..HEAD -- index.html
             echo "perlu=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Pastikan build hook tersedia
-        if: steps.cek.outputs.perlu == 'true' && steps.jeda.outputs.boleh == 'true'
-        run: |
-          if [ -z "${{ secrets.NETLIFY_BUILD_HOOK }}" ]; then
-            echo "::error::Secret NETLIFY_BUILD_HOOK belum diisi. Situs tidak akan terbit."
-            exit 1
-          fi
+      - name: Siapkan Pages
+        if: steps.cek.outputs.perlu == 'true'
+        uses: actions/configure-pages@v5
 
-      - name: Picu deploy Netlify
-        if: steps.cek.outputs.perlu == 'true' && steps.jeda.outputs.boleh == 'true'
-        run: |
-          CODE=$(curl -sS -o /tmp/resp.txt -w "%{http_code}" \
-                 -X POST -d '{}' "${{ secrets.NETLIFY_BUILD_HOOK }}")
-          echo "HTTP $CODE"
-          cat /tmp/resp.txt || true
-          if [ "$CODE" -lt 200 ] || [ "$CODE" -ge 300 ]; then
-            echo "::error::Build hook gagal (HTTP $CODE). Situs tidak terbit."
-            exit 1
-          fi
-          echo "Deploy dipicu. 15 kredit terpakai."
+      - name: Upload artifact situs
+        if: steps.cek.outputs.perlu == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+      - name: Terbitkan ke GitHub Pages
+        if: steps.cek.outputs.perlu == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       - name: Tandai commit yang sudah diterbitkan
-        if: steps.cek.outputs.perlu == 'true' && steps.jeda.outputs.boleh == 'true'
+        if: steps.cek.outputs.perlu == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -1,19 +1,21 @@
 # Jadwal Kajian — panduan kerja
 
 Dashboard jadwal kajian Jabodetabek & sekitarnya.
-Live: https://jadwalkajian.netlify.app · Pemilik: Amal (@amalwoodworking)
+Live: https://reconciler.github.io/jadwalkajian/ · Pemilik: Amal (@amalwoodworking)
+
+Migrasi dari Netlify ke GitHub Pages: **29 September 2026**. URL lama
+(`jadwalkajian.netlify.app`) sudah tidak dipakai.
 
 ## Struktur
 
 ```
 index.html                           # seluruh dashboard — HTML+CSS+JS satu file
-netlify.toml                         # konfigurasi build; MEMATIKAN deploy-on-push
 robots.txt                           # izinkan semua crawler, tunjuk ke sitemap.xml
 sitemap.xml                          # daftar URL untuk Google Search Console (1 URL, single-page)
 favicon.svg                          # ikon tab browser
 scripts/prune.py                     # hapus event lewat + perbarui stempel footer
 scripts/build.py                     # generate HTML statis + JSON-LD (SEO) dari allEvents
-.github/workflows/weekly-deploy.yml  # prune + build + terbitkan situs, Jumat 15:00 WIB
+.github/workflows/weekly-deploy.yml  # prune + build + terbitkan ke GitHub Pages, Jumat 15:00 WIB
 ```
 
 ## SEO — konten statis & JSON-LD (jangan edit manual)
@@ -43,20 +45,19 @@ manual sekali di `<head>`, tidak berubah tiap event — tidak perlu diupdate
 rutin. **Belum ada `og:image`** (butuh aset gambar banner asli dari Amal,
 belum dibuat).
 
-`index.html` **wajib** di root dengan nama persis itu — Netlify menyajikannya
-sebagai homepage.
+`index.html` **wajib** di root dengan nama persis itu — GitHub Pages
+menyajikannya sebagai homepage.
 
 ## PENTING — push TIDAK menerbitkan situs
 
 Baca ini sebelum melapor apa pun ke Amal.
 
-`netlify.toml` berisi `ignore = "exit 0"`. Artinya **setiap build yang dipicu
-push akan dibatalkan Netlify.** Commit dan push sebanyak apa pun tidak mengubah
-situs live dan tidak memakan biaya.
-
-Situs hanya terbit lewat workflow `weekly-deploy.yml`, yang memanggil Netlify
-build hook. Build hook mengabaikan aturan `ignore`, jadi itulah satu-satunya
-jalur publikasi.
+Situs di-host **GitHub Pages** (Settings → Pages → Build and deployment →
+Source: **"GitHub Actions"**, bukan "Deploy from a branch"). Publikasi
+**hanya** terjadi lewat job di `weekly-deploy.yml` — push biasa ke `main`
+tidak memicu apa pun di luar itu. Ini murni untuk menjaga **irama
+publikasi** (lihat di bawah), bukan lagi soal biaya — GitHub Pages gratis
+tanpa batas kredit untuk situs sekecil ini.
 
 Konsekuensi untuk sesi ini:
 
@@ -66,53 +67,29 @@ Konsekuensi untuk sesi ini:
 - Batas commit agar ikut terbit pekan itu: **Jumat sebelum jam 3 sore WIB.**
 - Kalau ada kajian mendesak yang harus tayang sekarang, Amal bisa menjalankan
   workflow manual: tab Actions → *Prune & deploy mingguan* → Run workflow.
-  **Sarankan ini bila relevan, tapi jangan jalankan tanpa persetujuan Amal** —
-  setiap eksekusi memakan 15 kredit.
+  **Gratis** — boleh disarankan dan dijalankan kapan pun perlu, tidak perlu
+  menahan diri seperti waktu masih di Netlify.
+- **Catatan keandalan cron**: pada 25 Sep 2026, cron ini pernah telat >5 jam
+  dari jadwalnya (delay dari sisi GitHub, workflow-nya sendiri tidak
+  bermasalah). Kalau situs lama tidak ter-update setelah Jumat 15:00 WIB,
+  cek tab Actions dulu sebelum menyimpulkan ada yang rusak.
 
-### JEDA SEMENTARA — kredit tim Netlify habis (sejak 22 Sep 2026)
+## Riwayat migrasi Netlify → GitHub Pages (29 Sep 2026)
 
-Kredit **tim** Netlify "Amal" (dipakai bersama `jadwalkajian` **dan**
-`catatankajian` — satu tim yang sama) tersisa 14,9/300 pada 22 Sep 2026,
-di bawah 15 kredit yang dibutuhkan satu deploy. Regrant berikutnya: **12
-Oktober 2026**.
+Sebelumnya situs ini di Netlify, dengan mekanisme `netlify.toml`
+(`ignore = "exit 0"`) + build hook untuk menahan biaya kredit (kredit tim
+Netlify sempat habis 22 Sep 2026, dipakai bersama `catatankajian`). Setelah
+pindah ke GitHub Pages, seluruh masalah kredit itu tidak relevan lagi —
+`netlify.toml` sudah dihapus, secret `NETLIFY_BUILD_HOOK` sudah tidak
+dipakai (boleh dihapus dari repo secrets kalau belum). Irama publikasi
+mingguan (Jumat 15:00 WIB) **dipertahankan** karena alasannya independen
+dari soal biaya — supaya jadwal akhir pekan sudah stabil sebelum orang
+merencanakan Sabtu-Ahad, bukan berubah-ubah kapan saja sepanjang minggu.
 
-Ditambahkan step **"Cek masa jeda kredit Netlify"** di `weekly-deploy.yml`
-(commit `4e7ddc0`, oleh sesi lain — "Integrasi dua project kajian") yang
-melewati pemicuan build hook + penandaan tag `last-deploy` sampai 12 Okt
-2026. **Prune dan build tetap jalan normal tiap Jumat (gratis)** — cuma
-penerbitan situsnya yang ditunda.
-
-- Jumat **25 Sep, 2 Okt, 9 Okt 2026**: workflow jalan, tapi deploy
-  **sengaja dilewati** — ini bukan kegagalan.
-- Jumat **16 Okt 2026** dan seterusnya: jalan normal lagi tanpa perlu
-  diubah manual.
-- **Jangan hapus/revert gerbang ini atau coba trigger manual sebelum 12
-  Okt**, kecuali Amal memintanya secara eksplisit (dan kalau diminta,
-  ingatkan bahwa itu kemungkinan besar akan gagal karena saldo tidak
-  cukup, atau Amal perlu upgrade plan Netlify dulu).
-- Setelah 12 Okt dan kredit dipastikan sehat, step "Cek masa jeda kredit"
-  dan kondisi `steps.jeda.outputs.boleh == 'true'` di tiga step terakhir
-  boleh dihapus.
-
-## Anggaran biaya
-
-Netlify Free = **300 kredit/bulan**, hard limit, tidak carry-over, situs
-dijeda kalau habis. Deploy produksi = **15 kredit**. Plafon ~20 deploy/bulan.
-
-**Kredit ini per-tim, bukan per-situs** — dipakai bersama situs
-`catatankajian` (tim Netlify "Amal" yang sama). Deploy di salah satu situs
-mengurangi jatah untuk situs satunya juga. Lihat bagian "JEDA SEMENTARA" di
-atas untuk status kredit terkini.
-
-Karena push tidak memicu deploy, **jumlah commit tidak lagi memengaruhi biaya
-sama sekali.** Yang memakan kredit hanya eksekusi workflow deploy. Jadi tidak
-perlu menggabungkan flyer ke satu commit demi hemat — commit sesering yang
-paling rapi untuk riwayat.
-
-Prune ikut berjalan di dalam workflow deploy, jadi tidak menambah deploy
-terpisah. Prune bersifat kosmetik: dashboard sudah menyembunyikan event lewat
-di sisi browser (`isEventPast`/`up` di index.html), jadi menunda prune tidak
-membuat pengunjung melihat data basi.
+Prune tetap berjalan di dalam workflow yang sama, jadi tidak menambah
+job terpisah. Prune bersifat kosmetik: dashboard sudah menyembunyikan event
+lewat di sisi browser (`isEventPast`/`up` di index.html), jadi menunda
+prune tidak membuat pengunjung melihat data basi.
 
 ## Alur kerja utama
 
@@ -160,8 +137,10 @@ Bulan singkat: Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des
 
 ## Jangan sentuh tanpa diminta
 
-- **`netlify.toml`** — mengubah `ignore` akan menghidupkan lagi deploy-on-push
-  dan bisa menghabiskan jatah kredit dalam hitungan hari.
+- **Settings → Pages → Source** — harus tetap "GitHub Actions". Mengubahnya
+  kembali ke "Deploy from a branch" akan menerbitkan `main` apa adanya tiap
+  push (termasuk file `scripts/`, `CLAUDE.md`, dll ikut ter-publish di URL),
+  melewati logika mingguan di `weekly-deploy.yml` sepenuhnya.
 - **Tag git `last-deploy`** — dipakai workflow untuk tahu commit mana yang sudah
   diterbitkan. Kalau dihapus atau dipindah manual, workflow akan deploy ulang
   tanpa perlu (boros) atau melewatkan perubahan (data tidak terbit).
@@ -216,19 +195,18 @@ Ditautkan dari header dashboard. Repo terpisah, tidak terintegrasi di level data
 ## Lapor ke sesi "Auditor project kajian"
 
 Amal menugaskan satu sesi Claude terpisah sebagai auditor lintas-project
-(mengawasi `jadwalkajian` **dan** `catatankajian` sekaligus — kredit Netlify
-kedua situs dipakai bersama, lihat "Anggaran biaya"). Session ID per 22 Sep
-2026: `session_01V7K2gPxpghoLSqB74zsXWV`. Nama sesi ini bisa berubah (sudah
-pernah berganti dari "Integrasi dua project kajian") — kalau ID ini sudah
-tidak valid/sesi berakhir, cari dengan `list_sessions` berdasarkan judul
-**"Auditor project kajian"**, atau tanya Amal langsung.
+(mengawasi `jadwalkajian` **dan** `catatankajian` sekaligus). Session ID per
+22 Sep 2026: `session_01V7K2gPxpghoLSqB74zsXWV`. Nama sesi ini bisa berubah
+(sudah pernah berganti dari "Integrasi dua project kajian") — kalau ID ini
+sudah tidak valid/sesi berakhir, cari dengan `list_sessions` berdasarkan
+judul **"Auditor project kajian"**, atau tanya Amal langsung.
 
 **Wajib lapor untuk** (bukan tiap commit — hanya yang signifikan):
 - Perubahan skema data (`allEvents`, nilai `audience` baru, dsb.)
-- Perubahan pipeline/workflow (`weekly-deploy.yml`, `netlify.toml`,
-  `scripts/prune.py`, `scripts/build.py`)
-- Temuan yang berdampak lintas-project (mis. isu kredit Netlify, error
-  deploy, konflik branch)
+- Perubahan pipeline/workflow/hosting (`weekly-deploy.yml`, pengaturan
+  GitHub Pages, `scripts/prune.py`, `scripts/build.py`)
+- Temuan yang berdampak lintas-project (mis. error deploy, konflik branch,
+  keandalan cron/scheduler)
 - Perubahan besar pada `index.html` di luar penambahan data rutin (mis.
   restrukturisasi SEO, perubahan struktur HTML)
 

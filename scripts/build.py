@@ -26,7 +26,7 @@ from zoneinfo import ZoneInfo
 
 FILE = Path(__file__).resolve().parent.parent / "index.html"
 TZ = ZoneInfo("Asia/Jakarta")
-SITE_URL = "https://jadwalkajian.netlify.app/"
+SITE_URL = "https://reconciler.github.io/jadwalkajian/"
 
 EVENT_LINE_RX = re.compile(r'^\s*\{id:\d+,date:"\d{4}-\d{2}-\d{2}".*\},\s*$')
 KNOWN_KEYS = ["id", "date", "dayShort", "timeLabel", "timeOrder", "title",

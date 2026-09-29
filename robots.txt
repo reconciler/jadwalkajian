@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://jadwalkajian.netlify.app/sitemap.xml
+Sitemap: https://reconciler.github.io/jadwalkajian/sitemap.xml
