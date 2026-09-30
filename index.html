@@ -17,7 +17,7 @@
 <meta name="twitter:title" content="Jadwal Kajian · Jabodetabek">
 <meta name="twitter:description" content="Jadwal kajian rutin dan umum di Jabodetabek & sekitarnya — Depok, Bogor, Jakarta, Bekasi.">
 <meta name="twitter:image" content="https://reconciler.github.io/jadwalkajian/og-image.png">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 <!--LD_JSON_START-->
@@ -70,6 +70,14 @@
   .archive-link{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:7px 13px;background:#3a3020;border:1px solid #6a5838;border-radius:4px;color:#c9ad78;text-decoration:none;font-size:12px;font-weight:500;letter-spacing:.03em;transition:all .12s}
   .archive-link:hover{background:#4a3d28;border-color:#8a7548;color:#e0c896}
   .header-meta{font-size:12px;color:#7a8eaa;margin-top:3px}
+  .header-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .menu-btn{flex-shrink:0;height:30px;padding:0 12px;background:transparent;border:1px solid #2a3a50;border-radius:3px;color:#8899bb;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.04em;cursor:pointer}
+  .menu-btn:hover,.menu-btn[aria-expanded="true"]{border-color:#5a7a9a;color:#ccd8e8}
+  .menu-panel{position:absolute;top:100%;right:12px;width:min(260px,calc(100vw - 24px));background:#0a1020;border:1px solid #2a3a50;border-radius:4px;padding:6px 0;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:20}
+  .menu-panel[hidden]{display:none}
+  .menu-group{padding:8px 14px 4px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#7a9abb}
+  .menu-panel a{display:block;padding:8px 14px;font-size:13px;color:#c9d6e6;text-decoration:none}
+  .menu-panel a:hover,.menu-panel a:focus-visible{background:#131c2e;color:#fff;outline:none}
   .filters{padding:12px 16px 0}
   .filter-row{display:flex;gap:5px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
   .filter-label{font-size:11px;color:#7a9abb;letter-spacing:.1em;text-transform:uppercase;margin-right:2px}
@@ -97,7 +105,18 @@
 <body>
 <div class="header">
   <div class="header-sub" id="header-sub">Jabodetabek & Sekitarnya</div>
-  <h1 class="header-title">Jadwal Kajian</h1>
+  <div class="header-row">
+    <h1 class="header-title">Jadwal Kajian</h1>
+    <button class="menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu-panel">Menu &#9662;</button>
+  </div>
+  <div class="menu-panel" id="menu-panel" hidden>
+    <div class="menu-group">Tentang</div>
+    <a href="https://www.instagram.com/amalwoodworking/" target="_blank" rel="noopener noreferrer">Pembuat: @amalwoodworking</a>
+    <a href="https://github.com/reconciler/jadwalkajian" target="_blank" rel="noopener noreferrer">Kode sumber</a>
+    <div class="menu-group">Proyek lain</div>
+    <a href="https://reconciler.github.io/catatankajian/" target="_blank" rel="noopener noreferrer">Catatan Kajian</a>
+    <a href="https://reconciler.github.io/bikin-cv-taaruf/" target="_blank" rel="noopener noreferrer">Bikin CV Taaruf</a>
+  </div>
   <div class="header-meta" id="header-meta"></div>
   <a class="archive-link" href="https://reconciler.github.io/catatankajian/" target="_blank" rel="noopener">📝 Catatan Kajian — arsip sesi yang sudah dihadiri →</a>
 </div>
@@ -164,6 +183,13 @@ function setMasjid(m){state.masjid=(state.masjid===m?"ALL":m);state.date="ALL";r
 function setDate(d){state.date=(state.date===d?"ALL":d);render();}
 function resetFilters(){state.area="ALL";state.masjid="ALL";state.date="ALL";render();}
 function toggleCard(id){state.expanded=(state.expanded===id?null:id);render();}
+(function(){
+  const b=document.getElementById("menu-btn"),p=document.getElementById("menu-panel");
+  function set(o){p.hidden=!o;b.setAttribute("aria-expanded",o?"true":"false");}
+  b.addEventListener("click",e=>{e.stopPropagation();set(p.hidden);});
+  document.addEventListener("click",e=>{if(!p.hidden&&!p.contains(e.target))set(false);});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!p.hidden){set(false);b.focus();}});
+})();
 render();
 </script>
 <div class="page-footer">
@@ -173,14 +199,14 @@ render();
       Kirim flyer atau detail kajian ke
       <a href="mailto:akhmad.amal@gmail.com">akhmad.amal@gmail.com</a>
       atau mention/DM Instagram
-      <a href="https://instagram.com/amalwoodworking" target="_blank">@amalwoodworking</a>
+      <a href="https://www.instagram.com/amalwoodworking/" target="_blank" rel="noopener noreferrer">@amalwoodworking</a>
     </div>
   </div>
   <div class="meta-bar">
     <div class="meta-left">
       <span class="update-stamp">Diperbarui: 1 Okt 2026</span>
     </div>
-    <div class="credit">by <a href="https://instagram.com/amalwoodworking" target="_blank">@amalwoodworking</a></div>
+    <div class="credit">by <a href="https://www.instagram.com/amalwoodworking/" target="_blank" rel="noopener noreferrer">@amalwoodworking</a></div>
   </div>
 </div>
 </body>
