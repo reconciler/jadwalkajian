@@ -88,17 +88,20 @@ jobs:
       - name: Cek apakah ada yang perlu diterbitkan
         id: cek
         run: |
+          # Berkas situs + workflow ini sendiri: mengubah cara publikasi juga
+          # harus menerbitkan ulang, kalau tidak perubahannya tidak pernah tayang.
+          WATCH="index.html robots.txt sitemap.xml favicon.svg og-image.png .github/workflows/weekly-deploy.yml"
           LAST=$(git rev-parse --verify -q refs/tags/last-deploy || echo "")
           if [ -z "$LAST" ]; then
             echo "Belum pernah deploy lewat workflow ini -- akan menerbitkan."
             echo "perlu=true" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet "$LAST" HEAD -- index.html; then
-            echo "index.html tidak berubah sejak deploy terakhir. Dilewati."
+          elif git diff --quiet "$LAST" HEAD -- $WATCH; then
+            echo "Berkas situs tidak berubah sejak deploy terakhir. Dilewati."
             echo "perlu=false" >> "$GITHUB_OUTPUT"
           else
-            N=$(git rev-list --count "$LAST"..HEAD -- index.html)
-            echo "Ada $N commit yang mengubah index.html sejak deploy terakhir."
-            git log --oneline "$LAST"..HEAD -- index.html
+            N=$(git rev-list --count "$LAST"..HEAD -- $WATCH)
+            echo "Ada $N commit yang mengubah berkas situs sejak deploy terakhir."
+            git log --oneline "$LAST"..HEAD -- $WATCH
             echo "perlu=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -106,11 +109,29 @@ jobs:
         if: steps.cek.outputs.perlu == 'true'
         uses: actions/configure-pages@v5
 
+      - name: Siapkan folder situs (_site)
+        if: steps.cek.outputs.perlu == 'true'
+        run: |
+          # HANYA berkas ini yang tayang di situs. CLAUDE.md, AUDIT-HANDOFF-*.md,
+          # scripts/ dan .github/ sengaja TIDAK disalin (berkas internal).
+          # Menambah aset baru yang dirujuk index.html? Tambahkan ke daftar cp
+          # di bawah, kalau tidak situs tayang dengan aset hilang.
+          mkdir -p _site
+          cp index.html robots.txt sitemap.xml favicon.svg og-image.png _site/
+          echo "Isi _site:"
+          ls -1 _site
+          for f in CLAUDE.md scripts .github; do
+            if [ -e "_site/$f" ]; then
+              echo "::error::Berkas internal ikut ter-copy ke _site: $f"
+              exit 1
+            fi
+          done
+
       - name: Upload artifact situs
         if: steps.cek.outputs.perlu == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "."
+          path: "_site"
 
       - name: Terbitkan ke GitHub Pages
         if: steps.cek.outputs.perlu == 'true'
