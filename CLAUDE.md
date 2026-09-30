@@ -241,8 +241,10 @@ dengan klik di luar dan Esc), isi berurutan bagian khusus proyek, Tentang,
 Proyek lain; tanpa deskripsi singkat; tinggi header tidak bertambah (uji lebar
 320 sampai 430 px); tautan luar `target="_blank" rel="noopener noreferrer"`.
 **Status: belum dipasang di repo ini.** Yang memasang PIC repo ini
-(`index.html` berkas inti). Ini fitur, bukan perbaikan bug, jadi ikut irama
-Jumat kecuali Amal meminta tayang segera.
+(`index.html` berkas inti). Ini fitur, bukan perbaikan bug, tetapi Amal
+memutuskan (30 Sep 2026) menu ini **tayang segera**, pengecualian sekali ini
+dari irama Jumat: setelah push, trigger workflow manual lalu verifikasi run
+`success`.
 
 **Daftar resmi** (dijaga Auditor; bila URL berubah, Auditor memperbarui ketiga
 repo dan memberi tahu PIC):

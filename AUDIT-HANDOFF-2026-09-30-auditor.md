@@ -76,3 +76,28 @@ sesi Auditor.
 - **[Usulan Auditor]** Bila Amal ingin berkas itu tidak tayang: langkah workflow
   menyalin hanya berkas situs ke folder `_site/` dan mengunggah folder itu.
   Menunggu keputusan Amal.
+
+## 5. Keputusan Amal (30 Sep 2026) dan instruksi eksekusi
+
+1. **Menu "Tentang": tayang segera** (sekali ini, pengecualian dari irama
+   Jumat). Sesudah uji lulus (bagian 2) dan push, trigger workflow manual lalu
+   verifikasi run `success`, sesuai aturan di `376da19`.
+2. **Berkas internal tidak boleh tayang di situs.** **[Dilaporkan Amal]** berkas
+   `CLAUDE.md` terbuka di URL publik; Amal meminta berkas internal hanya bisa
+   diakses internal. Ini membatalkan status "menunggu keputusan" di bagian 4.
+   - Instruksi (`weekly-deploy.yml` adalah berkas inti PIC): salin hanya berkas
+     situs ke `_site/`, lalu `upload-pages-artifact` memakai `path: _site`.
+     Langkah commit prune/build, pengecekan `last-deploy`, dan penandaan tag
+     tidak berubah. Perkiraan Auditor untuk berkas situs: `index.html`,
+     `robots.txt`, `sitemap.xml`, `favicon.svg`, dan `og-image.png` bila ada.
+     PIC memastikan daftar lengkap dengan memeriksa referensi di `index.html`.
+     Berkas yang lupa disalin berarti situs rusak.
+   - **[Usulan Auditor]** Kerjakan sebagai push terpisah dari menu dan
+     dahulukan. Sesudah run manual sukses, minta Amal membuka beranda dan
+     `.../jadwalkajian/CLAUDE.md` (harus 404).
+   - Batasan: berkas tetap terbaca di repo GitHub-nya (status publik atau
+     privat repo belum Auditor verifikasi), dan cache mesin pencari bisa
+     bertahan. Keputusan ini hanya menyembunyikan dari situs.
+3. Pernyataan Amal: keputusan yang tidak mengubah tampilan atau fungsi tidak
+   perlu menunggu persetujuannya.
+4. Catat hasilnya di handoff PIC dan beri tahu Auditor.
