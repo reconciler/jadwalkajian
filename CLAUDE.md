@@ -103,6 +103,25 @@ DAN untuk siapa pun yang push ke `main`**:
   Actions atau `list_workflow_runs`) sebelum melapor ke Amal bahwa
   perbaikan sudah tayang — jangan asumsikan trigger otomatis berhasil.
 
+## Berkas yang tayang di situs (folder `_site`)
+
+Sejak 1 Okt 2026 workflow **tidak lagi** mengunggah seluruh root repo. Langkah
+"Siapkan folder situs (_site)" menyalin hanya: `index.html`, `robots.txt`,
+`sitemap.xml`, `favicon.svg`, `og-image.png`. `CLAUDE.md`, `AUDIT-HANDOFF-*.md`,
+`scripts/`, dan `.github/` **tidak tayang** (workflow gagal bila ada yang ikut
+tersalin).
+
+- **Menambah aset baru yang dirujuk `index.html`** (gambar, CSS/JS terpisah,
+  dll.)? Tambahkan ke daftar `cp` di langkah itu **dan** ke variabel `WATCH`
+  di langkah "Cek apakah ada yang perlu diterbitkan". Kalau lupa, situs tayang
+  dengan aset hilang atau perubahan aset dilewati sebagai "tidak ada perubahan".
+- Rujukan lokal di `index.html` harus **relatif** (`favicon.svg`), bukan
+  root-absolut (`/favicon.svg`): situs ada di subpath `/jadwalkajian/`, jadi
+  `/favicon.svg` menunjuk ke `reconciler.github.io/favicon.svg` (404).
+- Berkas tetap terbaca di repo GitHub-nya; ini hanya menyembunyikannya dari situs.
+- Yang belum diverifikasi dari sesi kerja (akses ke `reconciler.github.io`
+  diblokir): bahwa `.../jadwalkajian/CLAUDE.md` benar-benar 404. Amal yang cek.
+
 ## Riwayat migrasi Netlify → GitHub Pages (29 Sep 2026)
 
 Sebelumnya situs ini di Netlify, dengan mekanisme `netlify.toml`
@@ -240,11 +259,9 @@ origin, jadi `localStorage` dipakai bersama. Ditemukan PIC `bikin-cv-taaruf`
 dengan klik di luar dan Esc), isi berurutan bagian khusus proyek, Tentang,
 Proyek lain; tanpa deskripsi singkat; tinggi header tidak bertambah (uji lebar
 320 sampai 430 px); tautan luar `target="_blank" rel="noopener noreferrer"`.
-**Status: belum dipasang di repo ini.** Yang memasang PIC repo ini
-(`index.html` berkas inti). Ini fitur, bukan perbaikan bug, tetapi Amal
-memutuskan (30 Sep 2026) menu ini **tayang segera**, pengecualian sekali ini
-dari irama Jumat: setelah push, trigger workflow manual lalu verifikasi run
-`success`.
+**Status: terpasang (1 Okt 2026).** Akordeon "Menu" di header, dipasang PIC
+repo ini. Amal memutuskan (30 Sep 2026) menu ini **tayang segera**, pengecualian
+sekali ini dari irama Jumat.
 
 **Daftar resmi** (dijaga Auditor; bila URL berubah, Auditor memperbarui ketiga
 repo dan memberi tahu PIC):
