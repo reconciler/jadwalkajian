@@ -70,3 +70,17 @@ aturan eksekusi instruksi Auditor (`bc3879d`).
   bila hanya `_site` disajikan; gagal bila berkas internal tersaji (200), bila
   favicon hilang, dan bila beranda tanpa teks penanda.
 - Satu push, satu deploy manual. Hasil run: lihat bagian bawah setelah selesai.
+
+### Hasil run manual (1 Okt 2026)
+
+- **[Terverifikasi, API Actions]** Run #7 (`36808215973`) pada `a3e9d33`: `success`.
+  Semua langkah lulus, termasuk "Siapkan folder situs (_site)", "Terbitkan ke GitHub
+  Pages", "Uji situs live setelah terbit", dan "Tandai commit yang sudah diterbitkan".
+- **[Terverifikasi, log job]** Uji live berjalan di runner terhadap
+  `https://reconciler.github.io/jadwalkajian/`: "Percobaan 1/12" lalu "Semua cek
+  situs live lulus" (200 untuk beranda dan 5 berkas `_site`, 404 untuk 3 berkas
+  internal). Tag `last-deploy` pindah dari `e7e3e68` ke `a3e9d33`.
+- **Batas yang tetap berlaku:** uji ini memeriksa status HTTP dan teks penanda,
+  bukan tampilan. Tampilan tombol "Tentang" (font asli, ponsel) belum dilihat siapa
+  pun di perangkat nyata; uji lokal memakai font cadangan.
+- Satu push (`9787426`, `d600597`, `a3e9d33`) dan satu deploy, sesuai instruksi.
