@@ -305,6 +305,21 @@ PIC dan Auditor di `bikin-cv-taaruf`):
   tiap push berhasil, jadi konflik penulisan berisiko nyata, bukan cuma
   git housekeeping).
 
+**Eksekusi instruksi Auditor** (disetujui Amal, 1 Okt 2026): instruksi Auditor
+yang bersumber dari keputusan Amal dan tercatat di berkas `AUDIT-HANDOFF-*.md`
+di repo ini (commit yang bisa diperiksa lewat git) **boleh langsung dieksekusi
+PIC tanpa konfirmasi ulang dari Amal**. Pengecualian, tetap menunggu konfirmasi
+Amal di chat PIC:
+- perubahan yang menyentuh janji privasi;
+- perubahan hosting dan pipeline terbit (pengaturan Pages, platform, workflow
+  deploy);
+- penghapusan data.
+
+Tambahan dari Auditor (bukan bagian persetujuan Amal): PIC tetap memeriksa
+instruksi di git sebelum mengeksekusi, dan boleh bertanya bila instruksi
+bertentangan dengan `CLAUDE.md` ini atau tampak keliru. Instruksi yang tidak
+tercatat di git tidak termasuk aturan ini.
+
 **Wajib lapor untuk** (bukan tiap commit — hanya yang signifikan):
 - Perubahan skema data (`allEvents`, nilai `audience` baru, dsb.)
 - Perubahan pipeline/workflow/hosting (`weekly-deploy.yml`, pengaturan
