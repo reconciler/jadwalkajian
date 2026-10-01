@@ -138,3 +138,34 @@ Setelah push: trigger workflow manual dan verifikasi run `success` (aturan di
   grup `pages` bersifat per repo, jadi deploy tiga repo tidak saling menunggu.
 - Catat hasilnya di handoff PIC dan beri tahu Auditor.
 
+
+## 7. Uji otomatis pasca-deploy (disetujui Amal, 1 Okt 2026)
+
+Tujuan: verifikasi situs live dilakukan oleh workflow sendiri. Runner GitHub bisa
+mengakses `github.io`, sedangkan sesi PIC dan Auditor tidak, sehingga Amal tidak
+perlu mengecek manual hal yang bisa dicek mesin.
+
+Tambahkan SATU langkah baru setelah langkah "Terbitkan ke GitHub Pages" (id `deployment`) dan SEBELUM "Tandai commit yang sudah diterbitkan", dengan `if: steps.cek.outputs.perlu == 'true'`. URL dasar: `${{ steps.deployment.outputs.page_url }}`.
+- **Pengulangan:** coba ulang sampai sekitar 2 menit (mis. 12 kali, jeda 10
+  detik) sebelum gagal, dan tambahkan query unik (`?v=${{ github.sha }}`) agar
+  tidak mengambil cache lama. **[Pengetahuan umum Auditor, belum diuji]** Pages
+  bisa menyimpan cache beberapa menit.
+- **Cek (gagal bila tidak terpenuhi):**
+  1. Beranda HTTP 200 dan memuat teks penanda stabil yang PIC pilih (mis. judul
+     halaman).
+  2. Setiap berkas langsung di `_site/` (bukan isi subfolder) HTTP 200, diambil
+     dari isi `_site/` agar berkas baru ikut terperiksa otomatis. Untuk subfolder,
+     contoh 1 sampai 3 berkas.
+  3. Berkas internal HTTP 404: `CLAUDE.md`, `AUDIT-HANDOFF-2026-09-30.md`, `scripts/prune.py`.
+- **Hanya** `curl` dan shell bawaan runner. Tanpa action pihak ketiga, tanpa
+  mengirim data apa pun.
+- Bila langkah ini gagal, jangan dinonaktifkan atau dilonggarkan supaya hijau;
+  selidiki penyebabnya.
+- Batas: uji ini tidak menilai tampilan (tinggi header, font, tata letak). Itu
+  tetap pengecekan manusia.
+
+**Status persetujuan:** Amal menyetujui langsung ke Auditor di chat (1 Okt 2026)
+dan meminta dieksekusi langsung. Karena ini perubahan pipeline terbit, ia masuk
+pengecualian di aturan "Eksekusi instruksi Auditor". Bila PIC tetap memerlukan
+konfirmasi di chat PIC, Amal cukup membalas "lanjut". Catat hasilnya di handoff PIC.
+
