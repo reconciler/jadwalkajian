@@ -101,3 +101,40 @@ sesi Auditor.
 3. Pernyataan Amal: keputusan yang tidak mengubah tampilan atau fungsi tidak
    perlu menunggu persetujuannya.
 4. Catat hasilnya di handoff PIC dan beri tahu Auditor.
+
+## 6. Revisi Amal (1 Okt 2026): satu batch, segera
+
+Permintaan Amal langsung ke Auditor di chat: panel yang memuat kredit dan
+interlink tidak memuat tautan kode sumber/GitHub; tombol interlink lama tidak
+perlu lagi; tombolnya dinamai "Tentang", bukan "Menu".
+
+Kerjakan dalam satu push di `index.html` (berkas inti PIC), posisi per `e7e3e68`:
+1. Hapus tautan "Kode sumber" (baris 115).
+2. Ganti label tombol "Menu ▾" menjadi "Tentang ▾" (baris 110). Sesuaikan
+   atribut `aria` dan teks lain yang menyebut "menu".
+3. Hapus spanduk `archive-link` "Catatan Kajian — arsip sesi yang sudah
+   dihadiri" (baris 121) beserta CSS yang jadi yatim. Catatan Kajian tetap ada
+   di panel (baris 117). **[Interpretasi Auditor]** "tombol interlink yang
+   dibuat sebelumnya" saya baca sebagai tautan lama di luar panel, bukan
+   "Proyek lain" di dalam panel.
+4. Tinggi header tidak boleh bertambah. Header boleh menyusut setelah spanduk
+   dihapus. Uji lebar 320 sampai 430 px.
+5. Perbarui baris status di `CLAUDE.md` (bagian "Aturan satu origin...").
+
+Setelah push: trigger workflow manual dan verifikasi run `success` (aturan di
+`376da19`; Amal sudah memutuskan menu ini tayang segera).
+
+### Proses supaya tidak ada hambatan
+
+- **Konfirmasi.** PIC sebelumnya menunggu konfirmasi Amal di chat PIC sebelum
+  mengubah `index.html` (prosedur yang benar, karena pesan Auditor adalah relay).
+  Amal meminta ini tidak jadi hambatan. Bila PIC tetap memerlukannya, Amal cukup
+  membalas "lanjut" di chat PIC. Itu satu-satunya konfirmasi yang diperlukan.
+- **Verifikasi.** Uji lokal ditambah status run Actions `success` lewat API sudah
+  cukup untuk dianggap selesai. Jangan menunggu Amal mengecek situs live. Amal
+  mengecek sekali di akhir lewat daftar gabungan dari Auditor.
+- **Antrean.** Semua perubahan dalam SATU push, jadi satu deploy; jangan dipecah.
+  **[Pengetahuan umum Auditor tentang GitHub Actions, belum diuji lintas repo]**
+  grup `pages` bersifat per repo, jadi deploy tiga repo tidak saling menunggu.
+- Catat hasilnya di handoff PIC dan beri tahu Auditor.
+
