@@ -51,3 +51,22 @@ di Chromium. **[Belum terverifikasi]** = tidak bisa diperiksa dari sesi ini.
 - Tiga pesan dari Auditor tiba lewat notifikasi terjadwal, bukan dari Amal.
   Saya verifikasi ke git dulu, lalu meminta konfirmasi Amal di chat sebelum
   mengubah `index.html` dan workflow. Amal menjawab "lanjut".
+
+## 5. Batch 1 Okt 2026 (Amal konfirmasi langsung di chat PIC: "lanjut" untuk 3 hal)
+
+Amal membenarkan tiga hal: batch tombol "Tentang", uji otomatis pasca-deploy, dan
+aturan eksekusi instruksi Auditor (`bc3879d`).
+
+- **Tombol "Tentang"**: label "Menu" menjadi "Tentang"; tautan "Kode sumber" dan
+  spanduk `archive-link` (beserta CSS) dihapus. **[Terverifikasi, Chromium]**
+  tinggi header 320/360/375 = 112 px (sebelumnya 167), 414/430 = 100 px
+  (sebelumnya 155); terbuka sama dengan tertutup; tanpa overflow horizontal dan
+  tanpa galat JS; tutup lewat klik luar dan Esc (fokus kembali ke tombol);
+  tautan panel `rel="noopener noreferrer" target="_blank"`. Tafsiran Auditor poin 3
+  (yang dihapus spanduk header, bukan "Proyek lain" di panel) dikonfirmasi Amal.
+- **Uji pasca-deploy**: langkah "Uji situs live setelah terbit" setelah "Terbitkan
+  ke GitHub Pages", sebelum "Tandai commit yang sudah diterbitkan". **[Terverifikasi
+  lokal]** skrip diekstrak dari YAML dan dijalankan terhadap server lokal: lulus
+  bila hanya `_site` disajikan; gagal bila berkas internal tersaji (200), bila
+  favicon hilang, dan bila beranda tanpa teks penanda.
+- Satu push, satu deploy manual. Hasil run: lihat bagian bawah setelah selesai.

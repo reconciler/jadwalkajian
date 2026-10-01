@@ -119,8 +119,17 @@ tersalin).
   root-absolut (`/favicon.svg`): situs ada di subpath `/jadwalkajian/`, jadi
   `/favicon.svg` menunjuk ke `reconciler.github.io/favicon.svg` (404).
 - Berkas tetap terbaca di repo GitHub-nya; ini hanya menyembunyikannya dari situs.
-- Yang belum diverifikasi dari sesi kerja (akses ke `reconciler.github.io`
-  diblokir): bahwa `.../jadwalkajian/CLAUDE.md` benar-benar 404. Amal yang cek.
+- **Uji otomatis setelah terbit** (langkah "Uji situs live setelah terbit" di
+  `weekly-deploy.yml`, atas keputusan Amal 1 Okt 2026): runner memeriksa URL
+  publik sampai 12 kali (jeda 10 detik): beranda 200 dan memuat teks "Jadwal
+  Kajian"; setiap berkas langsung di `_site/` 200; `CLAUDE.md`,
+  `AUDIT-HANDOFF-2026-09-30.md`, `scripts/prune.py` 404. Gagal = run merah dan
+  tag `last-deploy` tidak dipindah, jadi run berikutnya menerbitkan ulang.
+  **Jangan dilonggarkan supaya hijau**; selidiki penyebabnya. Uji ini tidak
+  menilai tampilan. Bila nama berkas internal di daftar `INTERNAL` pada langkah
+  itu berubah, perbarui daftarnya.
+- Sesi kerja tidak bisa mengakses `reconciler.github.io`; verifikasi situs live
+  dilakukan oleh langkah uji otomatis di atas (hasilnya ada di log run Actions).
 
 ## Riwayat migrasi Netlify → GitHub Pages (29 Sep 2026)
 
@@ -266,9 +275,12 @@ origin, jadi `localStorage` dipakai bersama. Ditemukan PIC `bikin-cv-taaruf`
   panel. Di repo ini: spanduk "Catatan Kajian — arsip sesi yang sudah dihadiri" (`archive-link`).
 - Repo ini terbit lewat workflow manual atau jadwal Jumat; untuk perubahan ini, trigger manual setelah push.
 
-**Status (1 Okt 2026):** akordeon terpasang berlabel "Menu" dan masih memuat tautan "Kode sumber"; spanduk lama masih ada. Perubahan di atas diminta Amal pada
-1 Okt 2026 dan dikerjakan PIC dalam satu push. PIC memperbarui baris status ini
-setelah selesai.
+**Status (1 Okt 2026): selesai.** Akordeon berlabel **"Tentang"**, isinya Pembuat
+(Instagram), Catatan Kajian, Bikin CV Taaruf. Tautan kode sumber dan spanduk
+`archive-link` sudah dihapus (beserta CSS-nya). Header tidak bertambah tinggi;
+diuji di Chromium 320 sampai 430 px (menyusut dari 167/155 px menjadi 112/100 px
+karena spanduk hilang). Nama kelas/id internal masih `menu-*`, tidak terlihat
+pengunjung.
 
 **Daftar resmi** (dijaga Auditor; bila URL berubah, Auditor memperbarui ketiga
 repo dan memberi tahu PIC):
