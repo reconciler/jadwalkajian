@@ -138,6 +138,55 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
+      - name: Uji situs live setelah terbit
+        if: steps.cek.outputs.perlu == 'true'
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          SHA: ${{ github.sha }}
+        run: |
+          # Memeriksa URL publik dari runner (sesi lokal tidak bisa mengakses github.io).
+          # Gagal bila ada cek yang tidak terpenuhi; JANGAN dilonggarkan supaya hijau,
+          # selidiki penyebabnya. Bila gagal, tag last-deploy tidak dipindah (langkah
+          # berikutnya tidak jalan), jadi run berikutnya menerbitkan ulang.
+          # Tidak menilai tampilan (tinggi header, font, tata letak).
+          if [ -z "$PAGE_URL" ]; then
+            echo "::error::page_url kosong; tidak bisa menguji situs live."
+            exit 1
+          fi
+          BASE="${PAGE_URL%/}/"
+          MARKER="Jadwal Kajian"
+          INTERNAL="CLAUDE.md AUDIT-HANDOFF-2026-09-30.md scripts/prune.py"
+          http_code() {
+            curl -s -o "$2" -w '%{http_code}' --max-time 15 "${BASE}$1?v=${SHA}" || true
+          }
+          check_once() {
+            local fail=0 code f
+            code=$(http_code "" /tmp/home.html)
+            if [ "$code" != "200" ]; then echo "  beranda: HTTP $code (harus 200)"; fail=1; fi
+            if ! grep -q "$MARKER" /tmp/home.html 2>/dev/null; then
+              echo "  beranda: teks penanda \"$MARKER\" tidak ada"; fail=1
+            fi
+            for f in $(cd _site && find . -maxdepth 1 -type f -printf '%f\n' | sort); do
+              code=$(http_code "$f" /dev/null)
+              if [ "$code" != "200" ]; then echo "  $f: HTTP $code (harus 200)"; fail=1; fi
+            done
+            for f in $INTERNAL; do
+              code=$(http_code "$f" /dev/null)
+              if [ "$code" != "404" ]; then echo "  $f: HTTP $code (harus 404, berkas internal)"; fail=1; fi
+            done
+            return $fail
+          }
+          for i in $(seq 1 12); do
+            echo "Percobaan $i/12 terhadap $BASE"
+            if check_once; then
+              echo "Semua cek situs live lulus."
+              exit 0
+            fi
+            if [ "$i" -lt 12 ]; then sleep 10; fi
+          done
+          echo "::error::Uji situs live gagal setelah 12 percobaan (lihat cek yang gagal di atas)."
+          exit 1
+
       - name: Tandai commit yang sudah diterbitkan
         if: steps.cek.outputs.perlu == 'true'
         run: |
