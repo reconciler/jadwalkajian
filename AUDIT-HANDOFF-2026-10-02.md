@@ -70,3 +70,7 @@ Dasar: instruksi Auditor (komit 467e4d8) + persetujuan Amal ("lanjut untuk tahap
 - Apakah GitHub menerima dropdown 104 opsi (Amal membuka "New issue" sekali; bila form tidak tampil lengkap, turunkan `MAKS_OPSI_DROPDOWN` atau gabungkan kolom 9-12).
 - Alur end-to-end di GitHub: Issue sungguhan -> komentar -> Issue tertutup -> event di situs; cron `schedule` (baru jalan pertama kali 20:17 UTC); komentar `issues: write` oleh GITHUB_TOKEN.
 - Perilaku concurrency yang diasumsikan di atas.
+
+### Hasil run pertama workflow baru (3 Okt 2026, 00:29 WIB)
+- Run #5 (`37041083168`, pemicu `push`, komit `d055d4b`): **success**, 14 langkah termasuk langkah baru "Ambil Issue", "Ingest Issue, prune, build, dan komit" (0 Issue), "Perbarui templat formulir Issue" (templat sudah mutakhir, tanpa push), "Uji situs live" (lulus), "Komentar hasil dan tutup Issue" (tanpa Issue). Tag `last-deploy` dipindah. Tidak ada commit bot.
+- **Belum teruji di GitHub:** jalur dengan Issue sungguhan, `issues: opened/edited`, cron `schedule`, dan push templat oleh GITHUB_TOKEN. Uji end-to-end menunggu Amal mengirim satu Issue uji (lalu event ujinya dihapus).
