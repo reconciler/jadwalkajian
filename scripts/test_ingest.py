@@ -161,7 +161,7 @@ def _():
 def _():
     d = siapkan(); n0 = len(events(d))
     kasus = [
-        form(Tanggal="2026-10-02"), form(Tanggal="10-10-2026"), form(Tanggal="2026-02-30"), form(Tanggal="2031-01-01"),
+        form(Tanggal="2026-10-02"), form(Tanggal="besok"), form(Tanggal="2026-02-30"), form(Tanggal="2031-01-01"),
         form(Jenis_waktu="Jam eksak"), form(Jenis_waktu="Jam eksak", Jam="25.00"), form(Jenis_waktu="Jam eksak", Jam="9"),
         form(Pemateri=ad.LAINNYA), form(Masjid=ad.LAINNYA), form(Masjid="Online"),
         form(Masjid=ad.LAINNYA, Nama_masjid_baru="X", Alamat_masjid_baru="Y", Kota_masjid_baru=ad.KOTA_LAIN),
@@ -228,12 +228,41 @@ def _():
     import yaml
     t = yaml.safe_load(ad.render_template(core.muat_kategori(REPO / "data" / "kategori.json")))
     assert t["title"] == ad.JUDUL_ISSUE and len(t["body"]) == 15
+    assert next(x for x in t["body"] if x["id"] == "tanggal")["type"] == "input"
     ids = [x["id"] for x in t["body"]]; assert len(ids) == len(set(ids))
     assert [x["attributes"]["label"] for x in t["body"]] == [ad.LABEL[k] for k in ad.LABEL]
     for x in t["body"]:
         if x["type"] == "dropdown":
             o = x["attributes"]["options"]
             assert len(o) == len(set(o)) and not any("," in s for s in o), x["id"]
+
+
+@uji("tanggal bebas: berbagai format, filter hari, tahun dihilangkan, pemeriksa hari")
+def _():
+    import tanggal_bebas as tb
+    H = core.date(2026, 10, 3)
+    ok = {
+        "10 Okt 2026": ["2026-10-10"], "10 okt": ["2026-10-10"], "10/10/2026": ["2026-10-10"], "10-10-2026": ["2026-10-10"],
+        "sabtu 10 okt 2026": ["2026-10-10"], "10, 17, 24 Okt 2026": ["2026-10-10", "2026-10-17", "2026-10-24"],
+        "3 Okt - 4 Okt 2026": ["2026-10-03", "2026-10-04"], "3 s/d 5 Okt 2026": ["2026-10-03", "2026-10-04", "2026-10-05"],
+        "3-31 Okt 2026 Sabtu": ["2026-10-03", "2026-10-10", "2026-10-17", "2026-10-24", "2026-10-31"],
+        "3-31 Okt 2026 setiap Sabtu & Ahad": [f"2026-10-{d:02d}" for d in (3, 4, 10, 11, 17, 18, 24, 25, 31)],
+        "3-31 Okt 2026, Sab": ["2026-10-03", "2026-10-10", "2026-10-17", "2026-10-24", "2026-10-31"],
+        "2026-10-10\n2026-10-11": ["2026-10-10", "2026-10-11"], "5 Jan": ["2027-01-05"],
+        "28 Des 2026 - 3 Jan 2027": ["2026-12-28", "2026-12-29", "2026-12-30", "2026-12-31", "2027-01-01", "2027-01-02", "2027-01-03"],
+        "Jum'at 2 Okt 2026": ["2026-10-02"], "10 Oktober 2026; 17 Oktober 2026": ["2026-10-10", "2026-10-17"],
+    }
+    for s, e in ok.items():
+        assert tb.parse(s, H) == e, (s, tb.parse(s, H))
+    for s in ["besok", "", "30 Feb 2026", "10 Foo 2026", "minggu 10 okt 2026", "31-3 Okt 2026", "Sabtu", "32 Okt 2026", "13/13/2026", "3-31 Okt 2026 Selasa 2027"]:
+        try:
+            tb.parse(s, H); raise AssertionError(f"harus gagal: {s!r}")
+        except core.InputError:
+            pass
+    # ujung ke ujung: rentang + filter hari menjadi banyak event, komentar memuat nama hari
+    d = siapkan()
+    h = jalankan(d, [iss(70, form(Tanggal="3-31 Okt 2026 setiap Sabtu"))])
+    assert h[0]["status"] == "ok" and len(h[0]["id"]) == 5 and "Sab 31 Okt (2026-10-31)" in h[0]["komentar"], h[0]["komentar"]
 
 
 @uji("pecah_body: heading, _No response_, centang")

@@ -5,12 +5,12 @@ name: Tambah kajian
 description: Tambah satu atau beberapa kajian ke Jadwal Kajian (hanya pemilik repo).
 title: "Tambah kajian: "
 body:
-  - type: textarea
+  - type: input
     id: tanggal
     attributes:
       label: "Tanggal"
-      description: "Satu tanggal per baris, format YYYY-MM-DD. Banyak tanggal = banyak event dengan isian yang sama."
-      placeholder: "2026-10-10\n2026-10-11"
+      description: "Satu isian. Contoh: 10 Okt 2026 | 10, 17, 24 Okt 2026 | 3-31 Okt 2026 Sabtu | 3 Okt - 4 Okt 2026 | 10/10/2026. Banyak tanggal = banyak event dengan isian yang sama. Tahun boleh dihilangkan. Cek hasilnya di komentar balasan."
+      placeholder: "10 Okt 2026"
     validations:
       required: true
   - type: dropdown

@@ -43,7 +43,7 @@ def komentar_ok(issue, events, ids, hasil):
     b = ["Kajian dari Issue ini sudah masuk data dan **sudah terbit** di situs.", "",
          "| id | tanggal | waktu | judul | pemateri | masjid | kota |", "|---|---|---|---|---|---|---|"]
     for ev, i in zip(events, ids):
-        b.append(f"| {i} | {ev['date']} | {kode(ev['timeLabel'])} | {kode(ev['title'])} | "
+        b.append(f"| {i} | {ev['dayShort']} ({ev['date']}) | {kode(ev['timeLabel'])} | {kode(ev['title'])} | "
                  f"{kode(ev['ustadz'])} | {kode(ev['masjid'])} | {kode(ev['area'])} |")
     if not events:
         b.append("| - | - | - | tidak ada event baru | - | - | - |")
@@ -113,7 +113,7 @@ def main(argv=None):
 
         events_ada = core.events_dari_html(html)
         try:
-            paket = adapter.ke_paket(iss.get("body", ""), kat)
+            paket = adapter.ke_paket(iss.get("body", ""), kat, hari_ini)
             hasil = core.bangun_event(paket, kat, hari_ini, events_ada)
         except core.InputError as e:
             kat["gagal"].append({"issue": n, "alasan": e.pesan})

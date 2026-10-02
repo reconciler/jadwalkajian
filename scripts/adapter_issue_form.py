@@ -17,8 +17,9 @@ menghasilkan paket baku yang sama.
 import json
 import re
 
+import tanggal_bebas
 from ingest_core import (AUDIENCE, BELUM_DITENTUKAN, JENIS_WAKTU, ONLINE,
-                         InputError, bersihkan)
+                         InputError, bersihkan, sekarang_wib)
 
 LABEL = {
     "tanggal": "Tanggal",
@@ -103,9 +104,10 @@ def render_template(kat):
         mas = _unsur("dropdown", "masjid", LABEL["masjid"], wajib=True, opsi=mas_opsi)
 
     unsur = [
-        _unsur("textarea", "tanggal", LABEL["tanggal"],
-               "Satu tanggal per baris, format YYYY-MM-DD. Banyak tanggal = banyak event dengan isian yang sama.",
-               "2026-10-10\n2026-10-11", wajib=True),
+        _unsur("input", "tanggal", LABEL["tanggal"],
+               "Satu isian. Contoh: 10 Okt 2026 | 10, 17, 24 Okt 2026 | 3-31 Okt 2026 Sabtu | 3 Okt - 4 Okt 2026 | 10/10/2026. "
+               "Banyak tanggal = banyak event dengan isian yang sama. Tahun boleh dihilangkan. Cek hasilnya di komentar balasan.",
+               "10 Okt 2026", wajib=True),
         _unsur("dropdown", "jenis_waktu", LABEL["jenis_waktu"], wajib=True, opsi=JENIS_WAKTU),
         _unsur("input", "jam", LABEL["jam"],
                "Hanya bila Jenis waktu = Jam eksak. Contoh 09.30 atau 09.30-11.00.", "09.30-11.00"),
@@ -153,7 +155,7 @@ def _centang(nilai):
     return bool(re.search(r"^\s*-\s*\[[xX]\]", nilai or "", re.M))
 
 
-def ke_paket(body, kat):
+def ke_paket(body, kat, hari_ini=None):
     """Isi Issue -> paket baku. Menaikkan InputError bila struktur/kolom bersyarat salah."""
     f = pecah_body(body)
     galat = []
@@ -166,7 +168,11 @@ def ke_paket(body, kat):
     def v(k):
         return f.get(LABEL[k], "")
 
-    tanggal = [t for t in re.split(r"[\s,;]+", v("tanggal")) if t]
+    try:
+        tanggal = tanggal_bebas.parse(v("tanggal"), hari_ini or sekarang_wib())
+    except InputError as e:
+        galat.extend(e.pesan)
+        tanggal = []
 
     # pemateri
     pem = v("pemateri")
