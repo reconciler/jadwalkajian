@@ -188,8 +188,11 @@ Bulan singkat: Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des
   diterbitkan. Kalau dihapus atau dipindah manual, workflow akan deploy ulang
   tanpa perlu (boros) atau melewatkan perubahan (data tidak terbit).
 - **Pemicu di `deploy.yml`** (push ke `main` + manual, tanpa cron) — diputuskan
-  Amal 2 Okt 2026. Jangan menambah jadwal cron tanpa diminta. Bila suatu saat
-  ada cron: jam di cron adalah **UTC** (WIB = UTC+7).
+  Amal 2 Okt 2026. Jangan menambah jadwal cron tanpa diminta. **Satu
+  pengecualian disetujui Amal 2 Okt 2026:** satu cron pengaman harian untuk
+  sistem input event lewat formulir Issue (rinci di
+  `AUDIT-HANDOFF-2026-10-02-auditor.md` bagian 6); baru berlaku setelah PIC
+  menerapkannya (tahap 1). Jam di cron adalah **UTC** (WIB = UTC+7).
 
 ## Validasi wajib sebelum commit
 
