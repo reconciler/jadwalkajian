@@ -15,7 +15,12 @@ sitemap.xml                          # daftar URL untuk Google Search Console (1
 favicon.svg                          # ikon tab browser
 scripts/prune.py                     # hapus event lewat + perbarui stempel footer
 scripts/build.py                     # generate HTML statis + JSON-LD (SEO) dari allEvents
-data/kategori.json                   # daftar induk kota/masjid/pemateri (internal, TIDAK tayang di _site)
+data/kategori.json                   # daftar induk kota/masjid/pemateri + Issue diproses/gagal (internal, TIDAK tayang di _site)
+scripts/ingest.py                    # CLI ingest Issue -> event (dipanggil workflow)
+scripts/ingest_core.py               # logika inti: validasi, pembuatan event, daftar induk (tanpa tahu soal formulir)
+scripts/adapter_issue_form.py        # adapter formulir Issue: templat YAML + parser isi Issue -> paket baku
+scripts/test_ingest.py               # uji lokal ingest (python3 scripts/test_ingest.py)
+.github/ISSUE_TEMPLATE/              # DIBUAT OTOMATIS dari data/kategori.json; jangan edit manual
 .github/workflows/deploy.yml         # prune + build + terbitkan ke GitHub Pages (push ke main + manual)
 ```
 
@@ -61,11 +66,19 @@ sejak pindah ke GitHub Pages. File workflow diganti nama dari
 
 Situs di-host **GitHub Pages** (Settings → Pages → Build and deployment →
 Source: **"GitHub Actions"**, bukan "Deploy from a branch"). Publikasi hanya
-lewat `deploy.yml`, dengan dua pemicu:
+lewat `deploy.yml`, dengan empat pemicu (Issue dan cron ditambah 3 Okt 2026, tahap 1
+sistem input Issue):
 
 - **Push ke `main`** yang mengubah `index.html`, `robots.txt`, `sitemap.xml`,
   `favicon.svg`, `og-image.png`, `scripts/**`, atau `deploy.yml` — otomatis.
   Push yang hanya mengubah `CLAUDE.md`/`AUDIT-HANDOFF-*.md` tidak memicu apa pun.
+- **Issue "Tambah kajian: ..."** dibuka/diedit oleh `reconciler` — lihat bagian
+  "Input event lewat formulir Issue" di bawah.
+- **Cron pengaman harian** `17 20 * * *` UTC (03:17 WIB; satu-satunya cron yang
+  disetujui Amal 2 Okt 2026): menerbitkan bila `last-deploy` tertinggal dari
+  `main`, memproses Issue yang terlewat, menutup Issue yang sudah terbit. Tanpa
+  Issue baru, cron **tidak** prune/build/commit (tidak ada deploy harian). Cron
+  GitHub bisa telat berjam-jam; itu hanya menunda terbit.
 - **Manual**: tab Actions → *Prune & deploy* → Run workflow (gratis, kapan saja).
 
 Konsekuensi untuk sesi ini:
@@ -87,6 +100,48 @@ Konsekuensi untuk sesi ini:
 - Sebelum 2 Okt 2026, cron pernah telat >5 jam (25 Sep) dan sesi lain sempat
   menunggu Jumat padahal ada bug live (insiden 29 Sep, `0e0c688`). Dua masalah
   itu hilang bersama jadwal mingguan.
+
+## Input event lewat formulir Issue (sejak 3 Okt 2026)
+
+Jalur input kedua selain "screenshot flyer ke Claude". Keputusan Amal 2 Okt 2026,
+rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
+`AUDIT-HANDOFF-2026-10-02.md` bagian 6.
+
+- **Cara pakai (Amal):** tab Issues → New issue → "Tambah kajian" → isi → Submit.
+  Hanya Issue dari `reconciler` berjudul "Tambah kajian: ..." yang diproses.
+  Dalam beberapa menit: event masuk, situs terbit, Issue diberi komentar dan
+  ditutup. **Issue terbuka = belum terbit.** Gagal validasi: Issue tetap terbuka
+  dengan komentar alasan; edit Issue untuk memproses ulang.
+- **Kolom:** Tanggal (satu per baris `YYYY-MM-DD`, banyak tanggal = banyak event),
+  Jenis waktu, Jam (hanya Jam eksak: `09.30` atau `09.30-11.00`), Judul, Pemateri
+  (+ Pemateri baru), Pemateri perempuan (→ `Khusus Akhwat`), Masjid (+ Nama/Alamat
+  masjid baru, Kota masjid baru / Kota lain), Audience (bawaan Terbuka untuk
+  umum), Kajian rutin, Catatan (opsional). Masjid = **Online**: isi penyelenggara
+  di "Nama masjid baru" → `masjid` = `<penyelenggara> (Online)`, `area` = `Online`.
+- **Menambah kota/masjid/pemateri baru:** pilih "Lainnya" dan isi kolom barunya;
+  otomatis masuk `data/kategori.json` dan dropdown berikutnya. Nama yang sama
+  (abaikan huruf besar/kecil) memakai yang sudah ada; nama **mirip** diberi
+  peringatan di komentar tapi tetap diproses.
+- **Dropdown selalu mutakhir:** `.github/ISSUE_TEMPLATE/tambah-kajian.yml` dibuat
+  ulang oleh `scripts/ingest.py` dari `data/kategori.json` di setiap run. Jangan
+  edit manual. Opsi dropdown memakai koma lebar penuh (`，`) sebagai pengganti
+  koma ASCII; parser memetakannya kembali.
+- **Label kolom = kunci parser.** Mengubah label di `adapter_issue_form.py`
+  (`LABEL`) wajib diikuti pengubahan parser; uji: `python3 scripts/test_ingest.py`.
+- **Arsitektur:** `ingest_core.py` hanya menerima "paket baku"; formulir Issue
+  hanya satu adapter (`adapter_issue_form.py`). Jalur lain (mis. Google Form)
+  cukup menulis adapter baru.
+- **Keamanan (jangan dilanggar):** isi/judul Issue **tidak pernah** diinterpolasi
+  ke `run:` di workflow (injeksi skrip) — dibaca dari berkas JSON. Baris event
+  ditulis lewat `json.dumps`; tanda `<` `>` ditolak; karakter kontrol dibuang.
+  Hanya action resmi `actions/*`.
+- **Daftar induk `data/kategori.json`** juga menyimpan `diproses` (Issue → id event,
+  untuk idempotensi) dan `gagal` (Issue yang ditolak; dilewati sampai diedit).
+  Jangan edit manual kecuali memperbaiki data; ia tidak tayang di situs.
+- Alur flyer ke Claude tetap memakai langkah manual (edit `index.html`); bila
+  ada kota/masjid/pemateri baru, tambahkan juga ke `data/kategori.json` agar
+  dropdown mengikutinya (atau biarkan: run berikutnya tidak menghapusnya, tetapi
+  tidak otomatis menambahkannya dari event manual).
 
 ## Berkas yang tayang di situs (folder `_site`)
 
@@ -178,6 +233,8 @@ Bulan singkat: Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des
 7. **Data baru ditambahkan, bukan ditahan.** Lokasi, masjid, ustadz, atau area
    yang belum ada di dashboard tetap dimasukkan (aturan Amal, 2 Okt 2026).
    Laporkan hanya pilihan yang tidak tertulis di flyer (mis. nama area baru).
+   Saat menambah event dari flyer secara manual, samakan ejaan kota/masjid/pemateri
+   dengan `data/kategori.json`.
 
 ## Jangan sentuh tanpa diminta
 
@@ -188,12 +245,10 @@ Bulan singkat: Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des
 - **Tag git `last-deploy`** — dipakai workflow untuk tahu commit mana yang sudah
   diterbitkan. Kalau dihapus atau dipindah manual, workflow akan deploy ulang
   tanpa perlu (boros) atau melewatkan perubahan (data tidak terbit).
-- **Pemicu di `deploy.yml`** (push ke `main` + manual, tanpa cron) — diputuskan
-  Amal 2 Okt 2026. Jangan menambah jadwal cron tanpa diminta. **Satu
-  pengecualian disetujui Amal 2 Okt 2026:** satu cron pengaman harian untuk
-  sistem input event lewat formulir Issue (rinci di
-  `AUDIT-HANDOFF-2026-10-02-auditor.md` bagian 6); baru berlaku setelah PIC
-  menerapkannya (tahap 1). Jam di cron adalah **UTC** (WIB = UTC+7).
+- **Pemicu di `deploy.yml`** (push ke `main`, Issue "Tambah kajian", cron pengaman
+  harian, manual) — diputuskan Amal 2 Okt 2026 dan diterapkan 3 Okt 2026. Jangan
+  menambah cron lain atau jadwal mingguan tanpa diminta. Jam di cron adalah
+  **UTC** (WIB = UTC+7); cron yang ada `17 20 * * *` = 03:17 WIB.
 
 ## Validasi wajib sebelum commit
 

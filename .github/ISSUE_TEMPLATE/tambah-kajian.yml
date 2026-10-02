@@ -1,0 +1,260 @@
+# DIBUAT OTOMATIS oleh scripts/ingest.py dari data/kategori.json. Jangan edit manual:
+# perubahan akan tertimpa pada run berikutnya. Label kolom = kunci parser
+# (scripts/adapter_issue_form.py); jangan diubah tanpa mengubah parser.
+name: Tambah kajian
+description: Tambah satu atau beberapa kajian ke Jadwal Kajian (hanya pemilik repo).
+title: "Tambah kajian: "
+body:
+  - type: textarea
+    id: tanggal
+    attributes:
+      label: "Tanggal"
+      description: "Satu tanggal per baris, format YYYY-MM-DD. Banyak tanggal = banyak event dengan isian yang sama."
+      placeholder: "2026-10-10\n2026-10-11"
+    validations:
+      required: true
+  - type: dropdown
+    id: jenis_waktu
+    attributes:
+      label: "Jenis waktu"
+      options:
+        - "Jam eksak"
+        - "Dhuha"
+        - "Ba'da Subuh"
+        - "Ba'da Zuhur"
+        - "Ba'da Ashar"
+        - "Ba'da Maghrib"
+    validations:
+      required: true
+  - type: input
+    id: jam
+    attributes:
+      label: "Jam"
+      description: "Hanya bila Jenis waktu = Jam eksak. Contoh 09.30 atau 09.30-11.00."
+      placeholder: "09.30-11.00"
+    validations:
+      required: false
+  - type: input
+    id: judul
+    attributes:
+      label: "Judul"
+    validations:
+      required: true
+  - type: dropdown
+    id: pemateri
+    attributes:
+      label: "Pemateri"
+      options:
+        - "Abdullah Taslim， M.A."
+        - "Abu Ya'la Kurnaedi， Lc."
+        - "Arman Amri， Lc."
+        - "Asatidz Pengajar Tahsin"
+        - "Assoc. Prof. Dr. KH. Akhmad Alim， Lc.， M.A."
+        - "Badru Salam， Lc."
+        - "Derma Permana， Lc."
+        - "Dr. (HC) H. Sholeh Asri， M.A."
+        - "Dr. Ahmad Sunhaji， M.Pd.I."
+        - "Dr. Ali Saman Hasan， Lc.， MA"
+        - "Dr. Budi Utomo， Lc.， M.A."
+        - "Dr. H. Abdul Muid Nawawi， M.A."
+        - "Dr. H. Ending Bahruddin， M.Ag."
+        - "Dr. H. Mulawarman Hannase， Lc.， M.Hum."
+        - "Dr. H. Nirwan Syafrin Manurung， M.A."
+        - "Dr. Hj. Sri Sabbahatun， Lc.， M.E."
+        - "DR. K.H. Amang Syafrudin， Lc.， M.M"
+        - "Dr. KH. Abdul Halim Sholeh， M.M."
+        - "Dr. KH. Agam Bayu Suyanto， M.B.A."
+        - "Dr. KH. Mahkamah Mahdin， Lc.， M.A."
+        - "Dr. Muhammad Ardiansyah"
+        - "Dr. Musyaffa' Ad-Dariny， M.A."
+        - "Drs. H.A. Dzulfatah Yasin， M.Ag."
+        - "Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta"
+        - "Gigih Surya Nugraha， S.H."
+        - "H. Jamaluddin F. Hasyim， S.H.， M.H."
+        - "H. Mas'ud Halimin， M.A."
+        - "Irham Maulana， M.H.I."
+        - "Kang Ghany & Zidny Hikmatiar"
+        - "KH. Abdurrahman Bustomi， M.A."
+        - "Mas'ud Mahmud， Lc."
+        - "Muhammad Setiawan"
+        - "Prof. Dr. H. Hamka Hasan， Lc.， M.A."
+        - "Rizki Nasution， Lc.， M.SI"
+        - "Sheikh Assim Al Hakeem"
+        - "Ust. Ahmad Fathoni， M.E."
+        - "Ust. Hisyam Mukhlas A."
+        - "Ustadz Abdul Aziz Al Owainy， Lc."
+        - "Ustadz Abu Bakar Al Akhdhory， Lc.， M.Pd."
+        - "Ustadz Abu Hurairah， MA"
+        - "Ustadz Abu Yazid Novtriadi， Lc.， M.Pd."
+        - "Ustadz Ali Hasan Bawazier"
+        - "Ustadz Amrullah Tekko， Lc."
+        - "Ustadz Arman Amri， Lc"
+        - "Ustadz Ayub Abu Ayub"
+        - "Ustadz Azhar Khalid Bin Sheff， Lc.， MA"
+        - "Ustadz Azhar Khalid Seff， M.A."
+        - "Ustadz Dr. Abdi Kurnia Djohan， M.A.， S.H.， M.H."
+        - "Ustadz Dr. Abdullah Achmad Zawawi， B.IL.， CIFP."
+        - "Ustadz Dr. Abu Jarir Ari Triono， Lc.， M.A."
+        - "Ustadz Dr. Ahmad Ba'mualim， Lc.， M.Pd."
+        - "Ustadz Dr. Ahmad Sujai， M.Si."
+        - "Ustadz DR. Elfa Hendri Mukhlis， MA"
+        - "Ustadz Dr. Khairan Muhammad Arif， M.A.， M.Ed."
+        - "Ustadz DR. Nurdin Apud Sarbini， Lc.， M.Pd"
+        - "Ustadz DR. Syafiq Al-Khatieb， Lc.， MA"
+        - "Ustadz Dzikrullah Arza"
+        - "Ustadz Ega Abu Fahd， Lc"
+        - "Ustadz Erfandoni Tarmizi， LC.， M.HI"
+        - "Ustadz Fatahillah Aly， M.Ag"
+        - "Ustadz Fatahillah Aly， S.Ag."
+        - "Ustadz Fuad Mubarok， Lc.， M.A"
+        - "Ustadz H. Faisal Qosim， Lc.， CFRM."
+        - "Ustadz Harist Abu Naufal"
+        - "Ustadz Herfi G Faizi， Lc.， M.Ag"
+        - "Ustadz Hudzaifah bin Muhammad"
+        - "Ustadz Idrus Yusuf， MA"
+        - "Ustadz Imamuddin Mukhtar， B.Sh.， M.SI"
+        - "Ustadz Ishom Aini， Lc.， MA"
+        - "Ustadz Joni Qodariyanto， Lc."
+        - "Ustadz Khalid Basalamah"
+        - "Ustadz Luthfi Abdul Jabbar， Lc."
+        - "Ustadz M Ihsan Tandjung， Lc"
+        - "Ustadz Masykur Abu Mawaddah"
+        - "Ustadz Maududi Abdullah， Lc."
+        - "Ustadz Mizan Qudsiyyah， Lc.， MA"
+        - "Ustadz Mohamad Nursamsul Qamar， Lc"
+        - "Ustadz Mohamad Nursamsul Qamar， Lc."
+        - "Ustadz Muhammad Barmim"
+        - "Ustadz Muhammad Halid Syar'ie， Lc."
+        - "Ustadz Muhammad Iqbal ibnu Said， S.Pd"
+        - "Ustadz Muhammad Nuzul Dzikri"
+        - "Ustadz Muhammad Setiawan， S.Pd"
+        - "Ustadz Muhammad Tamrin， Lc."
+        - "Ustadz Muhammad Yahya， Lc"
+        - "Ustadz Najmi Umar Bakkar"
+        - "Ustadz Nur Fajri Ramadhan， Lc.， M.A"
+        - "Ustadz Nur Ihsan Jundullah， Lc."
+        - "Ustadz Prof. Daud Rasyid"
+        - "Ustadz Rafael Afrianto， Lc."
+        - "Ustadz Rahmat Hidayat Syamsurizal， Lc.， MA"
+        - "Ustadz Sidqi Kamal Zimah"
+        - "Ustadz Sofyan Chalid bin Idham Ruray， Lc."
+        - "Ustadz Subhan Bawazier"
+        - "Ustadz Syariful Mahya， Lc.， M.A."
+        - "Ustadz Umar Lathif"
+        - "Ustadz Yovin Abu Hammam"
+        - "Ustadz Yusuf Utsman Baisa， Lc."
+        - "Ustadz Zakariyal Anshari， Lc.， M.Pd."
+        - "Ustadz Zulfikar Harun， Lc."
+        - "Ustadzaat Pengajar Tahsin"
+        - "Ustadzah Poppy Yuditya"
+        - "Belum ditentukan"
+        - "Lainnya (tulis di bawah)"
+    validations:
+      required: true
+  - type: input
+    id: pemateri_baru
+    attributes:
+      label: "Pemateri baru"
+      description: "Wajib bila Pemateri = Lainnya. Pemateri baru otomatis masuk daftar."
+    validations:
+      required: false
+  - type: checkboxes
+    id: perempuan
+    attributes:
+      label: "Pemateri perempuan"
+      options:
+        - label: "Pemateri perempuan (otomatis Khusus Akhwat)"
+  - type: dropdown
+    id: masjid
+    attributes:
+      label: "Masjid"
+      options:
+        - "Baitusyaakiriin Depok"
+        - "Kupinami Cafe"
+        - "Masjid Al Ukhuwah BSD"
+        - "Masjid Al-Adhim"
+        - "Masjid Al-Barkah Sawah Baru"
+        - "Masjid Al-Fattah"
+        - "Masjid Al-Hidayah"
+        - "Masjid Al-Ikhlas Dukuh Bima"
+        - "Masjid Alumni IPB Botani Square"
+        - "Masjid Ar-Riyadh Depok"
+        - "Masjid As-Sofia"
+        - "Masjid Ash-Shiddiq Cikeas"
+        - "Masjid At-Tiin Asem Baris"
+        - "Masjid Baiturrahman Pondok Pinang"
+        - "Masjid Daarussalaam GTA"
+        - "Masjid Darussalam Kota Wisata"
+        - "Masjid Istiqlal"
+        - "Masjid Istiqomah IKEA Sentul City"
+        - "Masjid Jami' Al-Barkah"
+        - "Masjid Jaza"
+        - "Masjid Nurul Iman Blok M Square"
+        - "Masjid Nurullah Kalibata City"
+        - "Masjid Puri Cinere"
+        - "MTI Rasuna Epicentrum (Live YouTube)"
+        - "Rumah Quran Al-Ihsan"
+        - "Taman Ismail Marzuki (TIM)"
+        - "Online"
+        - "Lainnya (tulis di bawah)"
+    validations:
+      required: true
+  - type: input
+    id: masjid_baru
+    attributes:
+      label: "Nama masjid baru"
+      description: "Wajib bila Masjid = Lainnya. Bila Masjid = Online, isi nama penyelenggara di sini."
+    validations:
+      required: false
+  - type: input
+    id: alamat_baru
+    attributes:
+      label: "Alamat masjid baru"
+      description: "Wajib bila Masjid = Lainnya."
+    validations:
+      required: false
+  - type: dropdown
+    id: kota_baru
+    attributes:
+      label: "Kota masjid baru"
+      description: "Wajib bila Masjid = Lainnya."
+      options:
+        - "Bandung"
+        - "Bekasi"
+        - "Bogor"
+        - "Depok"
+        - "Jakarta"
+        - "Tangerang"
+        - "Kota lain (tulis di bawah)"
+    validations:
+      required: false
+  - type: input
+    id: kota_lain
+    attributes:
+      label: "Kota lain"
+      description: "Wajib bila Kota masjid baru = Kota lain."
+    validations:
+      required: false
+  - type: dropdown
+    id: audience
+    attributes:
+      label: "Audience"
+      options:
+        - "Terbuka untuk umum"
+        - "Khusus Akhwat"
+        - "Khusus Ikhwan"
+    validations:
+      required: true
+  - type: checkboxes
+    id: rutin
+    attributes:
+      label: "Kajian rutin"
+      options:
+        - label: "Kajian rutin atau berkala"
+  - type: textarea
+    id: catatan
+    attributes:
+      label: "Catatan"
+      description: "Opsional."
+    validations:
+      required: false

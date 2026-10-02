@@ -41,3 +41,32 @@ Dasar eksekusi: instruksi tercatat di git (`AUDIT-HANDOFF-2026-10-02-auditor.md`
 - **Tidak ada masjid dengan lebih dari satu (kota, alamat) di riwayat** — pernyataan Auditor "tiap masjid satu area dan satu alamat" juga berlaku untuk riwayat.
 - **Pemateri 103 entri tanpa normalisasi semantik**: hanya spasi/huruf besar-kecil yang digabung. Variasi penulisan nama orang yang sama (mis. dengan/tanpa "Ustadz", gelar berbeda) tetap terpisah, dan ada entri gabungan ("... & Komunitas ..."). Dropdown 103 opsi mungkin panjang; **[Belum terverifikasi]** batas jumlah opsi dropdown Issue form. Perlu keputusan Amal/Auditor soal pembersihan sebelum tahap 1.
 - **Keputusan PIC yang perlu dikonfirmasi**: kajian **Masjid Jaza, Bandung** (Qiyamul Lail, Min 4 Okt 02.30 WIB) yang sebelumnya sengaja tidak dimasukkan karena di luar area, **kini dimasukkan** (id 746, area `Bandung`) berdasarkan keputusan Amal (bagian 1 handoff Auditor + pesan Amal 2 Okt "lokasi yang belum ada harus ditambahkan"). Bila Amal tidak bermaksud mencakup Bandung, hapus id 746 dan entri `Bandung`/`Masjid Jaza` di `kategori.json`.
+
+## 6. Tahap 1 sistem input Issue — dikerjakan PIC 3 Okt 2026 setelah "lanjut" Amal di chat PIC
+Dasar: instruksi Auditor (komit 467e4d8) + persetujuan Amal ("lanjut untuk tahap 1", chat PIC, 3 Okt 2026). Ini **perubahan pipeline** (wajib lapor).
+
+### Berkas baru / berubah
+- `.github/workflows/deploy.yml`: pemicu ditambah `issues: [opened, edited]` dan `schedule: 17 20 * * *` (UTC; 03:17 WIB); izin ditambah `issues: write`; job dilewati bila Issue bukan dari `reconciler` (pembuat Issue dan pengirim event) atau judul bukan "Tambah kajian:". Langkah baru: ambil Issue terbuka (actions/github-script), ingest+prune+build+komit dengan ulang sampai 4 kali bila push ditolak (reset ke origin/main lalu ingest ulang, jadi id dihitung ulang), perbarui templat Issue (continue-on-error), komentar hasil + tutup Issue (hanya bila deploy+uji situs live lolos; sapuan menutup Issue yang sudah diproses tetapi belum ditutup). Uji pasca-deploy: `data/kategori.json` ditambahkan ke daftar 404; guard `_site` ditambah `data`.
+- `scripts/ingest.py` (CLI), `scripts/ingest_core.py` (logika inti, tanpa tahu soal formulir), `scripts/adapter_issue_form.py` (adapter: templat YAML + parser; satu-satunya bagian yang tahu label formulir), `scripts/test_ingest.py` (14 uji lokal).
+- `.github/ISSUE_TEMPLATE/tambah-kajian.yml` (dibuat otomatis, 15 kolom sesuai tabel bagian 3.3 handoff Auditor) dan `config.yml` (`blank_issues_enabled: false`).
+- `data/kategori.json`: ditambah kunci `gagal` (Issue yang ditolak) selain `diproses`.
+- `CLAUDE.md`: bagian baru "Input event lewat formulir Issue", struktur, pemicu, "Jangan sentuh".
+
+### Keputusan PIC yang menyimpang atau melengkapi rancangan
+- **Setiap run menyapu SEMUA Issue terbuka lewat API**, bukan hanya Issue pada payload event. Alasan: concurrency group `pages` dengan `cancel-in-progress: false` tetap membatalkan run yang antre lebih lama bila ada run baru; run yang dibatalkan akan menghilangkan Issue-nya bila hanya memproses payload. [Alasan = kesimpulan PIC dari perilaku concurrency GitHub; belum diuji.]
+- **`gagal` + `edited`**: Issue yang gagal validasi tidak diproses ulang tiap hari oleh cron (menghindari komentar berulang); diproses ulang saat diedit (`issues: edited`) atau bila ditutup lalu dibuat baru.
+- **Cron tanpa Issue baru tidak prune/build/komit** (supaya tidak ada commit dan deploy tiap hari karena stempel "Diperbarui"). Deploy-bila-tertinggal tetap lewat langkah "Cek apakah ada yang perlu diterbitkan".
+- **Format Online**: pilih Masjid = Online, isi penyelenggara di "Nama masjid baru" -> `masjid` = `<penyelenggara> (Online)`, `address` = `Online (<penyelenggara>)`, `area` = `Online` (Online tidak masuk daftar kota). Entri lama `MTI Rasuna Epicentrum (Live YouTube)` tetap pilihan biasa di dropdown Masjid.
+- **Opsi dropdown tanpa koma ASCII**: koma diganti koma lebar penuh (`，`) dan dipetakan balik oleh parser, karena aturan koma pada dropdown Issue form tidak terverifikasi. Daftar pemateri **belum dibersihkan** (104 opsi); bila lebih dari `MAKS_OPSI_DROPDOWN` (150) kolom otomatis menjadi isian teks.
+- Templat diperbarui lewat langkah terpisah `continue-on-error`, supaya penolakan token tidak menggagalkan publikasi data. Bila gagal: peringatan di log, run tetap hijau, dropdown tertinggal sampai dipelihara manual; lapor ke Auditor, jangan minta token baru tanpa Amal.
+
+### Terverifikasi
+- 14 uji lokal lulus (`python3 scripts/test_ingest.py`): sukses 1 tanggal/banyak tanggal/Minggu "Min"/rentang jam en-dash/waktu salat; Online; masjid+kota+pemateri baru masuk daftar induk dan templat; nama sama huruf beda memakai yang lama, nama mirip diberi peringatan; pemateri perempuan -> Khusus Akhwat dan konflik Ikhwan ditolak; 16 jenis kegagalan (tanggal lampau/format/30 Feb/>2 tahun, jam kosong/25.00/"9", kolom bersyarat Lainnya/Online/Kota lain, `<script>`, `>`, 201 karakter, bukan dari formulir) masing-masing dengan alasan yang benar; input berbahaya (kutip, backslash, tab, baris baru, karakter kontrol) menghasilkan satu baris valid yang lolos prune.py dan build.py dan ter-escape di HTML statis; duplikat; idempotensi; gagal dilewati kecuali diedit; login/judul lain diabaikan; simulasi konflik id (ingest ulang di atas main terbaru menghasilkan id unik); templat YAML sah (15 kolom, id unik, opsi unik, tanpa koma ASCII).
+- Repo **publik** (API: `private:false`, `visibility:public`, `has_issues:true`), jadi `required` pada formulir berlaku.
+- Workflow YAML dapat di-parse dan ketiga pemicu terdaftar (uji lokal PyYAML).
+
+### Belum terverifikasi (harus diuji sungguhan)
+- Apakah GITHUB_TOKEN boleh push ke `.github/ISSUE_TEMPLATE/` (templat awal di-commit PIC, jadi baru teruji saat ada kota/masjid/pemateri baru).
+- Apakah GitHub menerima dropdown 104 opsi (Amal membuka "New issue" sekali; bila form tidak tampil lengkap, turunkan `MAKS_OPSI_DROPDOWN` atau gabungkan kolom 9-12).
+- Alur end-to-end di GitHub: Issue sungguhan -> komentar -> Issue tertutup -> event di situs; cron `schedule` (baru jalan pertama kali 20:17 UTC); komentar `issues: write` oleh GITHUB_TOKEN.
+- Perilaku concurrency yang diasumsikan di atas.

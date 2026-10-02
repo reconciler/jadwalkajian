@@ -3,21 +3,35 @@ name: Prune & deploy
 # CARA KERJA
 #   Situs di-host GitHub Pages (Settings -> Pages -> Source: "GitHub Actions").
 #   Publikasi HANYA lewat workflow ini. Sejak 2 Okt 2026 (keputusan Amal) tidak
-#   ada lagi jadwal mingguan: jadwal Jumat 15:00 WIB dulu ada karena batas kredit
-#   Netlify, yang sudah tidak relevan sejak pindah ke GitHub Pages.
+#   ada lagi jadwal mingguan Jumat; jadwal itu dulu ada karena batas kredit Netlify.
 #
 # PEMICU
-#   1. Push ke `main` yang mengubah berkas situs, scripts/, atau workflow ini
-#      -> kajian baru dan perbaikan langsung terbit.
-#   2. Manual: tab Actions -> "Prune & deploy" -> Run workflow (gratis, kapan saja).
-#   Push oleh bot (hasil prune/build) memakai GITHUB_TOKEN sehingga TIDAK memicu
-#   run baru; tidak ada loop.
+#   1. Push ke `main` yang mengubah berkas situs, scripts/, atau workflow ini.
+#   2. Issue "Tambah kajian: ..." dibuka atau diedit oleh `reconciler` (formulir
+#      Issue = jalur input event; lihat scripts/ingest.py). Issue dari akun lain
+#      atau berjudul lain membuat run dilewati.
+#   3. Cron pengaman HARIAN 20:17 UTC (= 03:17 WIB; disetujui Amal 2 Okt 2026):
+#      menerbitkan bila `last-deploy` tertinggal dari main, memproses Issue yang
+#      terlewat, menutup Issue yang sudah terbit. Selain itu tidak mengubah apa pun.
+#      Cron GitHub bisa telat berjam-jam (25 Sep: 5 jam 34 menit); itu hanya
+#      menunda terbit, bukan menghilangkan data.
+#   4. Manual: tab Actions -> "Prune & deploy" -> Run workflow (gratis, kapan saja).
+#
+# INGEST ISSUE (satu run = ingest + komit + deploy + uji + tutup Issue)
+#   Tiap run mengambil SEMUA Issue terbuka milik `reconciler` berjudul
+#   "Tambah kajian:" lewat API (bukan dari payload event), jadi tidak ada Issue yang
+#   hilang walau run lain dibatalkan antrean. Isi Issue dibaca dari berkas JSON;
+#   TIDAK PERNAH diinterpolasi ke `run:` (injeksi skrip). Issue ditutup hanya setelah
+#   uji situs live lolos. Gagal validasi: Issue tetap terbuka + komentar alasan;
+#   edit Issue untuk memproses ulang.
+#   Push oleh bot (GITHUB_TOKEN) tidak memicu run lain, maka ingest dan deploy harus
+#   satu run. Bila push ke main ditolak (ada push lain), run mereset ke origin/main
+#   dan mengulang ingest (id dihitung ulang), sampai 4 kali.
 #
 # PRUNE
-#   prune.py + build.py jalan di tiap run, jadi event yang sudah lewat terhapus
-#   dari index.html dan dari blok HTML statis/JSON-LD pada setiap terbit.
-#   Di browser pengunjung, event lewat tetap disembunyikan oleh isEventPast()/up()
-#   di index.html walau belum sempat di-prune.
+#   prune.py + build.py jalan di tiap run (kecuali cron tanpa Issue baru), jadi event
+#   lewat terhapus dari index.html dan blok statis/JSON-LD pada setiap terbit.
+#   Di browser pengunjung event lewat tetap disembunyikan oleh isEventPast()/up().
 #
 # PRASYARAT
 #   Settings -> Pages -> Build and deployment -> Source: "GitHub Actions"
@@ -34,10 +48,15 @@ on:
       - og-image.png
       - scripts/**
       - .github/workflows/deploy.yml
+  issues:
+    types: [opened, edited]
+  schedule:
+    - cron: "17 20 * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+  issues: write
   pages: write
   id-token: write
 
@@ -47,6 +66,12 @@ concurrency:
 
 jobs:
   prune-and-deploy:
+    # Issue dari akun lain / berjudul lain: dilewati tanpa membalas.
+    if: >-
+      github.event_name != 'issues' ||
+      (github.event.issue.user.login == 'reconciler' &&
+       github.event.sender.login == 'reconciler' &&
+       startsWith(github.event.issue.title, 'Tambah kajian:'))
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -62,26 +87,83 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Jalankan pruning
-        run: python scripts/prune.py
+      - name: Ambil Issue "Tambah kajian" yang terbuka
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', creator: 'reconciler', per_page: 100 });
+            const out = issues
+              .filter(i => !i.pull_request && i.title.startsWith('Tambah kajian:'))
+              .map(i => ({ number: i.number, title: i.title, body: i.body || '', login: i.user.login }));
+            fs.writeFileSync(process.env.RUNNER_TEMP + '/issues.json', JSON.stringify(out));
+            core.info('Issue terbuka yang cocok: ' + out.length);
 
-      - name: Generate HTML statis + JSON-LD untuk SEO
-        run: python scripts/build.py
-
-      - name: Commit hasil prune/build bila ada perubahan
+      - name: Ingest Issue, prune, build, dan komit
+        id: pipeline
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EDITED_ISSUE: ${{ github.event.issue.number }}
         run: |
-          if [ -z "$(git status --porcelain index.html)" ]; then
-            echo "Tidak ada perubahan dari prune atau build."
-            exit 0
-          fi
+          set -eu
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          git commit -m "Prune + build otomatis ($(TZ=Asia/Jakarta date +%Y-%m-%d))"
-          # Bila ada push lain masuk selama run ini, gabungkan dulu supaya push bot tidak ditolak.
-          git pull --rebase origin main
-          git push origin HEAD:main
-          echo "Perubahan di-commit."
+          OK=0
+          for ATTEMPT in 1 2 3 4; do
+            echo "== Percobaan $ATTEMPT =="
+            python scripts/ingest.py --issues "$RUNNER_TEMP/issues.json" \
+              --out "$RUNNER_TEMP/ingest.json" --commit-msg "$RUNNER_TEMP/commit-msg.txt" \
+              ${EDITED_ISSUE:+--edited "$EDITED_ISSUE"}
+            CHANGED_INGEST=$(git status --porcelain index.html data/kategori.json)
+            # Cron tanpa Issue baru: jangan prune/build supaya tidak ada commit/deploy harian.
+            if [ "$EVENT_NAME" != "schedule" ] || [ -n "$CHANGED_INGEST" ]; then
+              python scripts/prune.py
+              python scripts/build.py
+            fi
+            if [ -z "$(git status --porcelain index.html data/kategori.json)" ]; then
+              echo "Tidak ada perubahan data."
+              OK=1; break
+            fi
+            git add index.html data/kategori.json
+            if [ -n "$CHANGED_INGEST" ] && [ -s "$RUNNER_TEMP/commit-msg.txt" ]; then
+              git commit -F "$RUNNER_TEMP/commit-msg.txt"
+            else
+              git commit -m "Prune + build otomatis ($(TZ=Asia/Jakarta date +%Y-%m-%d))"
+            fi
+            if git push origin HEAD:main; then
+              echo "Perubahan di-commit."
+              OK=1; break
+            fi
+            echo "Push ditolak (main berubah). Sinkron ke origin/main dan ulangi ingest."
+            git fetch origin main
+            git reset --hard origin/main
+          done
+          if [ "$OK" != 1 ]; then
+            echo "::error::Gagal memuat data ke main setelah 4 percobaan."
+            exit 1
+          fi
+
+      - name: Perbarui templat formulir Issue
+        # Belum terverifikasi: apakah GITHUB_TOKEN boleh mengubah .github/ISSUE_TEMPLATE.
+        # Gagal di sini TIDAK boleh menghalangi publikasi data (continue-on-error).
+        continue-on-error: true
+        run: |
+          set -eu
+          if [ -z "$(git status --porcelain .github/ISSUE_TEMPLATE)" ]; then
+            echo "Templat formulir sudah mutakhir."
+            exit 0
+          fi
+          git add .github/ISSUE_TEMPLATE
+          git commit -m "Perbarui templat formulir Issue dari data/kategori.json"
+          if ! { git pull --rebase origin main && git push origin HEAD:main; }; then
+            echo "::warning::Templat formulir Issue tidak bisa di-commit (token tidak berhak atau main berubah). Dropdown dipelihara manual; data kajian tetap terbit."
+            git rebase --abort 2>/dev/null || true
+            git fetch origin main
+            git reset --hard origin/main   # jangan biarkan komit lokal ikut ditandai sebagai last-deploy
+            exit 1
+          fi
 
       - name: Cek apakah ada yang perlu diterbitkan
         id: cek
@@ -118,7 +200,7 @@ jobs:
           cp index.html robots.txt sitemap.xml favicon.svg og-image.png _site/
           echo "Isi _site:"
           ls -1 _site
-          for f in CLAUDE.md scripts .github; do
+          for f in CLAUDE.md scripts .github data; do
             if [ -e "_site/$f" ]; then
               echo "::error::Berkas internal ikut ter-copy ke _site: $f"
               exit 1
@@ -137,6 +219,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Uji situs live setelah terbit
+        id: live
         if: steps.cek.outputs.perlu == 'true'
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
@@ -153,7 +236,7 @@ jobs:
           fi
           BASE="${PAGE_URL%/}/"
           MARKER="Jadwal Kajian"
-          INTERNAL="CLAUDE.md AUDIT-HANDOFF-2026-09-30.md scripts/prune.py"
+          INTERNAL="CLAUDE.md AUDIT-HANDOFF-2026-09-30.md scripts/prune.py data/kategori.json"
           http_code() {
             curl -s -o "$2" -w '%{http_code}' --max-time 15 "${BASE}$1?v=${SHA}" || true
           }
@@ -193,3 +276,38 @@ jobs:
           git tag -f last-deploy HEAD
           git push -f origin last-deploy
           echo "Tag last-deploy dipindahkan ke $(git rev-parse --short HEAD)."
+
+      - name: Komentar hasil dan tutup Issue
+        if: ${{ always() && steps.pipeline.outcome == 'success' }}
+        uses: actions/github-script@v7
+        env:
+          PERLU: ${{ steps.cek.outputs.perlu }}
+          LIVE: ${{ steps.live.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const hasil = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/ingest.json', 'utf8')).hasil;
+            // Terbit = tidak ada yang perlu diterbitkan, atau deploy + uji situs live lolos.
+            const terbit = process.env.PERLU === 'false' || process.env.LIVE === 'success';
+            const { owner, repo } = context.repo;
+            const komentar = (n, body) => github.rest.issues.createComment({ owner, repo, issue_number: n, body });
+            const tutup = n => github.rest.issues.update({ owner, repo, issue_number: n, state: 'closed', state_reason: 'completed' });
+            const dilaporkan = new Set();
+            for (const h of hasil) {
+              dilaporkan.add(h.issue);
+              if (h.status === 'gagal') { await komentar(h.issue, h.komentar); continue; }  // tetap terbuka
+              if (terbit) { await komentar(h.issue, h.komentar); await tutup(h.issue); }
+              else { await komentar(h.issue, h.komentar_tertunda); }                          // tetap terbuka
+            }
+            // Sapu: Issue terbuka yang sudah diproses di run sebelumnya tetapi belum sempat ditutup.
+            if (terbit) {
+              const kat = JSON.parse(fs.readFileSync('data/kategori.json', 'utf8'));
+              const diproses = new Set(kat.diproses.map(d => d.issue));
+              const terbuka = await github.paginate(github.rest.issues.listForRepo,
+                { owner, repo, state: 'open', creator: 'reconciler', per_page: 100 });
+              for (const i of terbuka) {
+                if (i.pull_request || dilaporkan.has(i.number) || !diproses.has(i.number)) continue;
+                await komentar(i.number, 'Kajian dari Issue ini sudah terbit di situs. Issue ditutup otomatis.');
+                await tutup(i.number);
+              }
+            }
