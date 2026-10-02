@@ -12,7 +12,7 @@ JavaScript (render()) tetap jalan seperti biasa dan langsung menimpa isi
 dan tampilan sebelum JS selesai load (progressive enhancement), bukan
 pengganti interaktivitas filter.
 
-Dijalankan otomatis di .github/workflows/weekly-deploy.yml setelah prune.py.
+Dijalankan otomatis di .github/workflows/deploy.yml setelah prune.py.
 Tidak menyentuh baris event di allEvents maupun stempel "Diperbarui:" —
 regex prune.py tetap valid.
 """

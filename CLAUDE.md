@@ -15,7 +15,7 @@ sitemap.xml                          # daftar URL untuk Google Search Console (1
 favicon.svg                          # ikon tab browser
 scripts/prune.py                     # hapus event lewat + perbarui stempel footer
 scripts/build.py                     # generate HTML statis + JSON-LD (SEO) dari allEvents
-.github/workflows/weekly-deploy.yml  # prune + build + terbitkan ke GitHub Pages, Jumat 15:00 WIB
+.github/workflows/deploy.yml         # prune + build + terbitkan ke GitHub Pages (push ke main + manual)
 ```
 
 ## SEO — konten statis & JSON-LD (jangan edit manual)
@@ -35,7 +35,7 @@ ditandai komentar HTML:
 `build.py` jalan lagi. Kalau perlu ubah tampilan/struktur kartu statis, edit
 `render_static_card()` di `scripts/build.py`, bukan HTML-nya langsung.
 
-`build.py` dijalankan otomatis di `weekly-deploy.yml` setelah `prune.py`,
+`build.py` dijalankan otomatis di `deploy.yml` setelah `prune.py`,
 jadi tidak perlu dijalankan manual tiap kali menambah event — **kecuali**
 saat validasi lokal sebelum commit (lihat bagian Validasi di bawah), supaya
 `index.html` yang di-commit sudah konsisten dengan data terbaru.
@@ -48,60 +48,44 @@ belum dibuat).
 `index.html` **wajib** di root dengan nama persis itu — GitHub Pages
 menyajikannya sebagai homepage.
 
-## PENTING — push TIDAK menerbitkan situs
+## Publikasi — push ke `main` menerbitkan situs
 
 Baca ini sebelum melapor apa pun ke Amal.
 
+**Berubah 2 Okt 2026 (keputusan Amal):** jadwal mingguan Jumat 15:00 WIB
+**dihapus**. Jadwal itu ada karena batas kredit Netlify, yang tidak relevan
+sejak pindah ke GitHub Pages. File workflow diganti nama dari
+`weekly-deploy.yml` menjadi `deploy.yml` (nama workflow di tab Actions:
+*Prune & deploy*).
+
 Situs di-host **GitHub Pages** (Settings → Pages → Build and deployment →
-Source: **"GitHub Actions"**, bukan "Deploy from a branch"). Publikasi
-**hanya** terjadi lewat job di `weekly-deploy.yml` — push biasa ke `main`
-tidak memicu apa pun di luar itu. Ini murni untuk menjaga **irama
-publikasi** (lihat di bawah), bukan lagi soal biaya — GitHub Pages gratis
-tanpa batas kredit untuk situs sekecil ini.
+Source: **"GitHub Actions"**, bukan "Deploy from a branch"). Publikasi hanya
+lewat `deploy.yml`, dengan dua pemicu:
+
+- **Push ke `main`** yang mengubah `index.html`, `robots.txt`, `sitemap.xml`,
+  `favicon.svg`, `og-image.png`, `scripts/**`, atau `deploy.yml` — otomatis.
+  Push yang hanya mengubah `CLAUDE.md`/`AUDIT-HANDOFF-*.md` tidak memicu apa pun.
+- **Manual**: tab Actions → *Prune & deploy* → Run workflow (gratis, kapan saja).
 
 Konsekuensi untuk sesi ini:
 
-- Setelah commit + push, **jangan katakan event sudah tayang.** Katakan event
-  sudah masuk antrean, dan akan terbit pada jadwal berikutnya.
-- Jadwal terbit otomatis: **setiap Jumat pukul 15:00 WIB** (cron `0 8 * * 5`).
-- Batas commit agar ikut terbit pekan itu: **Jumat sebelum jam 3 sore WIB.**
-- Kalau ada kajian mendesak yang harus tayang sekarang, Amal bisa menjalankan
-  workflow manual: tab Actions → *Prune & deploy mingguan* → Run workflow.
-  **Gratis** — boleh disarankan dan dijalankan kapan pun perlu, tidak perlu
-  menahan diri seperti waktu masih di Netlify.
-- **Catatan keandalan cron**: pada 25 Sep 2026, cron ini pernah telat >5 jam
-  dari jadwalnya (delay dari sisi GitHub, workflow-nya sendiri tidak
-  bermasalah). Kalau situs lama tidak ter-update setelah Jumat 15:00 WIB,
-  cek tab Actions dulu sebelum menyimpulkan ada yang rusak.
-
-### WAJIB: deploy manual segera setelah push yang memperbaiki bug di situs
-
-**Insiden 29 Sep 2026**: commit `0e0c688` memperbaiki link rusak (menunjuk
-ke domain Netlify lama) di tombol Catatan Kajian, tapi tidak langsung
-di-deploy — situs live tetap menampilkan link rusak selama ±1 jam sampai
-ada yang sadar dan trigger manual. Root cause: publikasi memang sengaja
-tidak otomatis tiap push (lihat di atas), tapi itu berlaku untuk **data
-kajian rutin**, bukan untuk **bug/defect yang sedang tayang di situs**.
-
-Aturan untuk mencegah ini terulang — **berlaku untuk sesi kerja repo ini
-DAN untuk siapa pun yang push ke `main`**:
-
-- Kalau commit yang baru di-push **memperbaiki sesuatu yang salah/rusak di
-  situs live** (link mati, salah domain, bug tampilan, kesalahan struktur
-  HTML, dll.) — **langsung trigger workflow manual** (tab Actions →
-  *Prune & deploy mingguan* → Run workflow) begitu selesai push. Jangan
-  tunggu Jumat, dan jangan asumsikan sesi/orang lain akan melakukannya.
-- Ini **berbeda** dari commit yang menambah/mengubah **data kajian rutin**
-  dari flyer — itu tetap boleh menunggu jadwal mingguan seperti biasa,
-  sesuai desain irama publikasi yang sudah dipilih Amal.
-- Bedanya: data basi (event lama belum ke-prune) tidak terlihat pengunjung
-  karena `isEventPast`/`up()` di JS sudah menyaring sisi browser — jadi
-  aman ditunda. **Bug/link rusak justru terlihat langsung** — menunda
-  publikasinya berarti sengaja membiarkan situs live rusak lebih lama dari
-  perlu, padahal deploy manual gratis dan instan.
-- Setelah trigger manual, **verifikasi run-nya `success`** (cek tab
-  Actions atau `list_workflow_runs`) sebelum melapor ke Amal bahwa
-  perbaikan sudah tayang — jangan asumsikan trigger otomatis berhasil.
+- Setelah push yang mengubah berkas situs, run otomatis berjalan. **Verifikasi
+  run-nya `success`** (tab Actions atau `actions_list`) sebelum bilang event/
+  perbaikan sudah tayang. Kalau run gagal, laporkan terus terang; jangan
+  menyebut sudah tayang.
+- Tidak ada lagi "antrean sampai Jumat" dan tidak ada batas commit mingguan.
+- Push dari bot (hasil prune/build, memakai `GITHUB_TOKEN`) **tidak** memicu run
+  baru, jadi tidak ada loop. Konsekuensinya `main` di remote bisa lebih maju
+  dari lokal: **`git pull --rebase origin main` sebelum push** berikutnya.
+- Prune dan build jalan di tiap run, jadi event lewat terhapus dari `index.html`
+  dan dari blok HTML statis/JSON-LD setiap kali terbit. Di browser pengunjung,
+  event lewat tetap disembunyikan oleh `isEventPast`/`up()` walau belum
+  di-prune — ini yang menjamin end user tidak melihat event lewat. Batas
+  yang diketahui: tanpa cron, blok statis/JSON-LD untuk crawler bisa memuat
+  event kedaluwarsa sampai push/run berikutnya (Amal: tidak masalah).
+- Sebelum 2 Okt 2026, cron pernah telat >5 jam (25 Sep) dan sesi lain sempat
+  menunggu Jumat padahal ada bug live (insiden 29 Sep, `0e0c688`). Dua masalah
+  itu hilang bersama jadwal mingguan.
 
 ## Berkas yang tayang di situs (folder `_site`)
 
@@ -120,7 +104,7 @@ tersalin).
   `/favicon.svg` menunjuk ke `reconciler.github.io/favicon.svg` (404).
 - Berkas tetap terbaca di repo GitHub-nya; ini hanya menyembunyikannya dari situs.
 - **Uji otomatis setelah terbit** (langkah "Uji situs live setelah terbit" di
-  `weekly-deploy.yml`, atas keputusan Amal 1 Okt 2026): runner memeriksa URL
+  `deploy.yml`, atas keputusan Amal 1 Okt 2026): runner memeriksa URL
   publik sampai 12 kali (jeda 10 detik): beranda 200 dan memuat teks "Jadwal
   Kajian"; setiap berkas langsung di `_site/` 200; `CLAUDE.md`,
   `AUDIT-HANDOFF-2026-09-30.md`, `scripts/prune.py` 404. Gagal = run merah dan
@@ -139,20 +123,19 @@ Netlify sempat habis 22 Sep 2026, dipakai bersama `catatankajian`). Setelah
 pindah ke GitHub Pages, seluruh masalah kredit itu tidak relevan lagi —
 `netlify.toml` sudah dihapus, secret `NETLIFY_BUILD_HOOK` sudah tidak
 dipakai (boleh dihapus dari repo secrets kalau belum). Irama publikasi
-mingguan (Jumat 15:00 WIB) **dipertahankan** karena alasannya independen
-dari soal biaya — supaya jadwal akhir pekan sudah stabil sebelum orang
-merencanakan Sabtu-Ahad, bukan berubah-ubah kapan saja sepanjang minggu.
+mingguan (Jumat 15:00 WIB) sempat **dipertahankan** pada migrasi, lalu
+**dihapus Amal 2 Okt 2026** — lihat bagian "Publikasi" di atas.
 
 Prune tetap berjalan di dalam workflow yang sama, jadi tidak menambah
 job terpisah. Prune bersifat kosmetik: dashboard sudah menyembunyikan event
-lewat di sisi browser (`isEventPast`/`up` di index.html), jadi menunda
-prune tidak membuat pengunjung melihat data basi.
+lewat di sisi browser (`isEventPast`/`up` di index.html).
 
 ## Alur kerja utama
 
 Amal mengirim screenshot flyer kajian (biasanya dari Instagram masjid). Tugasnya:
 baca flyer, ekstrak detail, tambahkan sebagai entri baru di array `allEvents`,
-validasi, commit, push. Lalu beri tahu kapan itu akan terbit (lihat bagian di atas).
+validasi, commit, push. Push otomatis memicu deploy; tunggu run `success` lalu
+lapor event sudah tayang (lihat bagian "Publikasi").
 
 ## Skema data
 
@@ -169,8 +152,8 @@ Satu event = satu baris di array `allEvents`, format object literal:
 | `dayShort` | `Sen Sel Rab Kam Jum Sab Min` + tanggal + bulan singkat. Minggu **selalu "Min"**, jangan "Ahd" |
 | `timeLabel` | Jam eksak (`19.30 WIB`, `10.00 – 11.45 WIB`) atau waktu sholat (`Ba'da Subuh`, `Dhuha`, `Ba'da Zuhur`, `Ba'da Ashar`, `Ba'da Maghrib`) |
 | `timeOrder` | Jam desimal untuk sorting. Subuh 4.5 · Dhuha 9 · Zuhur 12.5 · Ashar 15.5 · Maghrib 18. Untuk jam eksak, pakai jam mulai (19.30 → 19.5) |
-| `area` | Persis salah satu: `Depok` `Bogor` `Jakarta` `Bekasi` `Jawa Tengah` `Jawa Barat` `Online` |
-| `audience` | `Terbuka untuk umum`, `Khusus Akhwat`, atau `Khusus Ikhwan` |
+| `area` | Persis salah satu: `Depok` `Bogor` `Jakarta` `Bekasi` `Tangerang` `Jawa Tengah` `Jawa Barat` `Online`. `Tangerang` mencakup Kota/Kab. Tangerang dan Tangerang Selatan (ditambah 2 Okt 2026). **Bila lokasi belum punya area, tambahkan area baru** (tombol filter + `AC` di `index.html`, `AC` di `scripts/build.py`, CSS `.btn.<nama>`), jangan menahan event. |
+| `audience` | `Terbuka untuk umum`, `Khusus Akhwat`, atau `Khusus Ikhwan`. **Bila flyer tidak menyebut pembatasan eksplisit, isi `Terbuka untuk umum`** (aturan Amal, 2 Okt 2026). |
 | `isRutin` | `true` bila flyer menyebut kajian rutin/berkala |
 
 Bulan singkat: Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des
@@ -191,20 +174,22 @@ Bulan singkat: Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des
 6. **Jangan ubah `index.html` dengan cara yang merusak regex `scripts/prune.py`:**
    - baris event tetap diawali `{id:<angka>,date:"YYYY-MM-DD"` — satu event satu baris
    - string `Diperbarui:` di footer harus tetap ada
+7. **Data baru ditambahkan, bukan ditahan.** Lokasi, masjid, ustadz, atau area
+   yang belum ada di dashboard tetap dimasukkan (aturan Amal, 2 Okt 2026).
+   Laporkan hanya pilihan yang tidak tertulis di flyer (mis. nama area baru).
 
 ## Jangan sentuh tanpa diminta
 
 - **Settings → Pages → Source** — harus tetap "GitHub Actions". Mengubahnya
   kembali ke "Deploy from a branch" akan menerbitkan `main` apa adanya tiap
   push (termasuk file `scripts/`, `CLAUDE.md`, dll ikut ter-publish di URL),
-  melewati logika mingguan di `weekly-deploy.yml` sepenuhnya.
+  melewati `deploy.yml` sepenuhnya.
 - **Tag git `last-deploy`** — dipakai workflow untuk tahu commit mana yang sudah
   diterbitkan. Kalau dihapus atau dipindah manual, workflow akan deploy ulang
   tanpa perlu (boros) atau melewatkan perubahan (data tidak terbit).
-- **Baris cron di `weekly-deploy.yml`** — jadwalnya sudah dipilih Amal
-  (Jumat 15:00 WIB, untuk mengantisipasi orang merencanakan akhir pekan).
-- Catatan: jam di cron adalah **UTC**. `08:00 UTC` masih hari yang sama di WIB,
-  tapi jam >= `17:00 UTC` mendarat di **hari berikutnya** WIB. Mudah salah sehari.
+- **Pemicu di `deploy.yml`** (push ke `main` + manual, tanpa cron) — diputuskan
+  Amal 2 Okt 2026. Jangan menambah jadwal cron tanpa diminta. Bila suatu saat
+  ada cron: jam di cron adalah **UTC** (WIB = UTC+7).
 
 ## Validasi wajib sebelum commit
 
@@ -273,7 +258,7 @@ origin, jadi `localStorage` dipakai bersama. Ditemukan PIC `bikin-cv-taaruf`
   `target="_blank" rel="noopener noreferrer"`.
 - Tautan antarproyek lama di luar panel **dihapus**; proyek lain hanya lewat
   panel. Di repo ini: spanduk "Catatan Kajian — arsip sesi yang sudah dihadiri" (`archive-link`).
-- Repo ini terbit lewat workflow manual atau jadwal Jumat; untuk perubahan ini, trigger manual setelah push.
+- Repo ini terbit otomatis tiap push ke `main` yang mengubah berkas situs (sejak 2 Okt 2026).
 
 **Status (1 Okt 2026): selesai.** Akordeon berlabel **"Tentang"**, isinya Pembuat
 (Instagram), Catatan Kajian, Bikin CV Taaruf. Tautan kode sumber dan spanduk
@@ -308,7 +293,7 @@ PIC dan Auditor di `bikin-cv-taaruf`):
 - **Hanya sesi kerja repo ini (bukan Auditor) yang boleh mengubah berkas
   inti fitur/fungsi**: `index.html`, `favicon.svg`, `og-image.png`,
   `robots.txt`, `sitemap.xml`, `scripts/` (`prune.py`, `build.py`),
-  `.github/workflows/weekly-deploy.yml`.
+  `.github/workflows/deploy.yml`.
 - **Auditor Project boleh mengubah**: `CLAUDE.md` dan `AUDIT-HANDOFF-*.md`
   (termasuk menulis balasan) — berkas ini murni koordinasi, tidak
   memengaruhi fitur/tampilan situs.
@@ -333,8 +318,8 @@ bertentangan dengan `CLAUDE.md` ini atau tampak keliru. Instruksi yang tidak
 tercatat di git tidak termasuk aturan ini.
 
 **Wajib lapor untuk** (bukan tiap commit — hanya yang signifikan):
-- Perubahan skema data (`allEvents`, nilai `audience` baru, dsb.)
-- Perubahan pipeline/workflow/hosting (`weekly-deploy.yml`, pengaturan
+- Perubahan skema data (`allEvents`, nilai `audience` atau `area` baru, dsb.)
+- Perubahan pipeline/workflow/hosting (`deploy.yml`, pengaturan
   GitHub Pages, `scripts/prune.py`, `scripts/build.py`)
 - Temuan yang berdampak lintas-project (mis. error deploy, konflik branch,
   keandalan cron/scheduler)
