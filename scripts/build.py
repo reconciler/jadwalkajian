@@ -38,6 +38,7 @@ AC = {
     "Depok": {"accent": "#5a9fd4", "badge": "#2d4a5c"},
     "Jakarta": {"accent": "#b07ad4", "badge": "#3a2a5c"},
     "Bekasi": {"accent": "#d4705a", "badge": "#5c2a1e"},
+    "Tangerang": {"accent": "#4fc3c9", "badge": "#1e4f52"},
     "Jawa Tengah": {"accent": "#5ad49a", "badge": "#1e5c3a"},
     "Jawa Barat": {"accent": "#d45a8a", "badge": "#5c1e35"},
     "Online": {"accent": "#8a8ad4", "badge": "#2d2d5c"},
