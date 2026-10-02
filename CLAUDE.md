@@ -15,6 +15,7 @@ sitemap.xml                          # daftar URL untuk Google Search Console (1
 favicon.svg                          # ikon tab browser
 scripts/prune.py                     # hapus event lewat + perbarui stempel footer
 scripts/build.py                     # generate HTML statis + JSON-LD (SEO) dari allEvents
+data/kategori.json                   # daftar induk kota/masjid/pemateri (internal, TIDAK tayang di _site)
 .github/workflows/deploy.yml         # prune + build + terbitkan ke GitHub Pages (push ke main + manual)
 ```
 
@@ -152,7 +153,7 @@ Satu event = satu baris di array `allEvents`, format object literal:
 | `dayShort` | `Sen Sel Rab Kam Jum Sab Min` + tanggal + bulan singkat. Minggu **selalu "Min"**, jangan "Ahd" |
 | `timeLabel` | Jam eksak (`19.30 WIB`, `10.00 – 11.45 WIB`) atau waktu sholat (`Ba'da Subuh`, `Dhuha`, `Ba'da Zuhur`, `Ba'da Ashar`, `Ba'da Maghrib`) |
 | `timeOrder` | Jam desimal untuk sorting. Subuh 4.5 · Dhuha 9 · Zuhur 12.5 · Ashar 15.5 · Maghrib 18. Untuk jam eksak, pakai jam mulai (19.30 → 19.5) |
-| `area` | Persis salah satu: `Depok` `Bogor` `Jakarta` `Bekasi` `Tangerang` `Jawa Tengah` `Jawa Barat` `Online`. `Tangerang` mencakup Kota/Kab. Tangerang dan Tangerang Selatan (ditambah 2 Okt 2026). **Bila lokasi belum punya area, tambahkan area baru** (tombol filter + `AC` di `index.html`, `AC` di `scripts/build.py`, CSS `.btn.<nama>`), jangan menahan event. |
+| `area` | **Nama kota** dengan ejaan konsisten (`Depok` `Bogor` `Jakarta` `Bekasi` `Tangerang` `Bandung` …) atau `Online`. Nama bidang tetap `area`; di UI berlabel "Kota". Filter dan warna dibuat otomatis dari data (tidak ada daftar di kode, warna dihitung dari nama oleh `cc()` di `index.html` dan `city_color()` di `scripts/build.py` dengan algoritma sama). Kota baru: cukup tulis namanya. Cek ejaan yang sudah ada di `data/kategori.json`. `Tangerang` mencakup Kota/Kab. Tangerang dan Tangerang Selatan. |
 | `audience` | `Terbuka untuk umum`, `Khusus Akhwat`, atau `Khusus Ikhwan`. **Bila flyer tidak menyebut pembatasan eksplisit, isi `Terbuka untuk umum`** (aturan Amal, 2 Okt 2026). |
 | `isRutin` | `true` bila flyer menyebut kajian rutin/berkala |
 
@@ -167,7 +168,7 @@ Bulan singkat: Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des
    (mis. judul yang sebelumnya generik), **perbarui entri lama** — jangan buat baru.
 3. **Jangan tambahkan event yang tanggalnya sudah lewat.** Akan terbuang prune
    berikutnya. Kalau seluruh isi flyer sudah lewat, katakan itu — jangan diam saja.
-4. **Hanya area Jabodetabek & sekitarnya.** Masjid di luar itu (mis. Malang) jangan dimasukkan.
+4. **Kajian di luar Jabodetabek tetap dimasukkan** dengan nama kotanya sebagai `area` (keputusan Amal 2 Okt 2026, dicatat Auditor di `AUDIT-HANDOFF-2026-10-02-auditor.md` bagian 1; contoh: Masjid Jaza, Bandung). Dulu aturan ini membatasi ke Jabodetabek.
 5. **Bedakan fakta flyer vs kesimpulan sendiri.** Kalau nama ustadz, alamat, atau jam
    tidak tercantum eksplisit dan diisi dari inferensi atau pengetahuan umum,
    **katakan eksplisit** di laporan. Amal secara khusus meminta ini.

@@ -1,0 +1,225 @@
+{
+  "kota": [
+    "Bandung",
+    "Bekasi",
+    "Bogor",
+    "Depok",
+    "Jakarta",
+    "Tangerang"
+  ],
+  "kota_khusus": [
+    "Online"
+  ],
+  "masjid": {
+    "Baitusyaakiriin Depok": {
+      "kota": "Depok",
+      "alamat": "Jl. Pamoras 12, Abadijaya, Sukmajaya, Depok"
+    },
+    "Kupinami Cafe": {
+      "kota": "Jakarta",
+      "alamat": "Jl. Bina Marga No. 44, Jakarta Timur"
+    },
+    "Masjid Al Ukhuwah BSD": {
+      "kota": "Tangerang",
+      "alamat": "Jl. Raya Cisauk Lapan, BSD City, Tangerang"
+    },
+    "Masjid Al-Adhim": {
+      "kota": "Depok",
+      "alamat": "Jl. Andara Raya No.32, Pangkalan Jati Baru, Cinere, Depok"
+    },
+    "Masjid Al-Barkah Sawah Baru": {
+      "kota": "Tangerang",
+      "alamat": "Jl. Merpati 2, Sawah Baru, Tangerang Selatan"
+    },
+    "Masjid Al-Fattah": {
+      "kota": "Jakarta",
+      "alamat": "Jl. Jatinegara Timur No. 48-50, Jatinegara, Jakarta Timur"
+    },
+    "Masjid Al-Hidayah": {
+      "kota": "Jakarta",
+      "alamat": "Taman Pulo Gebang, Cakung, Jakarta Timur"
+    },
+    "Masjid Al-Ikhlas Dukuh Bima": {
+      "kota": "Bekasi",
+      "alamat": "Tambun Selatan, Bekasi"
+    },
+    "Masjid Alumni IPB Botani Square": {
+      "kota": "Bogor",
+      "alamat": "Botani Square Mall, Bogor"
+    },
+    "Masjid Ar-Riyadh Depok": {
+      "kota": "Depok",
+      "alamat": "Masjid Ar-Riyadh, Depok"
+    },
+    "Masjid As-Sofia": {
+      "kota": "Bogor",
+      "alamat": "Bogor (alamat spesifik tidak tercantum di flyer)"
+    },
+    "Masjid Ash-Shiddiq Cikeas": {
+      "kota": "Bogor",
+      "alamat": "Cikeas"
+    },
+    "Masjid At-Tiin Asem Baris": {
+      "kota": "Jakarta",
+      "alamat": "Jl. Asem Baris Raya No. 1-C, Kebon Baru, Tebet, Jakarta Selatan"
+    },
+    "Masjid Baiturrahman Pondok Pinang": {
+      "kota": "Jakarta",
+      "alamat": "Jl. Buana Raya, Pondok Pinang, Jakarta Selatan"
+    },
+    "Masjid Daarussalaam GTA": {
+      "kota": "Depok",
+      "alamat": "Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok"
+    },
+    "Masjid Darussalam Kota Wisata": {
+      "kota": "Bogor",
+      "alamat": "Jl. Wisata Utama No.1, Ciangsana, Gn. Putri, Bogor, Jawa Barat 16968"
+    },
+    "Masjid Istiqlal": {
+      "kota": "Jakarta",
+      "alamat": "Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat"
+    },
+    "Masjid Istiqomah IKEA Sentul City": {
+      "kota": "Bogor",
+      "alamat": "IKEA Sentul City, Bogor"
+    },
+    "Masjid Jami' Al-Barkah": {
+      "kota": "Bogor",
+      "alamat": "Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor"
+    },
+    "Masjid Jaza": {
+      "kota": "Bandung",
+      "alamat": "Trunojoyo, Bandung"
+    },
+    "Masjid Nurul Iman Blok M Square": {
+      "kota": "Jakarta",
+      "alamat": "Blok M Square Lt. 7, Jakarta Selatan"
+    },
+    "Masjid Nurullah Kalibata City": {
+      "kota": "Jakarta",
+      "alamat": "Kalibata City, Jakarta Selatan"
+    },
+    "Masjid Puri Cinere": {
+      "kota": "Depok",
+      "alamat": "Jl. Lembah Pinus, Pangkalan Jati, Cinere, Depok"
+    },
+    "MTI Rasuna Epicentrum (Live YouTube)": {
+      "kota": "Online",
+      "alamat": "Online via YouTube (MTI Rasuna Epicentrum)"
+    },
+    "Rumah Quran Al-Ihsan": {
+      "kota": "Jakarta",
+      "alamat": "Masjid Raya Universitas Borobudur, Cipinang Melayu, Jakarta Timur"
+    },
+    "Taman Ismail Marzuki (TIM)": {
+      "kota": "Jakarta",
+      "alamat": "Taman Ismail Marzuki, Cikini, Jakarta Pusat"
+    }
+  },
+  "pemateri": [
+    "Abdullah Taslim, M.A.",
+    "Abu Ya'la Kurnaedi, Lc.",
+    "Arman Amri, Lc.",
+    "Asatidz Pengajar Tahsin",
+    "Assoc. Prof. Dr. KH. Akhmad Alim, Lc., M.A.",
+    "Badru Salam, Lc.",
+    "Belum ditentukan",
+    "Derma Permana, Lc.",
+    "Dr. (HC) H. Sholeh Asri, M.A.",
+    "Dr. Ahmad Sunhaji, M.Pd.I.",
+    "Dr. Ali Saman Hasan, Lc., MA",
+    "Dr. Budi Utomo, Lc., M.A.",
+    "Dr. H. Abdul Muid Nawawi, M.A.",
+    "Dr. H. Ending Bahruddin, M.Ag.",
+    "Dr. H. Mulawarman Hannase, Lc., M.Hum.",
+    "Dr. H. Nirwan Syafrin Manurung, M.A.",
+    "Dr. Hj. Sri Sabbahatun, Lc., M.E.",
+    "DR. K.H. Amang Syafrudin, Lc., M.M",
+    "Dr. KH. Abdul Halim Sholeh, M.M.",
+    "Dr. KH. Agam Bayu Suyanto, M.B.A.",
+    "Dr. KH. Mahkamah Mahdin, Lc., M.A.",
+    "Dr. Muhammad Ardiansyah",
+    "Dr. Musyaffa' Ad-Dariny, M.A.",
+    "Drs. H.A. Dzulfatah Yasin, M.Ag.",
+    "Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta",
+    "Gigih Surya Nugraha, S.H.",
+    "H. Jamaluddin F. Hasyim, S.H., M.H.",
+    "H. Mas'ud Halimin, M.A.",
+    "Irham Maulana, M.H.I.",
+    "Kang Ghany & Zidny Hikmatiar",
+    "KH. Abdurrahman Bustomi, M.A.",
+    "Mas'ud Mahmud, Lc.",
+    "Muhammad Setiawan",
+    "Prof. Dr. H. Hamka Hasan, Lc., M.A.",
+    "Rizki Nasution, Lc., M.SI",
+    "Sheikh Assim Al Hakeem",
+    "Ust. Ahmad Fathoni, M.E.",
+    "Ust. Hisyam Mukhlas A.",
+    "Ustadz Abdul Aziz Al Owainy, Lc.",
+    "Ustadz Abu Bakar Al Akhdhory, Lc., M.Pd.",
+    "Ustadz Abu Hurairah, MA",
+    "Ustadz Abu Yazid Novtriadi, Lc., M.Pd.",
+    "Ustadz Ali Hasan Bawazier",
+    "Ustadz Amrullah Tekko, Lc.",
+    "Ustadz Arman Amri, Lc",
+    "Ustadz Ayub Abu Ayub",
+    "Ustadz Azhar Khalid Bin Sheff, Lc., MA",
+    "Ustadz Azhar Khalid Seff, M.A.",
+    "Ustadz Dr. Abdi Kurnia Djohan, M.A., S.H., M.H.",
+    "Ustadz Dr. Abdullah Achmad Zawawi, B.IL., CIFP.",
+    "Ustadz Dr. Abu Jarir Ari Triono, Lc., M.A.",
+    "Ustadz Dr. Ahmad Ba'mualim, Lc., M.Pd.",
+    "Ustadz Dr. Ahmad Sujai, M.Si.",
+    "Ustadz DR. Elfa Hendri Mukhlis, MA",
+    "Ustadz Dr. Khairan Muhammad Arif, M.A., M.Ed.",
+    "Ustadz DR. Nurdin Apud Sarbini, Lc., M.Pd",
+    "Ustadz DR. Syafiq Al-Khatieb, Lc., MA",
+    "Ustadz Dzikrullah Arza",
+    "Ustadz Ega Abu Fahd, Lc",
+    "Ustadz Erfandoni Tarmizi, LC., M.HI",
+    "Ustadz Fatahillah Aly, M.Ag",
+    "Ustadz Fatahillah Aly, S.Ag.",
+    "Ustadz Fuad Mubarok, Lc., M.A",
+    "Ustadz H. Faisal Qosim, Lc., CFRM.",
+    "Ustadz Harist Abu Naufal",
+    "Ustadz Herfi G Faizi, Lc., M.Ag",
+    "Ustadz Hudzaifah bin Muhammad",
+    "Ustadz Idrus Yusuf, MA",
+    "Ustadz Imamuddin Mukhtar, B.Sh., M.SI",
+    "Ustadz Ishom Aini, Lc., MA",
+    "Ustadz Joni Qodariyanto, Lc.",
+    "Ustadz Khalid Basalamah",
+    "Ustadz Luthfi Abdul Jabbar, Lc.",
+    "Ustadz M Ihsan Tandjung, Lc",
+    "Ustadz Masykur Abu Mawaddah",
+    "Ustadz Maududi Abdullah, Lc.",
+    "Ustadz Mizan Qudsiyyah, Lc., MA",
+    "Ustadz Mohamad Nursamsul Qamar, Lc",
+    "Ustadz Mohamad Nursamsul Qamar, Lc.",
+    "Ustadz Muhammad Barmim",
+    "Ustadz Muhammad Halid Syar'ie, Lc.",
+    "Ustadz Muhammad Iqbal ibnu Said, S.Pd",
+    "Ustadz Muhammad Nuzul Dzikri",
+    "Ustadz Muhammad Setiawan, S.Pd",
+    "Ustadz Muhammad Tamrin, Lc.",
+    "Ustadz Muhammad Yahya, Lc",
+    "Ustadz Najmi Umar Bakkar",
+    "Ustadz Nur Fajri Ramadhan, Lc., M.A",
+    "Ustadz Nur Ihsan Jundullah, Lc.",
+    "Ustadz Prof. Daud Rasyid",
+    "Ustadz Rafael Afrianto, Lc.",
+    "Ustadz Rahmat Hidayat Syamsurizal, Lc., MA",
+    "Ustadz Sidqi Kamal Zimah",
+    "Ustadz Sofyan Chalid bin Idham Ruray, Lc.",
+    "Ustadz Subhan Bawazier",
+    "Ustadz Syariful Mahya, Lc., M.A.",
+    "Ustadz Umar Lathif",
+    "Ustadz Yovin Abu Hammam",
+    "Ustadz Yusuf Utsman Baisa, Lc.",
+    "Ustadz Zakariyal Anshari, Lc., M.Pd.",
+    "Ustadz Zulfikar Harun, Lc.",
+    "Ustadzaat Pengajar Tahsin",
+    "Ustadzah Poppy Yuditya"
+  ],
+  "diproses": []
+}

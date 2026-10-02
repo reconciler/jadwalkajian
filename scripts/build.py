@@ -33,16 +33,15 @@ KNOWN_KEYS = ["id", "date", "dayShort", "timeLabel", "timeOrder", "title",
               "ustadz", "masjid", "area", "address", "audience", "note", "isRutin"]
 KEY_RX = re.compile(r'([{,]\s*)(' + "|".join(KNOWN_KEYS) + r'):')
 
-AC = {
-    "Bogor": {"accent": "#d4a55a", "badge": "#5c4a2d"},
-    "Depok": {"accent": "#5a9fd4", "badge": "#2d4a5c"},
-    "Jakarta": {"accent": "#b07ad4", "badge": "#3a2a5c"},
-    "Bekasi": {"accent": "#d4705a", "badge": "#5c2a1e"},
-    "Tangerang": {"accent": "#4fc3c9", "badge": "#1e4f52"},
-    "Jawa Tengah": {"accent": "#5ad49a", "badge": "#1e5c3a"},
-    "Jawa Barat": {"accent": "#d45a8a", "badge": "#5c1e35"},
-    "Online": {"accent": "#8a8ad4", "badge": "#2d2d5c"},
-}
+def city_color(name):
+    """Warna kota otomatis, stabil per nama. Algoritma HARUS sama dengan cc() di index.html
+    (FNV-1a atas UTF-8 "b"+nama, hue = hash % 360)."""
+    x = 2166136261
+    for byte in ("b" + name).encode("utf-8"):
+        x ^= byte
+        x = (x * 16777619) & 0xFFFFFFFF
+    hue = x % 360
+    return {"accent": f"hsl({hue},58%,62%)", "badge": f"hsl({hue},36%,25%)"}
 
 def esc(s):
     return (str(s).replace("&", "&amp;").replace("<", "&lt;")
@@ -75,7 +74,7 @@ def start_datetime_iso(ev):
 
 
 def render_static_card(ev):
-    col = AC.get(ev["area"], AC["Depok"])
+    col = city_color(ev["area"])
     rutin = '<div class="rutin-label">RUTIN</div>' if ev.get("isRutin") else ""
     return (
         f'<article class="card" itemscope itemtype="https://schema.org/Event">'
