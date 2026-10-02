@@ -19,7 +19,7 @@ import re
 
 import tanggal_bebas
 from ingest_core import (AUDIENCE, BELUM_DITENTUKAN, JENIS_WAKTU, ONLINE,
-                         InputError, bersihkan, sekarang_wib)
+                         InputError, bersihkan, label_masjid, sekarang_wib)
 
 LABEL = {
     "tanggal": "Tanggal",
@@ -84,8 +84,8 @@ def _unsur(tipe, id_, label, deskripsi=None, placeholder=None, wajib=False, opsi
 
 
 def render_template(kat):
-    pemateri = sorted({p for p in kat["pemateri"] if p != BELUM_DITENTUKAN}, key=str.casefold)
-    masjid = sorted(kat["masjid"].keys(), key=str.casefold)
+    pemateri = sorted({p["nama"] for p in kat["pemateri"]}, key=str.casefold)
+    masjid = sorted({label_masjid(m) for m in kat["masjid"]}, key=str.casefold)
     kota = sorted(kat["kota"], key=str.casefold)
 
     pem_opsi = [tampil(p) for p in pemateri] + [BELUM_DITENTUKAN, LAINNYA]
@@ -94,14 +94,18 @@ def render_template(kat):
 
     if len(pem_opsi) > MAKS_OPSI_DROPDOWN:
         pem = _unsur("input", "pemateri", LABEL["pemateri"],
-                     "Nama pemateri persis seperti di flyer, atau Belum ditentukan.", wajib=True)
+                     "Nama pemateri (boleh dengan gelar, dicocokkan otomatis), atau Belum ditentukan.", wajib=True)
     else:
-        pem = _unsur("dropdown", "pemateri", LABEL["pemateri"], wajib=True, opsi=pem_opsi)
+        pem = _unsur("dropdown", "pemateri", LABEL["pemateri"],
+                     "Nama tanpa gelar. Tidak ada di daftar: pilih Lainnya dan tulis di kolom berikutnya.",
+                     wajib=True, opsi=pem_opsi)
     if len(mas_opsi) > MAKS_OPSI_DROPDOWN:
         mas = _unsur("input", "masjid", LABEL["masjid"],
-                     "Nama masjid persis seperti yang sudah ada, atau Online.", wajib=True)
+                     "Nama masjid dan kota, persis seperti yang sudah ada, atau Online.", wajib=True)
     else:
-        mas = _unsur("dropdown", "masjid", LABEL["masjid"], wajib=True, opsi=mas_opsi)
+        mas = _unsur("dropdown", "masjid", LABEL["masjid"],
+                     "Format: Nama (Kota). Tidak ada di daftar: pilih Lainnya dan isi kolom masjid baru.",
+                     wajib=True, opsi=mas_opsi)
 
     unsur = [
         _unsur("input", "tanggal", LABEL["tanggal"],
@@ -114,11 +118,12 @@ def render_template(kat):
         _unsur("input", "judul", LABEL["judul"], wajib=True),
         pem,
         _unsur("input", "pemateri_baru", LABEL["pemateri_baru"],
-               "Wajib bila Pemateri = Lainnya. Pemateri baru otomatis masuk daftar."),
+               "Wajib bila Pemateri = Lainnya. Tulis persis seperti di flyer, boleh dengan gelar; "
+               "bisa juga organisasi atau komunitas. Nama yang sudah ada dicocokkan otomatis."),
         _unsur("checkboxes", "perempuan", LABEL["perempuan"], kotak=OPSI_PEREMPUAN),
         mas,
         _unsur("input", "masjid_baru", LABEL["masjid_baru"],
-               "Wajib bila Masjid = Lainnya. Bila Masjid = Online, isi nama penyelenggara di sini."),
+               "Wajib bila Masjid = Lainnya. Tulis nama saja tanpa kota. Bila Masjid = Online, isi nama penyelenggara di sini."),
         _unsur("input", "alamat_baru", LABEL["alamat_baru"], "Wajib bila Masjid = Lainnya."),
         _unsur("dropdown", "kota_baru", LABEL["kota_baru"], "Wajib bila Masjid = Lainnya.", opsi=kota_opsi),
         _unsur("input", "kota_lain", LABEL["kota_lain"], "Wajib bila Kota masjid baru = Kota lain."),
@@ -181,11 +186,12 @@ def ke_paket(body, kat, hari_ini=None):
         if not pemateri:
             galat.append("Pemateri baru: wajib diisi bila Pemateri = Lainnya.")
     else:
-        pemateri = peta_tampil(kat["pemateri"]).get(pem, pem)
+        pemateri = peta_tampil([p["nama"] for p in kat["pemateri"]]).get(pem, pem)
 
     # masjid
     mas = v("masjid")
     masjid_baru = None
+    masjid_kota = ""
     if mas == ONLINE:
         penyelenggara = v("masjid_baru")
         if not penyelenggara:
@@ -216,7 +222,11 @@ def ke_paket(body, kat, hari_ini=None):
             galat.append("Kota masjid baru: wajib dipilih bila Masjid = Lainnya.")
         masjid_baru = {"alamat": v("alamat_baru"), "kota": kota}
     else:
-        masjid = peta_tampil(kat["masjid"].keys()).get(mas, mas)
+        peta = {tampil(label_masjid(m)): m for m in kat["masjid"]}
+        if mas in peta:
+            masjid, masjid_kota = peta[mas]["nama"], peta[mas]["kota"]
+        else:  # isian bebas / label usang: serahkan ke inti (cocok nama; ambigu ditolak)
+            masjid = mas
 
     if galat:
         raise InputError(galat)
@@ -229,6 +239,7 @@ def ke_paket(body, kat, hari_ini=None):
         "pemateri": pemateri,
         "pemateri_perempuan": _centang(v("perempuan")),
         "masjid": masjid,
+        "masjid_kota": masjid_kota,
         "masjid_baru": masjid_baru,
         "audience": v("audience"),
         "rutin": _centang(v("rutin")),

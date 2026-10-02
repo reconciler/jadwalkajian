@@ -15,10 +15,11 @@ sitemap.xml                          # daftar URL untuk Google Search Console (1
 favicon.svg                          # ikon tab browser
 scripts/prune.py                     # hapus event lewat + perbarui stempel footer
 scripts/build.py                     # generate HTML statis + JSON-LD (SEO) dari allEvents
-data/kategori.json                   # daftar induk kota/masjid/pemateri + Issue diproses/gagal (internal, TIDAK tayang di _site)
+data/kategori.json                   # daftar induk kota/masjid(nama,kota)/pemateri(nama bersih+lengkap) + Issue diproses/gagal (internal, TIDAK tayang di _site)
 scripts/ingest.py                    # CLI ingest Issue -> event (dipanggil workflow)
 scripts/ingest_core.py               # logika inti: validasi, pembuatan event, daftar induk (tanpa tahu soal formulir)
 scripts/adapter_issue_form.py        # adapter formulir Issue: templat YAML + parser isi Issue -> paket baku
+scripts/tanggal_bebas.py             # pengurai isian Tanggal bebas (10 Okt 2026, 3-31 Okt 2026 Sabtu, ...)
 scripts/test_ingest.py               # uji lokal ingest (python3 scripts/test_ingest.py)
 .github/ISSUE_TEMPLATE/              # DIBUAT OTOMATIS dari data/kategori.json; jangan edit manual
 .github/workflows/deploy.yml         # prune + build + terbitkan ke GitHub Pages (push ke main + manual)
@@ -112,16 +113,37 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   Dalam beberapa menit: event masuk, situs terbit, Issue diberi komentar dan
   ditutup. **Issue terbuka = belum terbit.** Gagal validasi: Issue tetap terbuka
   dengan komentar alasan; edit Issue untuk memproses ulang.
-- **Kolom:** Tanggal (satu per baris `YYYY-MM-DD`, banyak tanggal = banyak event),
-  Jenis waktu, Jam (hanya Jam eksak: `09.30` atau `09.30-11.00`), Judul, Pemateri
-  (+ Pemateri baru), Pemateri perempuan (→ `Khusus Akhwat`), Masjid (+ Nama/Alamat
-  masjid baru, Kota masjid baru / Kota lain), Audience (bawaan Terbuka untuk
-  umum), Kajian rutin, Catatan (opsional). Masjid = **Online**: isi penyelenggara
-  di "Nama masjid baru" → `masjid` = `<penyelenggara> (Online)`, `area` = `Online`.
+- **Kolom:** Tanggal (SATU isian bebas, bukan satu per baris; contoh `10 Okt 2026`,
+  `10, 17, 24 Okt 2026`, `3-31 Okt 2026 Sabtu`, `3 Okt - 4 Okt 2026`, `10/10/2026`,
+  `2026-10-10`; tahun boleh dihilangkan; nama hari di depan tanggal = pemeriksa;
+  rinci di `scripts/tanggal_bebas.py`; Issue form GitHub tidak punya pemilih
+  kalender [menurut pengetahuan PIC, belum tervalidasi docs]), Jenis waktu, Jam
+  (hanya Jam eksak: `09.30` atau `09.30-11.00`), Judul, Pemateri (dropdown **nama
+  bersih tanpa gelar**) + Pemateri baru, Pemateri perempuan (→ `Khusus Akhwat`),
+  Masjid (dropdown **`Nama (Kota)`**) + Nama/Alamat masjid baru, Kota masjid baru /
+  Kota lain, Audience (bawaan Terbuka untuk umum), Kajian rutin, Catatan
+  (opsional). Masjid = **Online**: isi penyelenggara di "Nama masjid baru" →
+  `masjid` = `<penyelenggara> (Online)`, `area` = `Online`. Komentar balasan
+  menampilkan tiap tanggal dengan nama hari; cek di sana.
+- **Pemateri** (keputusan Amal 3 Okt 2026): master menyimpan `nama` (bersih, untuk
+  dropdown/pencarian/deteksi duplikat) dan `tampil` (lengkap dengan gelar, yang
+  muncul di kartu situs), plus `alias`. Memilih dari dropdown → event memakai
+  `tampil`. Mengetik "Pemateri baru" persis dari flyer (dengan gelar) →
+  dicocokkan otomatis ke master lewat nama bersih/alias (komentar memberi tahu);
+  bila tidak ada, dibuat entri baru (`tampil` = ketikan, `nama` = hasil
+  pembersihan sapaan/gelar). Pemateri boleh organisasi/komunitas/kelompok
+  ("Asatidz Pengajar Tahsin", "... & Komunitas ..."): entri dengan `&`, "dan",
+  atau tanda kurung tidak dibersihkan. Nama mirip tapi beda hanya diberi
+  peringatan; gabungkan manual dengan menambah `alias` di `data/kategori.json`.
+- **Masjid** (keputusan Amal 3 Okt 2026): identitas = pasangan (`nama`, `kota`);
+  dropdown `Nama (Kota)`. Event memakai `tampil` (biasanya = `nama`). Masjid baru:
+  nama kota di belakang nama dibuang bila sisanya ≥ 2 kata ("Masjid Ar-Riyadh
+  Depok" + Depok → "Masjid Ar-Riyadh"); bila nama yang sama sudah ada di kota lain,
+  `tampil` memakai ` (Kota)` agar filter masjid di situs tidak menggabungkan dua
+  masjid berbeda (filter mencocokkan teks nama).
 - **Menambah kota/masjid/pemateri baru:** pilih "Lainnya" dan isi kolom barunya;
   otomatis masuk `data/kategori.json` dan dropdown berikutnya. Nama yang sama
-  (abaikan huruf besar/kecil) memakai yang sudah ada; nama **mirip** diberi
-  peringatan di komentar tapi tetap diproses.
+  (abaikan huruf besar/kecil) memakai yang sudah ada.
 - **Dropdown selalu mutakhir:** `.github/ISSUE_TEMPLATE/tambah-kajian.yml` dibuat
   ulang oleh `scripts/ingest.py` dari `data/kategori.json` di setiap run. Jangan
   edit manual. Opsi dropdown memakai koma lebar penuh (`，`) sebagai pengganti
@@ -138,10 +160,12 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
 - **Daftar induk `data/kategori.json`** juga menyimpan `diproses` (Issue → id event,
   untuk idempotensi) dan `gagal` (Issue yang ditolak; dilewati sampai diedit).
   Jangan edit manual kecuali memperbaiki data; ia tidak tayang di situs.
-- Alur flyer ke Claude tetap memakai langkah manual (edit `index.html`); bila
-  ada kota/masjid/pemateri baru, tambahkan juga ke `data/kategori.json` agar
-  dropdown mengikutinya (atau biarkan: run berikutnya tidak menghapusnya, tetapi
-  tidak otomatis menambahkannya dari event manual).
+- Alur flyer ke Claude tetap memakai langkah manual (edit `index.html`). Pakai
+  `tampil` dari `data/kategori.json` untuk pemateri dan masjid yang sudah ada
+  (ejaan konsisten); bila ada kota/masjid/pemateri baru, tambahkan juga ke
+  `data/kategori.json` agar dropdown mengikutinya (event manual tidak otomatis
+  masuk daftar induk). Uji konsistensi: `python3 scripts/test_ingest.py`
+  (setiap event harus punya masjid di daftar induk).
 
 ## Berkas yang tayang di situs (folder `_site`)
 
@@ -234,7 +258,8 @@ Bulan singkat: Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des
    yang belum ada di dashboard tetap dimasukkan (aturan Amal, 2 Okt 2026).
    Laporkan hanya pilihan yang tidak tertulis di flyer (mis. nama area baru).
    Saat menambah event dari flyer secara manual, samakan ejaan kota/masjid/pemateri
-   dengan `data/kategori.json`.
+   dengan `data/kategori.json` (`tampil`). Nama pemateri di kartu situs tetap
+   lengkap dengan gelar (keputusan Amal 3 Okt 2026).
 
 ## Jangan sentuh tanpa diminta
 

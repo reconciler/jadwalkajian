@@ -10,216 +10,660 @@
   "kota_khusus": [
     "Online"
   ],
-  "masjid": {
-    "Baitusyaakiriin Depok": {
+  "masjid": [
+    {
+      "nama": "Baitusyaakiriin Depok",
       "kota": "Depok",
-      "alamat": "Jl. Pamoras 12, Abadijaya, Sukmajaya, Depok"
+      "alamat": "Jl. Pamoras 12, Abadijaya, Sukmajaya, Depok",
+      "tampil": "Baitusyaakiriin Depok"
     },
-    "Kupinami Cafe": {
+    {
+      "nama": "Kupinami Cafe",
       "kota": "Jakarta",
-      "alamat": "Jl. Bina Marga No. 44, Jakarta Timur"
+      "alamat": "Jl. Bina Marga No. 44, Jakarta Timur",
+      "tampil": "Kupinami Cafe"
     },
-    "Masjid Al Ukhuwah BSD": {
+    {
+      "nama": "Masjid Al Ukhuwah BSD",
       "kota": "Tangerang",
-      "alamat": "Jl. Raya Cisauk Lapan, BSD City, Tangerang"
+      "alamat": "Jl. Raya Cisauk Lapan, BSD City, Tangerang",
+      "tampil": "Masjid Al Ukhuwah BSD"
     },
-    "Masjid Al-Adhim": {
+    {
+      "nama": "Masjid Al-Adhim",
       "kota": "Depok",
-      "alamat": "Jl. Andara Raya No.32, Pangkalan Jati Baru, Cinere, Depok"
+      "alamat": "Jl. Andara Raya No.32, Pangkalan Jati Baru, Cinere, Depok",
+      "tampil": "Masjid Al-Adhim"
     },
-    "Masjid Al-Barkah Sawah Baru": {
+    {
+      "nama": "Masjid Al-Barkah Sawah Baru",
       "kota": "Tangerang",
-      "alamat": "Jl. Merpati 2, Sawah Baru, Tangerang Selatan"
+      "alamat": "Jl. Merpati 2, Sawah Baru, Tangerang Selatan",
+      "tampil": "Masjid Al-Barkah Sawah Baru"
     },
-    "Masjid Al-Fattah": {
+    {
+      "nama": "Masjid Al-Fattah",
       "kota": "Jakarta",
-      "alamat": "Jl. Jatinegara Timur No. 48-50, Jatinegara, Jakarta Timur"
+      "alamat": "Jl. Jatinegara Timur No. 48-50, Jatinegara, Jakarta Timur",
+      "tampil": "Masjid Al-Fattah"
     },
-    "Masjid Al-Hidayah": {
+    {
+      "nama": "Masjid Al-Hidayah",
       "kota": "Jakarta",
-      "alamat": "Taman Pulo Gebang, Cakung, Jakarta Timur"
+      "alamat": "Taman Pulo Gebang, Cakung, Jakarta Timur",
+      "tampil": "Masjid Al-Hidayah"
     },
-    "Masjid Al-Ikhlas Dukuh Bima": {
+    {
+      "nama": "Masjid Al-Ikhlas Dukuh Bima",
       "kota": "Bekasi",
-      "alamat": "Tambun Selatan, Bekasi"
+      "alamat": "Tambun Selatan, Bekasi",
+      "tampil": "Masjid Al-Ikhlas Dukuh Bima"
     },
-    "Masjid Alumni IPB Botani Square": {
+    {
+      "nama": "Masjid Alumni IPB Botani Square",
       "kota": "Bogor",
-      "alamat": "Botani Square Mall, Bogor"
+      "alamat": "Botani Square Mall, Bogor",
+      "tampil": "Masjid Alumni IPB Botani Square"
     },
-    "Masjid Ar-Riyadh Depok": {
+    {
+      "nama": "Masjid Ar-Riyadh",
       "kota": "Depok",
-      "alamat": "Masjid Ar-Riyadh, Depok"
+      "alamat": "Masjid Ar-Riyadh, Depok",
+      "tampil": "Masjid Ar-Riyadh"
     },
-    "Masjid As-Sofia": {
+    {
+      "nama": "Masjid As-Sofia",
       "kota": "Bogor",
-      "alamat": "Bogor (alamat spesifik tidak tercantum di flyer)"
+      "alamat": "Bogor (alamat spesifik tidak tercantum di flyer)",
+      "tampil": "Masjid As-Sofia"
     },
-    "Masjid Ash-Shiddiq Cikeas": {
+    {
+      "nama": "Masjid Ash-Shiddiq Cikeas",
       "kota": "Bogor",
-      "alamat": "Cikeas"
+      "alamat": "Cikeas",
+      "tampil": "Masjid Ash-Shiddiq Cikeas"
     },
-    "Masjid At-Tiin Asem Baris": {
+    {
+      "nama": "Masjid At-Tiin Asem Baris",
       "kota": "Jakarta",
-      "alamat": "Jl. Asem Baris Raya No. 1-C, Kebon Baru, Tebet, Jakarta Selatan"
+      "alamat": "Jl. Asem Baris Raya No. 1-C, Kebon Baru, Tebet, Jakarta Selatan",
+      "tampil": "Masjid At-Tiin Asem Baris"
     },
-    "Masjid Baiturrahman Pondok Pinang": {
+    {
+      "nama": "Masjid Baiturrahman Pondok Pinang",
       "kota": "Jakarta",
-      "alamat": "Jl. Buana Raya, Pondok Pinang, Jakarta Selatan"
+      "alamat": "Jl. Buana Raya, Pondok Pinang, Jakarta Selatan",
+      "tampil": "Masjid Baiturrahman Pondok Pinang"
     },
-    "Masjid Daarussalaam GTA": {
+    {
+      "nama": "Masjid Daarussalaam GTA",
       "kota": "Depok",
-      "alamat": "Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok"
+      "alamat": "Perumahan Griya Tugu Asri, Kel. Tugu, Kec. Cimanggis, Kota Depok",
+      "tampil": "Masjid Daarussalaam GTA"
     },
-    "Masjid Darussalam Kota Wisata": {
+    {
+      "nama": "Masjid Darussalam Kota Wisata",
       "kota": "Bogor",
-      "alamat": "Jl. Wisata Utama No.1, Ciangsana, Gn. Putri, Bogor, Jawa Barat 16968"
+      "alamat": "Jl. Wisata Utama No.1, Ciangsana, Gn. Putri, Bogor, Jawa Barat 16968",
+      "tampil": "Masjid Darussalam Kota Wisata"
     },
-    "Masjid Istiqlal": {
+    {
+      "nama": "Masjid Istiqlal",
       "kota": "Jakarta",
-      "alamat": "Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat"
+      "alamat": "Jl. Taman Wijaya Kusuma, Ps. Baru, Sawah Besar, Jakarta Pusat",
+      "tampil": "Masjid Istiqlal"
     },
-    "Masjid Istiqomah IKEA Sentul City": {
+    {
+      "nama": "Masjid Istiqomah IKEA Sentul City",
       "kota": "Bogor",
-      "alamat": "IKEA Sentul City, Bogor"
+      "alamat": "IKEA Sentul City, Bogor",
+      "tampil": "Masjid Istiqomah IKEA Sentul City"
     },
-    "Masjid Jami' Al-Barkah": {
+    {
+      "nama": "Masjid Jami' Al-Barkah",
       "kota": "Bogor",
-      "alamat": "Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor"
+      "alamat": "Jl. Pahlawan, Kp. Tengah, Cileungsi, Bogor",
+      "tampil": "Masjid Jami' Al-Barkah"
     },
-    "Masjid Jaza": {
+    {
+      "nama": "Masjid Jaza",
       "kota": "Bandung",
-      "alamat": "Trunojoyo, Bandung"
+      "alamat": "Trunojoyo, Bandung",
+      "tampil": "Masjid Jaza"
     },
-    "Masjid Nurul Iman Blok M Square": {
+    {
+      "nama": "Masjid Nurul Iman Blok M Square",
       "kota": "Jakarta",
-      "alamat": "Blok M Square Lt. 7, Jakarta Selatan"
+      "alamat": "Blok M Square Lt. 7, Jakarta Selatan",
+      "tampil": "Masjid Nurul Iman Blok M Square"
     },
-    "Masjid Nurullah Kalibata City": {
+    {
+      "nama": "Masjid Nurullah Kalibata City",
       "kota": "Jakarta",
-      "alamat": "Kalibata City, Jakarta Selatan"
+      "alamat": "Kalibata City, Jakarta Selatan",
+      "tampil": "Masjid Nurullah Kalibata City"
     },
-    "Masjid Puri Cinere": {
+    {
+      "nama": "Masjid Puri Cinere",
       "kota": "Depok",
-      "alamat": "Jl. Lembah Pinus, Pangkalan Jati, Cinere, Depok"
+      "alamat": "Jl. Lembah Pinus, Pangkalan Jati, Cinere, Depok",
+      "tampil": "Masjid Puri Cinere"
     },
-    "MTI Rasuna Epicentrum (Live YouTube)": {
+    {
+      "nama": "MTI Rasuna Epicentrum (Live YouTube)",
       "kota": "Online",
-      "alamat": "Online via YouTube (MTI Rasuna Epicentrum)"
+      "alamat": "Online via YouTube (MTI Rasuna Epicentrum)",
+      "tampil": "MTI Rasuna Epicentrum (Live YouTube)"
     },
-    "Rumah Quran Al-Ihsan": {
+    {
+      "nama": "Rumah Quran Al-Ihsan",
       "kota": "Jakarta",
-      "alamat": "Masjid Raya Universitas Borobudur, Cipinang Melayu, Jakarta Timur"
+      "alamat": "Masjid Raya Universitas Borobudur, Cipinang Melayu, Jakarta Timur",
+      "tampil": "Rumah Quran Al-Ihsan"
     },
-    "Taman Ismail Marzuki (TIM)": {
+    {
+      "nama": "Taman Ismail Marzuki (TIM)",
       "kota": "Jakarta",
-      "alamat": "Taman Ismail Marzuki, Cikini, Jakarta Pusat"
+      "alamat": "Taman Ismail Marzuki, Cikini, Jakarta Pusat",
+      "tampil": "Taman Ismail Marzuki (TIM)"
     }
-  },
+  ],
   "pemateri": [
-    "Abdullah Taslim, M.A.",
-    "Abu Ya'la Kurnaedi, Lc.",
-    "Arman Amri, Lc.",
-    "Asatidz Pengajar Tahsin",
-    "Assoc. Prof. Dr. KH. Akhmad Alim, Lc., M.A.",
-    "Badru Salam, Lc.",
-    "Belum ditentukan",
-    "Derma Permana, Lc.",
-    "Dr. (HC) H. Sholeh Asri, M.A.",
-    "Dr. Ahmad Sunhaji, M.Pd.I.",
-    "Dr. Ali Saman Hasan, Lc., MA",
-    "Dr. Budi Utomo, Lc., M.A.",
-    "Dr. H. Abdul Muid Nawawi, M.A.",
-    "Dr. H. Ending Bahruddin, M.Ag.",
-    "Dr. H. Mulawarman Hannase, Lc., M.Hum.",
-    "Dr. H. Nirwan Syafrin Manurung, M.A.",
-    "Dr. Hj. Sri Sabbahatun, Lc., M.E.",
-    "DR. K.H. Amang Syafrudin, Lc., M.M",
-    "Dr. KH. Abdul Halim Sholeh, M.M.",
-    "Dr. KH. Agam Bayu Suyanto, M.B.A.",
-    "Dr. KH. Mahkamah Mahdin, Lc., M.A.",
-    "Dr. Muhammad Ardiansyah",
-    "Dr. Musyaffa' Ad-Dariny, M.A.",
-    "Drs. H.A. Dzulfatah Yasin, M.Ag.",
-    "Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta",
-    "Gigih Surya Nugraha, S.H.",
-    "H. Jamaluddin F. Hasyim, S.H., M.H.",
-    "H. Mas'ud Halimin, M.A.",
-    "Irham Maulana, M.H.I.",
-    "Kang Ghany & Zidny Hikmatiar",
-    "KH. Abdurrahman Bustomi, M.A.",
-    "Mas'ud Mahmud, Lc.",
-    "Muhammad Setiawan",
-    "Prof. Dr. H. Hamka Hasan, Lc., M.A.",
-    "Rizki Nasution, Lc., M.SI",
-    "Sheikh Assim Al Hakeem",
-    "Ust. Ahmad Fathoni, M.E.",
-    "Ust. Hisyam Mukhlas A.",
-    "Ustadz Abdul Aziz Al Owainy, Lc.",
-    "Ustadz Abu Bakar Al Akhdhory, Lc., M.Pd.",
-    "Ustadz Abu Hurairah, MA",
-    "Ustadz Abu Yazid Novtriadi, Lc., M.Pd.",
-    "Ustadz Ali Hasan Bawazier",
-    "Ustadz Amrullah Tekko, Lc.",
-    "Ustadz Arman Amri, Lc",
-    "Ustadz Ayub Abu Ayub",
-    "Ustadz Azhar Khalid Bin Sheff, Lc., MA",
-    "Ustadz Azhar Khalid Seff, M.A.",
-    "Ustadz Dr. Abdi Kurnia Djohan, M.A., S.H., M.H.",
-    "Ustadz Dr. Abdullah Achmad Zawawi, B.IL., CIFP.",
-    "Ustadz Dr. Abu Jarir Ari Triono, Lc., M.A.",
-    "Ustadz Dr. Ahmad Ba'mualim, Lc., M.Pd.",
-    "Ustadz Dr. Ahmad Sujai, M.Si.",
-    "Ustadz DR. Elfa Hendri Mukhlis, MA",
-    "Ustadz Dr. Khairan Muhammad Arif, M.A., M.Ed.",
-    "Ustadz DR. Nurdin Apud Sarbini, Lc., M.Pd",
-    "Ustadz DR. Syafiq Al-Khatieb, Lc., MA",
-    "Ustadz Dzikrullah Arza",
-    "Ustadz Ega Abu Fahd, Lc",
-    "Ustadz Erfandoni Tarmizi, LC., M.HI",
-    "Ustadz Fatahillah Aly, M.Ag",
-    "Ustadz Fatahillah Aly, S.Ag.",
-    "Ustadz Fuad Mubarok, Lc., M.A",
-    "Ustadz H. Faisal Qosim, Lc., CFRM.",
-    "Ustadz Harist Abu Naufal",
-    "Ustadz Herfi G Faizi, Lc., M.Ag",
-    "Ustadz Hudzaifah bin Muhammad",
-    "Ustadz Idrus Yusuf, MA",
-    "Ustadz Imamuddin Mukhtar, B.Sh., M.SI",
-    "Ustadz Ishom Aini, Lc., MA",
-    "Ustadz Joni Qodariyanto, Lc.",
-    "Ustadz Khalid Basalamah",
-    "Ustadz Luthfi Abdul Jabbar, Lc.",
-    "Ustadz M Ihsan Tandjung, Lc",
-    "Ustadz Masykur Abu Mawaddah",
-    "Ustadz Maududi Abdullah, Lc.",
-    "Ustadz Mizan Qudsiyyah, Lc., MA",
-    "Ustadz Mohamad Nursamsul Qamar, Lc",
-    "Ustadz Mohamad Nursamsul Qamar, Lc.",
-    "Ustadz Muhammad Barmim",
-    "Ustadz Muhammad Halid Syar'ie, Lc.",
-    "Ustadz Muhammad Iqbal ibnu Said, S.Pd",
-    "Ustadz Muhammad Nuzul Dzikri",
-    "Ustadz Muhammad Setiawan, S.Pd",
-    "Ustadz Muhammad Tamrin, Lc.",
-    "Ustadz Muhammad Yahya, Lc",
-    "Ustadz Najmi Umar Bakkar",
-    "Ustadz Nur Fajri Ramadhan, Lc., M.A",
-    "Ustadz Nur Ihsan Jundullah, Lc.",
-    "Ustadz Prof. Daud Rasyid",
-    "Ustadz Rafael Afrianto, Lc.",
-    "Ustadz Rahmat Hidayat Syamsurizal, Lc., MA",
-    "Ustadz Sidqi Kamal Zimah",
-    "Ustadz Sofyan Chalid bin Idham Ruray, Lc.",
-    "Ustadz Subhan Bawazier",
-    "Ustadz Syariful Mahya, Lc., M.A.",
-    "Ustadz Umar Lathif",
-    "Ustadz Yovin Abu Hammam",
-    "Ustadz Yusuf Utsman Baisa, Lc.",
-    "Ustadz Zakariyal Anshari, Lc., M.Pd.",
-    "Ustadz Zulfikar Harun, Lc.",
-    "Ustadzaat Pengajar Tahsin",
-    "Ustadzah Poppy Yuditya"
+    {
+      "nama": "Abdi Kurnia Djohan",
+      "tampil": "Ustadz Dr. Abdi Kurnia Djohan, M.A., S.H., M.H.",
+      "alias": []
+    },
+    {
+      "nama": "Abdul Aziz Al Owainy",
+      "tampil": "Ustadz Abdul Aziz Al Owainy, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Abdul Halim Sholeh",
+      "tampil": "Dr. KH. Abdul Halim Sholeh, M.M.",
+      "alias": []
+    },
+    {
+      "nama": "Abdul Muid Nawawi",
+      "tampil": "Dr. H. Abdul Muid Nawawi, M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Abdullah Achmad Zawawi",
+      "tampil": "Ustadz Dr. Abdullah Achmad Zawawi, B.IL., CIFP.",
+      "alias": []
+    },
+    {
+      "nama": "Abdullah Taslim",
+      "tampil": "Abdullah Taslim, M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Abdurrahman Bustomi",
+      "tampil": "KH. Abdurrahman Bustomi, M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Abu Bakar Al Akhdhory",
+      "tampil": "Ustadz Abu Bakar Al Akhdhory, Lc., M.Pd.",
+      "alias": []
+    },
+    {
+      "nama": "Abu Hurairah",
+      "tampil": "Ustadz Abu Hurairah, MA",
+      "alias": []
+    },
+    {
+      "nama": "Abu Jarir Ari Triono",
+      "tampil": "Ustadz Dr. Abu Jarir Ari Triono, Lc., M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Abu Ya'la Kurnaedi",
+      "tampil": "Abu Ya'la Kurnaedi, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Abu Yazid Novtriadi",
+      "tampil": "Ustadz Abu Yazid Novtriadi, Lc., M.Pd.",
+      "alias": []
+    },
+    {
+      "nama": "Agam Bayu Suyanto",
+      "tampil": "Dr. KH. Agam Bayu Suyanto, M.B.A.",
+      "alias": []
+    },
+    {
+      "nama": "Ahmad Ba'mualim",
+      "tampil": "Ustadz Dr. Ahmad Ba'mualim, Lc., M.Pd.",
+      "alias": []
+    },
+    {
+      "nama": "Ahmad Fathoni",
+      "tampil": "Ust. Ahmad Fathoni, M.E.",
+      "alias": []
+    },
+    {
+      "nama": "Ahmad Sujai",
+      "tampil": "Ustadz Dr. Ahmad Sujai, M.Si.",
+      "alias": []
+    },
+    {
+      "nama": "Ahmad Sunhaji",
+      "tampil": "Dr. Ahmad Sunhaji, M.Pd.I.",
+      "alias": []
+    },
+    {
+      "nama": "Akhmad Alim",
+      "tampil": "Assoc. Prof. Dr. KH. Akhmad Alim, Lc., M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Ali Hasan Bawazier",
+      "tampil": "Ustadz Ali Hasan Bawazier",
+      "alias": []
+    },
+    {
+      "nama": "Ali Saman Hasan",
+      "tampil": "Dr. Ali Saman Hasan, Lc., MA",
+      "alias": []
+    },
+    {
+      "nama": "Amang Syafrudin",
+      "tampil": "DR. K.H. Amang Syafrudin, Lc., M.M",
+      "alias": []
+    },
+    {
+      "nama": "Amrullah Tekko",
+      "tampil": "Ustadz Amrullah Tekko, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Arman Amri",
+      "tampil": "Ustadz Arman Amri, Lc",
+      "alias": [
+        "Arman Amri, Lc."
+      ]
+    },
+    {
+      "nama": "Asatidz Pengajar Tahsin",
+      "tampil": "Asatidz Pengajar Tahsin",
+      "alias": []
+    },
+    {
+      "nama": "Assim Al Hakeem",
+      "tampil": "Sheikh Assim Al Hakeem",
+      "alias": []
+    },
+    {
+      "nama": "Ayub Abu Ayub",
+      "tampil": "Ustadz Ayub Abu Ayub",
+      "alias": []
+    },
+    {
+      "nama": "Azhar Khalid Bin Sheff",
+      "tampil": "Ustadz Azhar Khalid Bin Sheff, Lc., MA",
+      "alias": [
+        "Ustadz Azhar Khalid Seff, M.A."
+      ]
+    },
+    {
+      "nama": "Badru Salam",
+      "tampil": "Badru Salam, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Budi Utomo",
+      "tampil": "Dr. Budi Utomo, Lc., M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Daud Rasyid",
+      "tampil": "Ustadz Prof. Daud Rasyid",
+      "alias": []
+    },
+    {
+      "nama": "Derma Permana",
+      "tampil": "Derma Permana, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Dzikrullah Arza",
+      "tampil": "Ustadz Dzikrullah Arza",
+      "alias": []
+    },
+    {
+      "nama": "Dzulfatah Yasin",
+      "tampil": "Drs. H.A. Dzulfatah Yasin, M.Ag.",
+      "alias": []
+    },
+    {
+      "nama": "Ega Abu Fahd",
+      "tampil": "Ustadz Ega Abu Fahd, Lc",
+      "alias": []
+    },
+    {
+      "nama": "Elfa Hendri Mukhlis",
+      "tampil": "Ustadz DR. Elfa Hendri Mukhlis, MA",
+      "alias": []
+    },
+    {
+      "nama": "Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta",
+      "tampil": "Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta",
+      "alias": []
+    },
+    {
+      "nama": "Ending Bahruddin",
+      "tampil": "Dr. H. Ending Bahruddin, M.Ag.",
+      "alias": []
+    },
+    {
+      "nama": "Erfandoni Tarmizi",
+      "tampil": "Ustadz Erfandoni Tarmizi, LC., M.HI",
+      "alias": []
+    },
+    {
+      "nama": "Faisal Qosim",
+      "tampil": "Ustadz H. Faisal Qosim, Lc., CFRM.",
+      "alias": []
+    },
+    {
+      "nama": "Fatahillah Aly",
+      "tampil": "Ustadz Fatahillah Aly, M.Ag",
+      "alias": [
+        "Ustadz Fatahillah Aly, S.Ag."
+      ]
+    },
+    {
+      "nama": "Fuad Mubarok",
+      "tampil": "Ustadz Fuad Mubarok, Lc., M.A",
+      "alias": []
+    },
+    {
+      "nama": "Gigih Surya Nugraha",
+      "tampil": "Gigih Surya Nugraha, S.H.",
+      "alias": []
+    },
+    {
+      "nama": "Hamka Hasan",
+      "tampil": "Prof. Dr. H. Hamka Hasan, Lc., M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Harist Abu Naufal",
+      "tampil": "Ustadz Harist Abu Naufal",
+      "alias": []
+    },
+    {
+      "nama": "Herfi G Faizi",
+      "tampil": "Ustadz Herfi G Faizi, Lc., M.Ag",
+      "alias": []
+    },
+    {
+      "nama": "Hisyam Mukhlas A.",
+      "tampil": "Ust. Hisyam Mukhlas A.",
+      "alias": []
+    },
+    {
+      "nama": "Hudzaifah bin Muhammad",
+      "tampil": "Ustadz Hudzaifah bin Muhammad",
+      "alias": []
+    },
+    {
+      "nama": "Idrus Yusuf",
+      "tampil": "Ustadz Idrus Yusuf, MA",
+      "alias": []
+    },
+    {
+      "nama": "Imamuddin Mukhtar",
+      "tampil": "Ustadz Imamuddin Mukhtar, B.Sh., M.SI",
+      "alias": []
+    },
+    {
+      "nama": "Irham Maulana",
+      "tampil": "Irham Maulana, M.H.I.",
+      "alias": []
+    },
+    {
+      "nama": "Ishom Aini",
+      "tampil": "Ustadz Ishom Aini, Lc., MA",
+      "alias": []
+    },
+    {
+      "nama": "Jamaluddin F. Hasyim",
+      "tampil": "H. Jamaluddin F. Hasyim, S.H., M.H.",
+      "alias": []
+    },
+    {
+      "nama": "Joni Qodariyanto",
+      "tampil": "Ustadz Joni Qodariyanto, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Kang Ghany & Zidny Hikmatiar",
+      "tampil": "Kang Ghany & Zidny Hikmatiar",
+      "alias": []
+    },
+    {
+      "nama": "Khairan Muhammad Arif",
+      "tampil": "Ustadz Dr. Khairan Muhammad Arif, M.A., M.Ed.",
+      "alias": []
+    },
+    {
+      "nama": "Khalid Basalamah",
+      "tampil": "Ustadz Khalid Basalamah",
+      "alias": []
+    },
+    {
+      "nama": "Luthfi Abdul Jabbar",
+      "tampil": "Ustadz Luthfi Abdul Jabbar, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "M Ihsan Tandjung",
+      "tampil": "Ustadz M Ihsan Tandjung, Lc",
+      "alias": []
+    },
+    {
+      "nama": "Mahkamah Mahdin",
+      "tampil": "Dr. KH. Mahkamah Mahdin, Lc., M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Mas'ud Halimin",
+      "tampil": "H. Mas'ud Halimin, M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Mas'ud Mahmud",
+      "tampil": "Mas'ud Mahmud, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Masykur Abu Mawaddah",
+      "tampil": "Ustadz Masykur Abu Mawaddah",
+      "alias": []
+    },
+    {
+      "nama": "Maududi Abdullah",
+      "tampil": "Ustadz Maududi Abdullah, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Mizan Qudsiyyah",
+      "tampil": "Ustadz Mizan Qudsiyyah, Lc., MA",
+      "alias": []
+    },
+    {
+      "nama": "Mohamad Nursamsul Qamar",
+      "tampil": "Ustadz Mohamad Nursamsul Qamar, Lc.",
+      "alias": [
+        "Ustadz Mohamad Nursamsul Qamar, Lc"
+      ]
+    },
+    {
+      "nama": "Muhammad Ardiansyah",
+      "tampil": "Dr. Muhammad Ardiansyah",
+      "alias": []
+    },
+    {
+      "nama": "Muhammad Barmim",
+      "tampil": "Ustadz Muhammad Barmim",
+      "alias": []
+    },
+    {
+      "nama": "Muhammad Halid Syar'ie",
+      "tampil": "Ustadz Muhammad Halid Syar'ie, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Muhammad Iqbal ibnu Said",
+      "tampil": "Ustadz Muhammad Iqbal ibnu Said, S.Pd",
+      "alias": []
+    },
+    {
+      "nama": "Muhammad Nuzul Dzikri",
+      "tampil": "Ustadz Muhammad Nuzul Dzikri",
+      "alias": []
+    },
+    {
+      "nama": "Muhammad Setiawan",
+      "tampil": "Ustadz Muhammad Setiawan, S.Pd",
+      "alias": [
+        "Muhammad Setiawan"
+      ]
+    },
+    {
+      "nama": "Muhammad Tamrin",
+      "tampil": "Ustadz Muhammad Tamrin, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Muhammad Yahya",
+      "tampil": "Ustadz Muhammad Yahya, Lc",
+      "alias": []
+    },
+    {
+      "nama": "Mulawarman Hannase",
+      "tampil": "Dr. H. Mulawarman Hannase, Lc., M.Hum.",
+      "alias": []
+    },
+    {
+      "nama": "Musyaffa' Ad-Dariny",
+      "tampil": "Dr. Musyaffa' Ad-Dariny, M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Najmi Umar Bakkar",
+      "tampil": "Ustadz Najmi Umar Bakkar",
+      "alias": []
+    },
+    {
+      "nama": "Nirwan Syafrin Manurung",
+      "tampil": "Dr. H. Nirwan Syafrin Manurung, M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Nur Fajri Ramadhan",
+      "tampil": "Ustadz Nur Fajri Ramadhan, Lc., M.A",
+      "alias": []
+    },
+    {
+      "nama": "Nur Ihsan Jundullah",
+      "tampil": "Ustadz Nur Ihsan Jundullah, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Nurdin Apud Sarbini",
+      "tampil": "Ustadz DR. Nurdin Apud Sarbini, Lc., M.Pd",
+      "alias": []
+    },
+    {
+      "nama": "Poppy Yuditya",
+      "tampil": "Ustadzah Poppy Yuditya",
+      "alias": []
+    },
+    {
+      "nama": "Rafael Afrianto",
+      "tampil": "Ustadz Rafael Afrianto, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Rahmat Hidayat Syamsurizal",
+      "tampil": "Ustadz Rahmat Hidayat Syamsurizal, Lc., MA",
+      "alias": []
+    },
+    {
+      "nama": "Rizki Nasution",
+      "tampil": "Rizki Nasution, Lc., M.SI",
+      "alias": []
+    },
+    {
+      "nama": "Sholeh Asri",
+      "tampil": "Dr. (HC) H. Sholeh Asri, M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Sidqi Kamal Zimah",
+      "tampil": "Ustadz Sidqi Kamal Zimah",
+      "alias": []
+    },
+    {
+      "nama": "Sofyan Chalid bin Idham Ruray",
+      "tampil": "Ustadz Sofyan Chalid bin Idham Ruray, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Sri Sabbahatun",
+      "tampil": "Dr. Hj. Sri Sabbahatun, Lc., M.E.",
+      "alias": []
+    },
+    {
+      "nama": "Subhan Bawazier",
+      "tampil": "Ustadz Subhan Bawazier",
+      "alias": []
+    },
+    {
+      "nama": "Syafiq Al-Khatieb",
+      "tampil": "Ustadz DR. Syafiq Al-Khatieb, Lc., MA",
+      "alias": []
+    },
+    {
+      "nama": "Syariful Mahya",
+      "tampil": "Ustadz Syariful Mahya, Lc., M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Umar Lathif",
+      "tampil": "Ustadz Umar Lathif",
+      "alias": []
+    },
+    {
+      "nama": "Ustadzaat Pengajar Tahsin",
+      "tampil": "Ustadzaat Pengajar Tahsin",
+      "alias": []
+    },
+    {
+      "nama": "Yovin Abu Hammam",
+      "tampil": "Ustadz Yovin Abu Hammam",
+      "alias": []
+    },
+    {
+      "nama": "Yusuf Utsman Baisa",
+      "tampil": "Ustadz Yusuf Utsman Baisa, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Zakariyal Anshari",
+      "tampil": "Ustadz Zakariyal Anshari, Lc., M.Pd.",
+      "alias": []
+    },
+    {
+      "nama": "Zulfikar Harun",
+      "tampil": "Ustadz Zulfikar Harun, Lc.",
+      "alias": []
+    }
   ],
   "diproses": []
 }

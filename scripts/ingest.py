@@ -55,9 +55,9 @@ def komentar_ok(issue, events, ids, hasil):
         if baru["kota"]:
             b.append("- kota: " + ", ".join(kode(x) for x in baru["kota"]))
         if baru["masjid"]:
-            b.append("- masjid: " + ", ".join(kode(x) for x in baru["masjid"]))
+            b.append("- masjid: " + ", ".join(kode(core.label_masjid(x)) for x in baru["masjid"]))
         if baru["pemateri"]:
-            b.append("- pemateri: " + ", ".join(kode(x) for x in baru["pemateri"]))
+            b.append("- pemateri: " + ", ".join(kode(x["tampil"]) + " (nama bersih " + kode(x["nama"]) + ")" for x in baru["pemateri"]))
     if hasil["peringatan"]:
         b += ["", "Peringatan:"] + [f"- {p}" for p in hasil["peringatan"]]
     return "\n".join(b)

@@ -32,7 +32,7 @@ def siapkan():
 def form(**k):
     """Isi Issue seperti yang dibuat GitHub dari formulir."""
     v = {"Tanggal": "2026-10-10", "Jenis waktu": "Ba'da Maghrib", "Jam": "", "Judul": "Kajian Uji",
-         "Pemateri": "Belum ditentukan", "Pemateri baru": "", "Pemateri perempuan": "", "Masjid": "Masjid Al-Adhim",
+         "Pemateri": "Belum ditentukan", "Pemateri baru": "", "Pemateri perempuan": "", "Masjid": "Masjid Al-Adhim (Depok)",
          "Nama masjid baru": "", "Alamat masjid baru": "", "Kota masjid baru": "", "Kota lain": "",
          "Audience": "Terbuka untuk umum", "Kajian rutin": "", "Catatan": ""}
     v.update({kk.replace("_", " "): vv for kk, vv in k.items()})
@@ -83,16 +83,16 @@ UJI = []
 @uji("sukses satu tanggal, jam eksak, pemateri ber-koma, rutin")
 def _():
     d = siapkan(); k = kat(d)
-    pem = next(p for p in k["pemateri"] if "," in p)
+    pem = next(p for p in k["pemateri"] if "," in p["tampil"])
     n0 = len(events(d)); id0 = core.id_berikutnya((d / "index.html").read_text(encoding="utf-8"))
-    h = jalankan(d, [iss(1, form(Jenis_waktu="Jam eksak", Jam="19.30", Pemateri=ad.tampil(pem), Kajian_rutin="- [x] Kajian rutin atau berkala", Catatan="Catatan uji"))])
+    h = jalankan(d, [iss(1, form(Jenis_waktu="Jam eksak", Jam="19.30", Pemateri=pem["nama"], Kajian_rutin="- [x] Kajian rutin atau berkala", Catatan="Catatan uji"))])
     assert h[0]["status"] == "ok", h
     ev = events(d)
     assert len(ev) == n0 + 1
     e = ev[-1]
     assert e["id"] == id0 and e["date"] == "2026-10-10" and e["dayShort"] == "Sab 10 Okt", e
-    assert e["timeLabel"] == "19.30 WIB" and e["timeOrder"] == 19.5 and e["ustadz"] == pem and e["isRutin"] is True
-    assert e["area"] == k["masjid"]["Masjid Al-Adhim"]["kota"] and e["audience"] == "Terbuka untuk umum"
+    assert e["timeLabel"] == "19.30 WIB" and e["timeOrder"] == 19.5 and e["ustadz"] == pem["tampil"] and e["isRutin"] is True
+    assert e["area"] == "Depok" and e["masjid"] == "Masjid Al-Adhim" and e["audience"] == "Terbuka untuk umum"
     assert any(x["issue"] == 1 and x["id"] == [id0] for x in kat(d)["diproses"])
 
 
@@ -133,19 +133,81 @@ def _():
     e = events(d)[-1]
     assert e["masjid"] == "Masjid Uji Baru" and e["area"] == "Semarang" and e["address"] == "Jl. Uji 1" and e["ustadz"] == "Ustadz Uji Baru"
     k = kat(d)
-    assert "Semarang" in k["kota"] and k["masjid"]["Masjid Uji Baru"] == {"kota": "Semarang", "alamat": "Jl. Uji 1"} and "Ustadz Uji Baru" in k["pemateri"]
+    assert "Semarang" in k["kota"] and {"nama": "Masjid Uji Baru", "kota": "Semarang", "alamat": "Jl. Uji 1", "tampil": "Masjid Uji Baru"} in k["masjid"]
+    assert {"nama": "Uji Baru", "tampil": "Ustadz Uji Baru", "alias": []} in k["pemateri"]
     tpl = (d / ".github/ISSUE_TEMPLATE/tambah-kajian.yml").read_text(encoding="utf-8")
-    assert "Masjid Uji Baru" in tpl and "Semarang" in tpl and "Ustadz Uji Baru" in tpl
+    assert "Masjid Uji Baru (Semarang)" in tpl and "Semarang" in tpl and '"Uji Baru"' in tpl and "Ustadz Uji Baru" not in tpl
 
 
-@uji("nama baru yang sama (huruf beda) memakai yang lama; yang mirip diberi peringatan")
+@uji("masjid: nama+kota sama (huruf beda) memakai yang lama; nama mirip diberi peringatan")
 def _():
-    d = siapkan(); k = kat(d)
-    lama = next(iter(k["masjid"]))
-    h = jalankan(d, [iss(5, form(Masjid=ad.LAINNYA, Nama_masjid_baru=lama.upper(), Alamat_masjid_baru="x", Kota_masjid_baru="Bogor"))])
-    assert events(d)[-1]["masjid"] == lama and not kat(d)["masjid"].get(lama.upper())
-    h = jalankan(d, [iss(6, form(Masjid=ad.LAINNYA, Nama_masjid_baru=lama + "a", Alamat_masjid_baru="x", Kota_masjid_baru="Bogor"))])
+    d = siapkan(); m0 = kat(d)["masjid"][0]
+    n0 = len(kat(d)["masjid"])
+    h = jalankan(d, [iss(5, form(Masjid=ad.LAINNYA, Nama_masjid_baru=m0["nama"].upper(), Alamat_masjid_baru="x", Kota_masjid_baru=m0["kota"]))])
+    assert events(d)[-1]["masjid"] == m0["tampil"] and len(kat(d)["masjid"]) == n0, h
+    h = jalankan(d, [iss(6, form(Masjid=ad.LAINNYA, Nama_masjid_baru=m0["nama"] + "a", Alamat_masjid_baru="x", Kota_masjid_baru=m0["kota"]))])
     assert "mirip" in h[0]["komentar"], h[0]["komentar"]
+
+
+@uji("masjid: kota di belakang nama dibuang; nama sama di kota lain diberi (Kota); dipilih lewat label Nama (Kota)")
+def _():
+    d = siapkan()
+    h = jalankan(d, [iss(80, form(Masjid=ad.LAINNYA, Nama_masjid_baru="Masjid Contoh Baru Depok", Alamat_masjid_baru="Jl. C 1", Kota_masjid_baru="Depok"))])
+    assert events(d)[-1]["masjid"] == "Masjid Contoh Baru" and "dirapikan" in h[0]["komentar"], h[0]["komentar"]
+    h = jalankan(d, [iss(81, form(Masjid=ad.LAINNYA, Nama_masjid_baru="Masjid Contoh Baru", Alamat_masjid_baru="Jl. C 2", Kota_masjid_baru=ad.KOTA_LAIN, Kota_lain="Bandung"))])
+    assert events(d)[-1]["masjid"] == "Masjid Contoh Baru (Bandung)" and events(d)[-1]["area"] == "Bandung" and "sudah dipakai" in h[0]["komentar"]
+    h = jalankan(d, [iss(82, form(Masjid="Masjid Contoh Baru (Bandung)"))])
+    assert events(d)[-1]["masjid"] == "Masjid Contoh Baru (Bandung)" and events(d)[-1]["address"] == "Jl. C 2"
+    h = jalankan(d, [iss(83, form(Masjid="Masjid Contoh Baru (Depok)", Judul="Kajian Depok"))])
+    assert events(d)[-1]["masjid"] == "Masjid Contoh Baru" and events(d)[-1]["address"] == "Jl. C 1"
+    h = jalankan(d, [iss(84, form(Masjid="Masjid Contoh Baru"))])  # label usang/ambigu ditolak
+    assert h[0]["status"] == "gagal" and "beberapa kota" in h[0]["komentar"], h[0]["komentar"]
+
+
+@uji("pemateri: dropdown nama bersih -> nama lengkap; ketik dengan gelar dicocokkan otomatis; organisasi boleh")
+def _():
+    import json as _j
+    d = siapkan(); k = kat(d); npem = len(k["pemateri"])
+    p = next(x for x in k["pemateri"] if x["nama"] == "Abu Hurairah")
+    jalankan(d, [iss(90, form(Pemateri="Abu Hurairah"))])
+    assert events(d)[-1]["ustadz"] == p["tampil"]
+    h = jalankan(d, [iss(91, form(Judul="Judul 91", Pemateri=ad.LAINNYA, Pemateri_baru="Ustadz Dr. Abu Hurairah, M.A."))])
+    assert h[0]["status"] == "ok" and events(d)[-1]["ustadz"] == p["tampil"] and "dicocokkan otomatis" in h[0]["komentar"], h[0]["komentar"]
+    k = kat(d); assert len(k["pemateri"]) == npem and "Ustadz Dr. Abu Hurairah, M.A." in next(x for x in k["pemateri"] if x["nama"] == "Abu Hurairah")["alias"]
+    h = jalankan(d, [iss(92, form(Judul="Judul 92", Pemateri=ad.LAINNYA, Pemateri_baru="Komunitas Kajian Contoh"))])
+    k = kat(d); assert events(d)[-1]["ustadz"] == "Komunitas Kajian Contoh" and {"nama": "Komunitas Kajian Contoh", "tampil": "Komunitas Kajian Contoh", "alias": []} in k["pemateri"]
+    h = jalankan(d, [iss(93, form(Judul="Judul 93", Pemateri=ad.LAINNYA, Pemateri_baru="Ust. Fulan bin Contoh, Lc., M.A."))])
+    assert {"nama": "Fulan bin Contoh", "tampil": "Ust. Fulan bin Contoh, Lc., M.A.", "alias": []} in kat(d)["pemateri"]
+
+
+@uji("nama_bersih: sapaan dan gelar dibuang, majemuk apa adanya")
+def _():
+    kasus = {
+        "Ustadz Dr. Ahmad Ba'mualim, Lc., M.Pd.": "Ahmad Ba'mualim", "Assoc. Prof. Dr. KH. Akhmad Alim, Lc., M.A.": "Akhmad Alim",
+        "Dr. (HC) H. Sholeh Asri, M.A.": "Sholeh Asri", "DR. K.H. Amang Syafrudin, Lc., M.M": "Amang Syafrudin",
+        "Drs. H.A. Dzulfatah Yasin, M.Ag.": "Dzulfatah Yasin", "Ustadz Mohamad Nursamsul Qamar Lc": "Mohamad Nursamsul Qamar",
+        "Ustadzah Poppy Yuditya": "Poppy Yuditya", "Sheikh Assim Al Hakeem": "Assim Al Hakeem", "Muhammad Setiawan": "Muhammad Setiawan",
+        "Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta": "Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta",
+        "Kang Ghany & Zidny Hikmatiar": "Kang Ghany & Zidny Hikmatiar", "Haris Abu Naufal": "Haris Abu Naufal",
+    }
+    for a, b in kasus.items():
+        assert core.nama_bersih(a) == b, (a, core.nama_bersih(a), b)
+    assert core.bersihkan_nama_masjid("Masjid Ar-Riyadh Depok", "Depok") == "Masjid Ar-Riyadh"
+    assert core.bersihkan_nama_masjid("Baitusyaakiriin Depok", "Depok") == "Baitusyaakiriin Depok"  # sisa 1 kata: dibiarkan
+    assert core.bersihkan_nama_masjid("Masjid Jaza", "Bandung") == "Masjid Jaza"
+
+
+@uji("integritas data nyata: setiap event punya masjid di daftar induk; Ar-Riyadh sudah diganti nama")
+def _():
+    k = core.muat_kategori(REPO / "data" / "kategori.json")
+    tampil = {m["tampil"] for m in k["masjid"]}
+    ev = build.parse_events((REPO / "index.html").read_text(encoding="utf-8"))
+    hilang = sorted({e["masjid"] for e in ev if e["masjid"] not in tampil})
+    assert not hilang, hilang
+    assert not any(e["masjid"] == "Masjid Ar-Riyadh Depok" for e in ev)
+    assert len({(m["nama"].casefold(), m["kota"].casefold()) for m in k["masjid"]}) == len(k["masjid"])
+    assert len({m["tampil"].casefold() for m in k["masjid"]}) == len(k["masjid"])
+    assert len({p["nama"].casefold() for p in k["pemateri"]}) == len(k["pemateri"])
 
 
 @uji("perempuan => Khusus Akhwat; konflik dengan Ikhwan ditolak")
@@ -235,6 +297,10 @@ def _():
         if x["type"] == "dropdown":
             o = x["attributes"]["options"]
             assert len(o) == len(set(o)) and not any("," in s for s in o), x["id"]
+        if x["id"] == "pemateri":
+            assert "Abu Hurairah" in x["attributes"]["options"] and not any(s.startswith(("Ustadz ", "Dr. ", "Ust. ")) for s in x["attributes"]["options"])
+        if x["id"] == "masjid":
+            assert "Masjid Al-Adhim (Depok)" in x["attributes"]["options"]
 
 
 @uji("tanggal bebas: berbagai format, filter hari, tahun dihilangkan, pemeriksa hari")

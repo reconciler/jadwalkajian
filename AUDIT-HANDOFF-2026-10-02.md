@@ -74,3 +74,33 @@ Dasar: instruksi Auditor (komit 467e4d8) + persetujuan Amal ("lanjut untuk tahap
 ### Hasil run pertama workflow baru (3 Okt 2026, 00:29 WIB)
 - Run #5 (`37041083168`, pemicu `push`, komit `d055d4b`): **success**, 14 langkah termasuk langkah baru "Ambil Issue", "Ingest Issue, prune, build, dan komit" (0 Issue), "Perbarui templat formulir Issue" (templat sudah mutakhir, tanpa push), "Uji situs live" (lulus), "Komentar hasil dan tutup Issue" (tanpa Issue). Tag `last-deploy` dipindah. Tidak ada commit bot.
 - **Belum teruji di GitHub:** jalur dengan Issue sungguhan, `issues: opened/edited`, cron `schedule`, dan push templat oleh GITHUB_TOKEN. Uji end-to-end menunggu Amal mengirim satu Issue uji (lalu event ujinya dihapus).
+
+## 7. Penyempurnaan formulir Issue — permintaan Amal 3 Okt 2026 (chat PIC, setelah mencoba formulir)
+Dasar: usulan Amal di chat PIC setelah membuka formulir (formulir tampil dan berjalan; ini juga menjawab "belum terverifikasi" bagian 6: **dropdown 104 opsi dan koma lebar penuh diterima GitHub**, formulir tampil lengkap menurut Amal). Perubahan skema data dan pipeline terbit, wajib lapor.
+
+### Keputusan Amal
+1. Kolom Tanggal: satu isian pendek (bukan textarea per baris). Kalender visual tidak tersedia di Issue form [menurut pengetahuan PIC; docs GitHub tidak bisa dibuka dari sesi ini] -> diganti isian bebas yang dibaca otomatis.
+2. Pemateri di dropdown: nama **bersih tanpa gelar**; di situs (kartu) tetap **lengkap dengan gelar**. Pencocokan otomatis untuk nama yang diketik. Pemateri boleh organisasi/komunitas/lainnya.
+3. Masjid: dropdown `Nama (Kota)`; nama masjid dirapikan; "Masjid Ar-Riyadh Depok" diganti "Masjid Ar-Riyadh" (7 event). Gabungkan pemateri yang sama (termasuk Azhar Khalid, dikonfirmasi Amal).
+
+### Perubahan
+- `scripts/tanggal_bebas.py` (baru): `10 Okt 2026`, `10, 17, 24 Okt 2026`, `3-31 Okt 2026 setiap Sabtu & Ahad`, `3 Okt - 4 Okt 2026`, `10/10/2026`, ISO; tahun boleh hilang (kejadian terdekat, toleransi 30 hari lalu); nama hari di depan tanggal sebagai pemeriksa; komentar balasan memuat nama hari. Rentang tanpa filter hari tetap dibatasi 60 event per Issue.
+- **Skema `data/kategori.json` berubah**: `masjid` dari dict nama->{kota,alamat} menjadi list `{nama, kota, alamat, tampil}` (identitas = nama+kota; `tampil` = teks di event, otomatis diberi ` (Kota)` bila nama sama sudah ada di kota lain); `pemateri` dari list string menjadi list `{nama (bersih), tampil (lengkap), alias[]}`. "Belum ditentukan" bukan entri master (opsi tetap di dropdown).
+- `ingest_core.py`: `nama_bersih()` (buang sapaan Ustadz/Ust./Ustadzah/Dr./Prof./KH/H./Hj./Drs./Sheikh/Kang dan gelar belakang; entri berisi `&`, "dan", atau tanda kurung dibiarkan), `bersihkan_nama_masjid()` (buang kota di belakang nama bila sisa >= 2 kata), `label_masjid()`, `cari_pemateri()` (cocok lewat nama bersih/alias/tampil; event memakai `tampil` master; komentar memberi tahu; alias ditambahkan otomatis). Paket baku mendapat `masjid_kota`.
+- Templat Issue: Tanggal = input; dropdown Pemateri = nama bersih (99 opsi); dropdown Masjid = `Nama (Kota)` (28 opsi; tanpa tambahan bila kota sudah di nama, mis. "Baitusyaakiriin Depok").
+- Uji lokal: 19 lulus (nama_bersih, pencocokan otomatis dengan gelar, organisasi sebagai pemateri, nama masjid+kota, bentrok nama beda kota, label usang/ambigu ditolak, integritas data nyata: setiap event punya masjid di daftar induk).
+
+### Migrasi data (dijalankan sekali, 3 Okt 2026)
+- Pemateri 102 -> **97** entri master. Digabung (nama bersih | tampil | alias):
+  - Arman Amri | Ustadz Arman Amri, Lc | Arman Amri, Lc.
+  - Muhammad Setiawan | Ustadz Muhammad Setiawan, S.Pd | Muhammad Setiawan
+  - Mohamad Nursamsul Qamar | Ustadz Mohamad Nursamsul Qamar, Lc. | ...Lc
+  - Fatahillah Aly | **Ustadz Fatahillah Aly, M.Ag** | Ustadz Fatahillah Aly, S.Ag. [pilihan PIC: M.Ag = gelar lebih tinggi dan flyer terbaru; bukan dari sumber]
+  - Azhar Khalid Bin Sheff | Ustadz Azhar Khalid Bin Sheff, Lc., MA | Ustadz Azhar Khalid Seff, M.A. [penggabungan dikonfirmasi Amal; **ejaan nama bersih "Bin Sheff" pilihan PIC**, ejaan yang benar belum diketahui]
+- **Teks nama pemateri pada event yang sudah ada TIDAK diubah** (tetap sesuai flyer masing-masing); hanya master yang menyatukan.
+- Masjid: 26 entri dipindah ke struktur baru; hanya satu nama diubah: "Masjid Ar-Riyadh Depok" -> "Masjid Ar-Riyadh" (di master dan 7 event id 739-745). Nama lain tidak diubah, termasuk yang memuat kawasan ("Masjid Al-Ikhlas Dukuh Bima") atau ejaan berbeda ("Daarussalaam GTA" vs "Darussalam Kota Wisata").
+- Entri bukan perorangan dipertahankan apa adanya: "Asatidz Pengajar Tahsin", "Ustadzaat Pengajar Tahsin", "Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta", "Kang Ghany & Zidny Hikmatiar".
+
+### Belum terverifikasi
+- Pencocokan otomatis hanya untuk nama bersih identik/alias; nama yang mirip tetapi tidak sama (typo, "Seff" vs "Sheff") hanya diberi peringatan dan menjadi entri baru sampai alias ditambahkan manual.
+- Alur sungguhan (Issue -> terbit -> tutup) belum diuji; menunggu Issue uji dari Amal.
