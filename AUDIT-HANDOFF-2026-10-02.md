@@ -104,3 +104,10 @@ Dasar: usulan Amal di chat PIC setelah membuka formulir (formulir tampil dan ber
 ### Belum terverifikasi
 - Pencocokan otomatis hanya untuk nama bersih identik/alias; nama yang mirip tetapi tidak sama (typo, "Seff" vs "Sheff") hanya diberi peringatan dan menjadi entri baru sampai alias ditambahkan manual.
 - Alur sungguhan (Issue -> terbit -> tutup) belum diuji; menunggu Issue uji dari Amal.
+
+### Insiden run #7 (3 Okt 2026, 01:18 WIB) — temuan keandalan
+- Run #7 (`37046508759`, komit `db82b07`) **merah**, tetapi hanya di langkah "Tandai commit yang sudah diterbitkan": `git push -f origin last-deploy` ditolak GitHub dengan `remote: fatal error in commit_refs` / `[remote rejected] last-deploy (failure)`. Langkah sebelumnya (ingest, deploy, uji situs live: lulus percobaan 1/12) berhasil, jadi **situs sudah terbit**; hanya tag `last-deploy` tidak pindah (tetap `d055d4b`).
+- Penyebab akar: **tidak diketahui**. Pesan galat berasal dari sisi server GitHub. Dugaan "gangguan sementara" didukung hanya oleh fakta bahwa perintah yang sama berhasil di run #4, #5 dan #8; belum dibuktikan.
+- Tindakan: re-run job gagal sekali (percobaan 2) gagal di langkah lain ("Terbitkan ke GitHub Pages"; penyebab tidak diperiksa, kemungkinan karena re-run memakai ulang versi build yang sama; **kesimpulan, belum diverifikasi**). Lalu run manual bersih #8 (`37046839064`, `workflow_dispatch`): **success**, tag `last-deploy` pindah ke `db82b07`. Jadi sistem pulih sendiri sesuai rancangan (tag tidak pindah -> run berikutnya menerbitkan ulang).
+- Efek samping di run #7: langkah komentar/tutup Issue tetap jalan (tidak ada Issue terbuka, jadi tidak ada dampak).
+- Opsi pengerasan (belum dikerjakan; menyentuh `deploy.yml`, tunggu persetujuan Amal): ulangi `git push -f origin last-deploy` sampai 3 kali dengan jeda sebelum menyerah.
