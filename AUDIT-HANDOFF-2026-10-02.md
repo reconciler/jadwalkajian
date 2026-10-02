@@ -20,4 +20,7 @@ Dicatat PIC (sesi kerja repo `jadwalkajian`). Semua poin di bawah **diputuskan/d
 - Commit `969288c` (27 kajian 3–31 Okt dari 11 flyer) dan `f601038` (2 kajian Tangerang). Tidak dimasukkan: Masjid Jaza (Bandung, di luar area) dan semua sesi 1–2 Okt (sudah lewat).
 
 ## 4. Hasil run
-(diisi PIC setelah run pertama `deploy.yml` selesai)
+- Run pertama `deploy.yml` (#1, pemicu `push`, commit `b235aa4`): id `37010091851`, **success** (13 langkah, termasuk "Uji situs live setelah terbit": percobaan 1/12, "Semua cek situs live lulus"). Tag `last-deploy` a3e9d33 -> b235aa4. Durasi ±20 detik. Run ini menerbitkan commit `969288c` dan `f601038` sekaligus (38 event aktif).
+- Tidak ada commit bot pada run ini (prune/build tidak mengubah apa pun).
+- Belum teruji: push-bot hasil prune dengan `git pull --rebase` (belum pernah ada perubahan prune pada run baru), dan dua push beruntun yang berdempetan. Dicatat jika muncul masalah.
+- Tampilan situs live (area Tangerang, warna) belum dilihat siapa pun; sesi kerja tidak bisa mengakses github.io.
