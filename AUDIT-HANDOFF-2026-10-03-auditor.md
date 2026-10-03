@@ -197,3 +197,42 @@ Penanda: **[Terverifikasi Auditor]** = dijalankan atau dibaca langsung. **[Dari 
 - **Pencarian dokumentasi GitHub (hasil pencarian web, bukan halaman penuh):** sintaks dropdown hanya menyebut `options` tidak boleh kosong dan harus unik; tidak ada batas maksimum jumlah opsi yang tertulis. Itu konsisten dengan keputusan Amal menghapus batas 150, tetapi **tidak membuktikan** ketiadaan batas. Pengamatan empiris: sekitar 104 opsi berfungsi.
 - Keputusan Amal di chat PIC (bagian 18-19) menggantikan penahanan PIC: paket pipeline dilanjutkan; batas dropdown dihapus; Hapus boleh mengosongkan daftar; uji YAML tidak dipasang di CI (opsi A).
 - **[Keputusan Amal, chat Auditor, 3 Okt 2026]** Peringatan tanpa-pemblokir untuk dropdown di atas 150 opsi **tidak perlu dikerjakan**. Risiko yang diketahui (batas GitHub tidak terdokumentasi; formulir bisa tidak tampil lengkap bila terlampaui, tidak terdeteksi CI) diterima. Gejala bila terjadi: kolom Pemateri/Masjid tidak tampil lengkap di formulir; cara pulih ada di `docs/formulir-issue.md`.
+
+## 10. Ekstraksi aturan dan keputusan yang belum tertulis di `CLAUDE.md` (3 Okt 2026, permintaan Amal)
+
+Penanda: **[Keputusan Amal]** = diucapkan Amal (chat Auditor atau tercatat di handoff PIC). **[Praktik PIC/Auditor]** = kebiasaan kerja yang terbukti di git, belum diputuskan Amal. **[Temuan]** = ketidaksesuaian dokumen dengan kenyataan. Semua butir di bawah **usulan**; belum ada yang ditulis ke `CLAUDE.md`.
+
+Cakupan sumber: transkrip sesi Auditor (79 pesan Amal), seluruh handoff dan `CLAUDE.md` ketiga repo, `docs/`. **Tidak termasuk** isi chat langsung Amal dengan tiap PIC yang tidak berakhir di git (tidak terjangkau dari sesi Auditor).
+
+### 10.1 Aturan lintas-repo (usulan masuk `CLAUDE.md` ketiga repo)
+| # | Aturan | Sumber | Status |
+|---|---|---|---|
+| L1 | Jangan menunggu Amal untuk keputusan yang **tidak mengubah tampilan atau fungsi**; putuskan sendiri dan catat. | [Keputusan Amal] 30 Sep: "hapus ketergantungan ke saya jika itu bukanlah keputusan yang akan mengubah tampilan atau fungsi" | Tidak tertulis di repo mana pun |
+| L2 | PIC boleh menyimpang dari spesifikasi Auditor bila ada metode lebih aman, **wajib mencatat penyimpangan dan alasannya**, lalu melapor. | [Keputusan Amal] 3 Okt (chat PIC, dikutip handoff PIC bagian 18); praktik PIC: Q3, B2, Q13 | Tidak tertulis |
+| L3 | Persetujuan Amal berlaku untuk butir yang disebut; tidak meluas ke butir lain. Pengecualian pipeline/privasi/penghapusan data dikonfirmasi di **chat PIC**; kutipan Amal yang disampaikan Auditor tidak cukup bagi PIC. | [Praktik PIC] bagian 16-18 handoff PIC; konsisten dengan aturan "Eksekusi instruksi Auditor" tetapi eksplisitnya belum ada | Sebagian tersirat |
+| L4 | Temuan janggal dilaporkan **disertai usulan perbaikan**, bukan hanya temuan. | [Keputusan Amal] 3 Okt | Tidak tertulis (preferensi melapor hanya mengatur format) |
+| L5 | Uji yang menerbitkan data ke situs publik: tanya Amal dulu atau uji lokal. | [Instruksi Auditor] bagian 6.5; PIC pernah menerbitkan event uji ±6 menit | Hanya di handoff Auditor |
+| L6 | Perubahan pipeline: satu per push, urut dari risiko rendah ke tinggi (push `deploy.yml` menjalankan versi baru alur itu); kerjakan perubahan yang membuat kondisi tepi aman **sebelum** yang mengandalkannya. | [Praktik PIC] handoff PIC bagian 18 (urutan Push 1-4); catatankajian memisahkan perubahan artifact dari batch lain | Tidak tertulis |
+| L7 | Dependensi pihak ketiga disalin ke `lib/` dengan versi dipatok dan integritas dicocokkan ke registry npm; tidak memuat skrip dari CDN tanpa SRI. | [Praktik PIC] bikin (jsPDF) dan catatankajian (Fuse.js) | Hanya di `CLAUDE.md` bikin |
+| L8 | Klaim di dokumen, UI, atau data terstruktur harus benar untuk proyek itu: tidak menambah `SearchAction` bila tidak ada fungsinya; kalimat privasi harus akurat (kasus Google Fonts). | [Praktik PIC] catatankajian bagian 4; bikin bagian 2 handoff 29 Sep | Hanya di `CLAUDE.md` bikin (privasi) |
+| L9 | Berkas koordinasi yang tidak lagi relevan dihapus, kecuali masih/akan dipakai. | [Keputusan Amal] 2 Okt (soal `COORDINATION-NOTE`, akhirnya dipertahankan) | Tidak tertulis |
+| L10 | Perubahan struktur komunikasi/pelaporan diterapkan **simetris** di ketiga repo supaya prediktif bagi Auditor dan pihak luar. | [Keputusan Amal] 22 Sep | Tersirat ("sengaja disamakan"), bukan aturan |
+| L11 | Setelah deploy yang mengubah tampilan, belum ada yang melihatnya di perangkat nyata (font asli, ponsel). Setiap laporan harus menyebut "belum dilihat di perangkat nyata" sampai Amal memeriksa. | [Praktik PIC] handoff PIC 30 Sep dan 2 Okt | Tidak tertulis; uji otomatis tidak menilai tampilan |
+| L12 | Prinsip kepastian di atas kecepatan: terbit yang pasti lebih penting daripada cepat (waktu tunggu lama tidak masalah). | [Keputusan Amal] 2 Okt | Tersirat di bagian cron jadwalkajian saja |
+
+### 10.2 Khusus repo
+| Repo | Aturan/keputusan | Sumber | Status |
+|---|---|---|---|
+| catatankajian | Bio ustadz/kitab baru ditulis dari riset web **dengan catatan transparan bila sumber tidak solid**. | [Praktik PIC] handoff 22 Sep bagian 2 | `CLAUDE.md` hanya menyebut riset kitab |
+| bikin-cv-taaruf | Pemeriksaan aksesibilitas axe-core (0 pelanggaran) sebagai uji standar sebelum push. Handoff PIC menyarankan dua PIC lain melakukan hal serupa. | [Praktik PIC] handoff 30 Sep bagian 6 | Hanya bikin |
+| jadwalkajian | Risiko diterima: batas jumlah opsi dropdown GitHub tidak terdokumentasi, tanpa peringatan; gejalanya formulir tidak lengkap. | [Keputusan Amal] 3 Okt | Di handoff dan `docs/`, bukan di `CLAUDE.md` |
+
+### 10.3 Ketidaksesuaian dokumen dengan kenyataan **[Temuan]**
+- **`catatankajian/CLAUDE.md` basi:** tidak menyebut `lib/` (Fuse.js lokal), folder `_site` dan daftar berkas yang tayang, atau uji otomatis pasca-deploy; padahal `deploy.yml` repo itu melakukan ketiganya (`cp -r lib`, `_site`, langkah "Uji otomatis pasca-deploy"). Bagian "Struktur" juga belum memuat `lib/`.
+- **Daftar `INTERNAL` di uji 404 tidak simetris:** bikin memeriksa semua `AUDIT-HANDOFF-*.md`; jadwalkajian hanya satu nama (`AUDIT-HANDOFF-2026-09-30.md`). Penjaga `_site` tetap mencegah berkas internal ikut, jadi risiko kecil, tetapi bertentangan dengan L10.
+- **Batas verifikasi tidak seragam:** catatan "sesi kerja tidak bisa mengakses github.io" hanya ada di `CLAUDE.md` jadwalkajian.
+
+### 10.4 Yang perlu diputuskan Amal
+1. Butir L1-L12 mana yang masuk `CLAUDE.md` (saran Auditor: L1-L7 dan L10 sebagai aturan; L8, L9, L11, L12 sebagai catatan singkat).
+2. Perbaikan 10.3 (dokumen saja, tidak mengubah fungsi) boleh dikerjakan Auditor sekarang.
+3. Bentuk penulisan: bagian "Aturan lintas-repo" bersama di ketiga `CLAUDE.md`, dengan teks identik (menjaga simetri L10).
