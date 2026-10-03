@@ -175,7 +175,7 @@ function getTodayStr(){const d=new Date();return`${d.getFullYear()}-${String(d.g
 function isEventPast(e){const t=getTodayStr();if(e.date<t)return true;if(e.date>t)return false;return e.timeOrder<new Date().getHours()-0.5;}
 function ms(m){return m.replace("Masjid ","").replace("Jami' ","").replace("Jami ","");}
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-function jse(s){return esc(s).replace(/'/g,"\\'");}
+function jse(s){return esc(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
 function up(){return allEvents.filter(e=>!isEventPast(e));}
 function fi(){return up().filter(e=>state.area==="ALL"||e.area===state.area).filter(e=>state.masjid==="ALL"||e.masjid===state.masjid).filter(e=>state.date==="ALL"||e.date===state.date).sort((a,b)=>a.date!==b.date?a.date.localeCompare(b.date):a.timeOrder-b.timeOrder);}
 function render(){

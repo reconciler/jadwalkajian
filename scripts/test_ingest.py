@@ -555,7 +555,7 @@ def _():
     h = jalankan(d, [iss(510, fk("Hapus", f"{ids[0]}"), title="Hapus")])
     assert h[0]["status"] == "gagal" and "Belum ada yang dihapus" in h[0]["komentar"] and "`HAPUS 1`" in h[0]["komentar"]
     assert "catatan penting" in h[0]["komentar"] and len(events(d)) == n0
-    assert {"issue": 510, "alasan": ["menunggu konfirmasi"]} in kat(d)["gagal"]
+    assert any(g["issue"] == 510 and g["alasan"] == ["menunggu konfirmasi"] and g.get("isi") for g in kat(d)["gagal"])
     # konfirmasi salah: kata lain, tanpa jumlah, jumlah keliru, lintas-aksi
     for i, (konf, harap) in enumerate([("HAPUS", "belum memuat jumlah"), ("HAPUS 5", "berbeda dengan jumlah"),
                                        ("KOREKSI 1", "untuk Koreksi. Pilih Aksi = Koreksi"), ("ya", "tidak dikenali")]):
@@ -756,6 +756,63 @@ def _():
     # sebagian saja: pratinjau normal
     h = jalankan(d, [iss(913, fk("Hapus", f"id {semua[0]}"))])
     assert h[0]["status"] == "gagal" and "Belum ada yang dihapus" in h[0]["komentar"]
+
+
+@uji("Q5: Issue gagal diproses ulang bila isinya berubah walau sinyal edit hilang; isi sama -> tetap dilewati tanpa komentar")
+def _():
+    d = siapkan(); ids = seri(d); n0 = len(events(d))
+    h = jalankan(d, [iss(920, fk("Hapus", f"id {ids[0]}"))])
+    assert h[0]["status"] == "gagal" and "Belum ada yang dihapus" in h[0]["komentar"]
+    h = jalankan(d, [iss(920, fk("Hapus", f"id {ids[0]}"))])  # run lain tanpa sinyal edit, isi sama
+    assert h == [] and len(events(d)) == n0
+    h = jalankan(d, [iss(920, fk("Hapus", f"id {ids[0]}", konfirmasi="HAPUS 1"))])  # isi berubah, TANPA --edited
+    assert h and h[0]["status"] == "ok" and len(events(d)) == n0 - 1, h
+    # Tambah yang gagal lalu diperbaiki tanpa sinyal edit
+    d2 = siapkan()
+    h = jalankan(d2, [iss(921, form(Judul="Perbaiki", Tanggal="besok sekali"))])
+    assert h[0]["status"] == "gagal"
+    h = jalankan(d2, [iss(921, form(Judul="Perbaiki", Tanggal="12 Okt 2026"))])
+    assert h and h[0]["status"] == "ok" and any(e["title"] == "Perbaiki" for e in events(d2))
+
+
+@uji("Q6: id tidak pernah dipakai ulang (setelah hapus dan setelah prune); #N lama tidak mengenai event baru")
+def _():
+    d = siapkan(); ids = seri(d, n=930, judul="Seri satu")
+    tertinggi = max(ids)
+    h = dua(d, [iss(931, fk("Hapus", "#930"))])
+    assert h[0]["status"] == "ok"
+    baru = seri(d, n=932, judul="Seri dua", Jenis_waktu="Ba'da Subuh")
+    assert min(baru) > tertinggi, (ids, baru)
+    assert kat(d)["id_tertinggi"] >= max(baru)
+    h = jalankan(d, [iss(933, fk("Hapus", "#930"))])  # Issue lama: semua event sudah tidak ada
+    assert h[0]["status"] == "gagal" and "sudah tidak ada" in h[0]["komentar"] and all(e["id"] in [x["id"] for x in events(d)] for e in events(d) if e["id"] in baru)
+    # prune: baris event dibuang langsung dari index.html (seperti prune), id tidak boleh dipakai ulang
+    html = (d / "index.html").read_text(encoding="utf-8")
+    html = "\n".join(l for l in html.split("\n") if not any(l.lstrip().startswith("{id:%d," % i) for i in baru))
+    (d / "index.html").write_text(html, encoding="utf-8")
+    ids3 = seri(d, n=934, judul="Seri tiga", Jenis_waktu="Dhuha")
+    assert min(ids3) > max(baru), (baru, ids3)
+    # master lama tanpa id_tertinggi tetap aman (dihitung dari diproses)
+    k = kat(d); k.pop("id_tertinggi"); core.simpan_kategori(d / "data" / "kategori.json", k)
+    ids4 = seri(d, n=935, judul="Seri empat", Jenis_waktu="Ba'da Ashar")
+    assert min(ids4) > max(ids3)
+
+
+@uji("Q7: jse() mengubah nama apa pun menjadi literal JS yang bernilai sama setelah entitas atribut HTML didekode")
+def _():
+    html = (REPO / "index.html").read_text(encoding="utf-8")
+    fungsi = re.search(r"function esc\(s\)\{.*?\}\nfunction jse\(s\)\{.*?\}", html, re.S)
+    assert fungsi, "esc/jse tidak ditemukan"
+    nama = ["Masjid back\\slash", "akhir\\", "Masjid O'Neil", 'Masjid "Q"', "A&B <x>", "\\'dua\\\\", "a\\nb", "plain"]
+    js = fungsi.group(0) + """
+const nama=%s;
+const attr=s=>s.replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+let ok=true;
+for(const n of nama){ const lit=attr("'"+jse(n)+"'"); if(eval(lit)!==n){ok=false;console.log('BEDA',JSON.stringify(n));} }
+console.log(ok?'OK':'GAGAL');
+""" % json.dumps(nama)
+    r = subprocess.run(["node", "-e", js], capture_output=True, text=True)
+    assert r.stdout.strip() == "OK", (r.stdout, r.stderr)
 
 
 @uji("pecah_body: heading, _No response_, centang")

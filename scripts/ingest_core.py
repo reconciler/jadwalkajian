@@ -203,6 +203,7 @@ def muat_kategori(path):
     d.setdefault("pemateri", [])
     d.setdefault("diproses", [])
     d.setdefault("gagal", [])
+    d.setdefault("id_tertinggi", 0)  # id event tertinggi yang pernah dipakai; id tidak pernah dipakai ulang
     return d
 
 
@@ -472,9 +473,19 @@ def baris_event(ev, id_):
     return "  {" + ",".join(f"{k}:{json.dumps(v, ensure_ascii=False)}" for k, v in pasangan) + "},"
 
 
-def id_berikutnya(html):
+def id_tertinggi(html, kat=None):
+    """Id tertinggi yang pernah dipakai: dari index.html, `id_tertinggi` di master, dan semua id di `diproses`
+    (event yang dihapus atau di-prune tidak boleh membuat id dipakai ulang, supaya Target #N tidak salah sasaran)."""
     ids = [int(i) for i in re.findall(r"\{id:(\d+),date:", html)]
-    return (max(ids) if ids else 0) + 1
+    if kat is not None:
+        ids.append(int(kat.get("id_tertinggi") or 0))
+        for d in kat.get("diproses", []):
+            ids += [int(i) for i in d.get("id", [])]
+    return max(ids) if ids else 0
+
+
+def id_berikutnya(html, kat=None):
+    return id_tertinggi(html, kat) + 1
 
 
 def sisipkan(html, baris):

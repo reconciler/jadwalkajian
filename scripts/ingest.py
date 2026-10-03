@@ -24,6 +24,7 @@ Format issues.json: [{"number": 12, "title": "Tambah kajian: ...", "body": "..."
 """
 
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -45,6 +46,12 @@ ISI_CONFIG = "blank_issues_enabled: false\n"
 def kode(s):
     """Teks dari pengguna dalam code span markdown (tidak memicu mention/tautan)."""
     return "`" + str(s).replace("`", "'") + "`"
+
+
+def hash_isi(iss):
+    """Sidik isi Issue (judul + isi). Dipakai agar Issue gagal diproses ulang bila isinya berubah,
+    walau sinyal edit dari run pemicu hilang (run edit dibatalkan antrean)."""
+    return hashlib.sha256((str(iss.get("title", "")) + "\n" + str(iss.get("body", ""))).encode("utf-8")).hexdigest()[:16]
 
 
 def komentar_ok(issue, events, ids, hasil, info=None):
@@ -226,8 +233,9 @@ def main(argv=None):
                 hasil_semua.append({"issue": n, "status": "abaikan", "id": ids, "komentar": komentar_abaikan(ids)})
             continue
         gagal_lama = [g for g in kat["gagal"] if g["issue"] == n]
-        if gagal_lama and n != a.edited:
-            continue  # sudah dilaporkan gagal; tunggu diedit
+        sidik = hash_isi(iss)
+        if gagal_lama and n != a.edited and gagal_lama[0].get("isi") in (None, sidik):
+            continue  # sudah dilaporkan gagal dan isinya belum berubah; tunggu diedit
         kat["gagal"] = [g for g in kat["gagal"] if g["issue"] != n]
 
         events_ada = core.events_dari_html(html)
@@ -262,11 +270,11 @@ def main(argv=None):
                     komentar = komentar_koreksi(hk)
                     ringkas = f"koreksi {len(hk['ganti'])} kajian (id {', '.join(map(str, pk['ids']))})"
             except koreksi.PerluKonfirmasi as e:
-                kat["gagal"].append({"issue": n, "alasan": ["menunggu konfirmasi"]})
+                kat["gagal"].append({"issue": n, "alasan": ["menunggu konfirmasi"], "isi": sidik})
                 hasil_semua.append({"issue": n, "status": "gagal", "id": [], "komentar": e.pratinjau})
                 continue
             except core.InputError as e:
-                kat["gagal"].append({"issue": n, "alasan": e.pesan})
+                kat["gagal"].append({"issue": n, "alasan": e.pesan, "isi": sidik})
                 hasil_semua.append({"issue": n, "status": "gagal", "id": [], "komentar": komentar_gagal(e.pesan)})
                 continue
             html = html_baru
@@ -280,16 +288,18 @@ def main(argv=None):
             paket = adapter.ke_paket(iss.get("body", ""), kat, hari_ini)
             hasil = core.bangun_event(paket, kat, hari_ini, events_ada)
         except core.InputError as e:
-            kat["gagal"].append({"issue": n, "alasan": e.pesan})
+            kat["gagal"].append({"issue": n, "alasan": e.pesan, "isi": sidik})
             hasil_semua.append({"issue": n, "status": "gagal", "id": [],
                                 "komentar": komentar_gagal(e.pesan)})
             continue
 
-        id0 = core.id_berikutnya(html)
+        id0 = core.id_berikutnya(html, kat)
         ids = list(range(id0, id0 + len(hasil["events"])))
         if hasil["events"]:
             html = core.sisipkan(html, [core.baris_event(ev, i) for ev, i in zip(hasil["events"], ids)])
             core.terapkan_kategori(kat, hasil)
+        if ids:
+            kat["id_tertinggi"] = max(int(kat.get("id_tertinggi") or 0), ids[-1])
         kat["diproses"].append({"issue": n, "id": ids})
         diproses.add(n)
         hasil_semua.append({"issue": n, "status": "ok", "id": ids,
@@ -302,7 +312,9 @@ def main(argv=None):
 
     if html != awal_html:
         f_html.write_text(html, encoding="utf-8")
-    if json.dumps(kat, sort_keys=True, ensure_ascii=False) != awal_kat:
+    if json.dumps(kat, sort_keys=True, ensure_ascii=False) != awal_kat or html != awal_html:
+        # Simpan id tertinggi yang pernah ada (termasuk event yang baru dihapus) agar id tidak pernah dipakai ulang.
+        kat["id_tertinggi"] = max(core.id_tertinggi(awal_html, kat), core.id_tertinggi(html, kat))
         core.simpan_kategori(f_kat, kat)
 
     # templat formulir selalu dibuat ulang dari daftar induk (ditulis hanya bila berubah)
