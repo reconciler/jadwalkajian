@@ -119,7 +119,7 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   dengan komentar alasan; edit Issue untuk memproses ulang.
 - **Kolom:** Tanggal (SATU isian bebas, bukan satu per baris; contoh `10 Okt 2026`,
   `10, 17, 24 Okt 2026`, `3-31 Okt 2026 Sabtu`, `3 Okt - 4 Okt 2026`, `10/10/2026`,
-  `2026-10-10`; tahun boleh dihilangkan; nama hari di depan tanggal = pemeriksa;
+  `2026-10-10`; tahun boleh dihilangkan **tetapi** tanggal tanpa tahun yang jatuh lebih dari **180 hari** ke depan ditolak ("tulis tahunnya"; tepat 180 hari lolos, tanggal dengan tahun eksplisit hanya terkena batas 730 hari); nama hari di depan tanggal = pemeriksa;
   rinci di `scripts/tanggal_bebas.py`; Issue form GitHub tidak punya pemilih
   kalender [menurut pengetahuan PIC, belum tervalidasi docs]), Jenis waktu, Jam
   (hanya Jam eksak: `09.30` atau `09.30-11.00`), Judul, Pemateri (dropdown **nama

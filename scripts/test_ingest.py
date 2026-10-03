@@ -947,6 +947,29 @@ def _():
     assert h[0]["status"] == "ok" and any(e["title"] == "Judul templat" for e in events(d))
 
 
+@uji("Q9: tanggal TANPA tahun lebih dari 180 hari ke depan ditolak (180 lolos, 181 ditolak); dengan tahun eksplisit tidak terkena batas")
+def _():
+    hari = core.date.fromisoformat(TODAY)
+    bln = core.BULAN
+    ok = hari + core.timedelta(days=180)
+    lewat = hari + core.timedelta(days=181)
+    d = siapkan()
+    h = jalankan(d, [iss(1060, form(Judul="Tepat seratus delapan puluh", Tanggal=f"{ok.day} {bln[ok.month - 1]}"))])
+    assert h[0]["status"] == "ok" and events(d)[-1]["date"] == ok.isoformat(), h[0]["komentar"]
+    h = jalankan(d, [iss(1061, form(Judul="Lewat satu hari", Tanggal=f"{lewat.day} {bln[lewat.month - 1]}"))])
+    assert h[0]["status"] == "gagal" and "tanpa tahun" in h[0]["komentar"] and f"{lewat.year}" in h[0]["komentar"], h[0]["komentar"]
+    h = jalankan(d, [iss(1062, form(Judul="Angka tanpa tahun", Tanggal=f"{lewat.day}/{lewat.month}"))])
+    assert h[0]["status"] == "gagal" and "tanpa tahun" in h[0]["komentar"]
+    h = jalankan(d, [iss(1063, form(Judul="Tahun eksplisit", Tanggal=f"{lewat.day} {bln[lewat.month - 1]} {lewat.year}"))])
+    assert h[0]["status"] == "ok" and events(d)[-1]["date"] == lewat.isoformat()
+    h = jalankan(d, [iss(1064, form(Judul="Rentang tanpa tahun", Tanggal=f"{lewat.day}-{lewat.day} {bln[lewat.month - 1]}"))])
+    assert h[0]["status"] == "gagal" and "tanpa tahun" in h[0]["komentar"]
+    # Koreksi tanggal memakai pengurai yang sama
+    ids = seri(d, n=1065, judul="Seri koreksi tanggal")
+    h = jalankan(d, [iss(1066, fk("Koreksi", f"{ids[0]}", tanggal=f"{lewat.day} {bln[lewat.month - 1]}"))])
+    assert h[0]["status"] == "gagal" and "tanpa tahun" in h[0]["komentar"], h[0]["komentar"]
+
+
 @uji("pecah_body: heading, _No response_, centang")
 def _():
     f = ad.pecah_body("### Tanggal\n\n2026-10-10\n\n### Jam\n\n_No response_\n\n### Kajian rutin\n\n- [X] Kajian rutin atau berkala\n")

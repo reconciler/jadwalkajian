@@ -64,6 +64,16 @@ def _normal(teks):
     return re.sub(r"\s+", " ", t).strip()
 
 
+MAKS_TANPA_TAHUN = 180  # hari ke depan; tanggal TANPA tahun lebih jauh dari ini ditolak (salah bulan? tulis tahunnya)
+
+
+def _periksa_tanpa_tahun(d, asal, hari_ini):
+    if d > hari_ini + timedelta(days=MAKS_TANPA_TAHUN):
+        raise InputError(
+            f"Tanggal: '{asal}' tanpa tahun jatuh pada {d.isoformat()}, lebih dari {MAKS_TANPA_TAHUN} hari ke depan. "
+            f"Tulis tahunnya bila memang benar (mis. '{d.day} {BULAN_SINGKAT[d.month - 1]} {d.year}'), atau periksa bulannya.")
+
+
 def _tahun_terdekat(bulan, hari, hari_ini):
     """Tahun untuk tanggal tanpa tahun: kejadian terdekat yang tidak > 30 hari lalu."""
     for tahun in (hari_ini.year, hari_ini.year + 1, hari_ini.year + 2):
@@ -105,6 +115,8 @@ def _tanggal_tunggal(ekspr, hari_ini, bawaan=None):
                 raise InputError(f"Tanggal: '{asal}' bulan harus 1-12 (urutan hari/bulan/tahun).")
             tahun = int(t) if t else _tahun_terdekat(b, h, hari_ini)
             d = _buat(tahun, b, h, asal)
+            if not t:
+                _periksa_tanpa_tahun(d, asal, hari_ini)
             info = (b, int(t) if t else None)
         else:
             m = re.fullmatch(r"(\d{1,2})(?: ([a-z]+))?(?: (\d{4}))?", e)
@@ -121,6 +133,8 @@ def _tanggal_tunggal(ekspr, hari_ini, bawaan=None):
                 b, tahun_info = BULAN[nb], (int(t) if t else None)
             tahun = tahun_info if tahun_info else _tahun_terdekat(b, h, hari_ini)
             d = _buat(tahun, b, h, asal)
+            if not tahun_info:
+                _periksa_tanpa_tahun(d, asal, hari_ini)
             info = (b, tahun_info)
     if nama_hari is not None and d.weekday() != nama_hari:
         nama = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Ahad"][d.weekday()]

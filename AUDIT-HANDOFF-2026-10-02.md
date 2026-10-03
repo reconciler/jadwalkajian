@@ -280,3 +280,18 @@ Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor
 - Kekeliruan PIC yang dikoreksi di bagian ini: Q10 "batas panjang tidak seragam" salah baca (batas memang per kolom).
 - Suite lokal akhir: 54 lulus, 0 gagal. Uji GitHub nyata untuk Q8/Q12/Q4 belum dilakukan (menunggu arahan Amal, bagian 6.5 Auditor).
 
+## 16. Q3, Q9, Q13, Q4-workflow setelah keputusan Amal (relai Auditor, `AUDIT-HANDOFF-2026-10-03-auditor.md` bagian 7, komit `9a8ebc0`) — 3 Okt 2026
+**Dasar dan batas yang diambil PIC (keputusan PIC, bisa dikoreksi):**
+- Bagian 7 mencatat kutipan Amal di **chat Auditor** ("biarkan mereka eksekusi tanpa izin manual dariku") dan Auditor sendiri menulis pernyataan itu "bukan dari git; PIC boleh memastikan ke Amal bila ragu". PIC tidak bisa melihat chat itu.
+- **Q9** (aturan data, bukan pengecualian CLAUDE.md): dikerjakan sekarang atas instruksi Auditor yang tercatat di git.
+- **Q3 (`prune.py`), Q13 (`deploy.yml`), Q4-workflow** menyentuh pipeline terbit, pengecualian yang di CLAUDE.md "tetap menunggu konfirmasi Amal di chat PIC": **ditahan** sampai Amal mengonfirmasi satu kali di chat PIC. Spesifikasi teknis bagian 7.2 sudah dibaca dan akan dipakai apa adanya.
+
+### Q9 (komit lihat git log; run diverifikasi sebelum dicatat)
+- `tanggal_bebas.py`: `MAKS_TANPA_TAHUN = 180`; tanggal yang tahunnya diinferensi (format angka `d/m`, `d.m` dan format nama bulan) ditolak bila > hari ini + 180 hari; pesan menyebut tanggal hasil tafsir dan contoh dengan tahun. Tahun eksplisit tidak terkena batas ini (batas 730 hari tetap).
+- Uji: tepat 180 hari lolos, 181 ditolak (nama bulan, angka, rentang), tahun eksplisit lolos, Koreksi tanggal memakai pengurai yang sama. Terbukti **gagal pada pengurai lama**. Suite 55 lulus.
+- Dampak ke data lama: tidak ada (hanya validasi input baru).
+
+### Temuan konkret untuk Q4-workflow (syarat bagian 7.2: sebut jalurnya) — belum diubah
+- **Langkah "Komentar hasil dan tutup Issue" (`deploy.yml`, github-script) berhenti di Issue pertama yang memicu galat API** (komentar/penutupan gagal; mis. Issue dikunci atau dihapus, atau batas laju). Entri `gagal` dan `diproses` sudah tercatat di commit sebelumnya, sehingga komentar kegagalan Issue sesudahnya **tidak pernah terkirim** (Issue gagal dilewati run berikutnya). Bukti: **dari pembacaan kode** (`for (const h of hasil)` tanpa try/catch), belum direproduksi. Usulan: try/catch per Issue (peringatan, lanjut ke Issue berikutnya). Menunggu konfirmasi Amal.
+- Tidak ditemukan jalur lain yang belum tertutup oleh `try/except` per Issue dan simulasi: kegagalan memuat `kategori.json`/`issues.json` (rusak) sengaja tetap keras karena tidak aman diteruskan.
+
