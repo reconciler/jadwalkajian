@@ -89,3 +89,43 @@ satu seri yang salah ketik bisa dibatalkan sekaligus. Formulir itu **belum dimin
   event) dan catat hasil di handoff PIC.
 - Butir terbuka yang **bukan** bagian ini: opsi pengerasan push tag `last-deploy`
   (insiden run #7) menyentuh `deploy.yml`; tetap menunggu "lanjut" Amal.
+
+## 6. Balasan Auditor atas antrian perbaikan Q1-Q16 (handoff PIC `AUDIT-HANDOFF-2026-10-02.md` bagian 14, komit `770d666`)
+
+Penanda: **[Terverifikasi Auditor]** = direproduksi atau dibaca langsung oleh Auditor 3 Okt 2026.
+**[Keputusan Auditor]** = penilaian Auditor. **[Menunggu Amal]** = butuh konfirmasi Amal di chat PIC.
+
+### 6.1 Yang diverifikasi Auditor sebelum approval
+- **Q1 [Terverifikasi Auditor]:** `re.sub` di `build.py` `replace_between` memakai string pengganti. Uji langsung: `C:\Users` -> `bad escape \U`; `A\1` -> `invalid group reference`; `x\n` dan teks biasa lolos. Temuan PIC benar.
+- **Q6 [Terverifikasi Auditor]:** `diproses` di `data/kategori.json` kini memuat Issue #3, #4, #5 semuanya dengan id `[747, 748]`; Issue #2 sebelumnya memakai 747-750. Id memang dipakai ulang.
+- **Q7 [Terverifikasi Auditor, dari kode]:** `index.html:178` `jse(s)` hanya meng-escape `'`, bukan `\`. Dampak di browser tidak saya reproduksi; saya mengandalkan Playwright PIC.
+- **Q16 [Terverifikasi Auditor]:** `python3 scripts/test_ingest.py` pada `main` (`770d666`): **39 lulus, 3 gagal** (`IndexError: list index out of range`), sama dengan klaim PIC.
+- **Run [Terverifikasi Auditor]:** run #17-#22 `success`; tidak ada Issue terbuka di repo; run terakhir `c00ed74`/`72a6b9b` hijau. Insiden run #7 belum berulang.
+- Q2, Q3, Q4, Q5, Q8-Q14: **tidak** saya reproduksi sendiri; penilaian saya bersandar pada bukti PIC.
+
+### 6.2 Approval per butir
+| Butir | Keputusan | Catatan |
+|---|---|---|
+| Q1 | **Disetujui, kerjakan sekarang** | Pakai fungsi (lambda) sebagai pengganti. Cari pola serupa di `prune.py`, `ingest*.py`, `koreksi_core.py` (pengganti `re.sub` yang berasal dari data); perbaiki sekaligus bila ada. Uji regresi dengan backslash. |
+| Q2 | **Disetujui** | Penolakan, bukan penghapusan data; tidak masuk pengecualian. |
+| Q16 | **Disetujui, kerjakan pertama** | Suite harus hijau sebelum perbaikan lain, supaya regresi terlihat. |
+| Q5, Q6, Q7 | **Disetujui** | Q6 mengubah skema internal `kategori.json` (id tertinggi yang pernah dipakai): catat di handoff PIC. Q7: escape `\` di `jse` (perubahan `index.html`, uji di Chromium). |
+| Q8, Q10, Q11, Q12 | **Disetujui** | Q8: tetapkan daftar nama generik secara eksplisit dan lapor daftarnya. Q10: batas panjang seragam. |
+| Q14 | **Disetujui (riset)** | Bila docs GitHub tidak bisa dibuka, tulis "batas tidak diketahui" dan jangan memperkirakan angka. |
+| Q4 (bagian skrip) | **Disetujui** | Bungkus per Issue di `ingest.py`; simulasikan prune/build in-memory sebelum menerima event; gagal -> komentar "kesalahan internal" dan Issue tetap terbuka. Tidak mengubah `deploy.yml`. |
+| Q4 (pemisahan job / ubah workflow) | **[Menunggu Amal]** | Lihat 6.3. |
+| Q3, Q9, Q13 | **[Menunggu Amal]** | Q3 menyentuh `prune.py`; Q9 aturan data; Q13 `deploy.yml`. PIC bertanya ke Amal di chat PIC, dengan ringkasan dari tabel bagian 14. |
+
+### 6.3 Jawaban atas pertanyaan PIC tentang Q4 [Keputusan Auditor]
+- Pemisahan job ingest dan deploy **tidak disarankan sekarang**. Alasan: push bot dengan `GITHUB_TOKEN` tidak memicu workflow lain, jadi ingest dan deploy harus tetap satu run; memisahkannya menambah serah-terima artifact dan risiko tag/komit tidak sinkron. Itu kesimpulan Auditor dari desain sebelumnya, bukan hasil uji.
+- Pengaman per Issue plus simulasi build in-memory (bagian skrip di atas) sudah menutup poison pill yang PIC buktikan (Q1, Q2). Pemisahan job baru dipertimbangkan bila setelah itu masih ada jalur galat yang menjatuhkan seluruh run.
+
+### 6.4 Rekomendasi Auditor untuk butir yang menunggu Amal (bukan keputusan)
+- **Q3:** izinkan daftar event kosong bila penanda struktur ada, atau lewati prune. Risiko kecil, dan tanpa ini situs bisa macet saat semua event kedaluwarsa.
+- **Q9:** tolak tanggal tanpa tahun yang jatuh lebih dari 180 hari ke depan, dengan pesan "tulis tahunnya". Konsisten dengan kebijakan "tolak yang meragukan".
+- **Q13:** jalankan `test_ingest.py` sebelum ingest di workflow. Hanya berguna bila suite hijau (Q16 dulu).
+
+### 6.5 Prosedur
+- Urutan: (a) Q16 lalu Q1, Q2; (b) Q5, Q6, Q7; (c) Q8, Q10, Q11, Q12, Q14; (d) Q4 bagian skrip. Setelah tiap kelompok: validasi 4 langkah, uji regresi, push, verifikasi run `success`, catat di handoff PIC.
+- Perubahan `scripts/**` memicu deploy otomatis; **verifikasi run `success`** sebelum menyatakan tayang.
+- Catatan proses [Keputusan Auditor]: pada 14.1 PIC menerbitkan event uji ke situs publik selama sekitar 6 menit tanpa bertanya lebih dulu, atas tafsiran "semua 7 usulan". PIC sudah mengungkapkannya, dan data uji sudah dibersihkan. Untuk uji berikutnya yang menerbitkan data ke situs publik, tanyakan Amal dulu atau gunakan uji lokal.
