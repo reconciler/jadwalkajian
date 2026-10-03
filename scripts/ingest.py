@@ -12,6 +12,11 @@ JSON (bukan dari interpolasi di run:), memproses yang belum diproses, lalu:
 
 Ia tidak melakukan git, tidak memanggil API GitHub, dan tidak menerbitkan apa pun.
 
+Issue dikenali sebagai formulir dari ISI-nya (judul kolom "### Tanggal", "### Jenis waktu",
+"### Masjid"), bukan dari judul Issue; awalan judul "Tambah kajian:" tetap dikenali. Issue dari
+akun lain diabaikan. Issue formulir yang sudah diproses lalu diedit mendapat komentar (status
+"abaikan"), bukan diam.
+
 Pemakaian:
   python scripts/ingest.py --issues issues.json --out ingest.json --commit-msg msg.txt [--edited N] [--root .]
 
@@ -81,6 +86,13 @@ def komentar_tertunda(ids):
             "dan menutup Issue ini setelah uji lolos.")
 
 
+def komentar_abaikan(ids):
+    daftar = ", ".join(str(i) for i in ids) or "tidak ada event baru"
+    return ("Issue ini **sudah diproses** (id event: " + daftar + ") dan perubahan pada isinya **tidak diterapkan**. "
+            "Untuk mengoreksi atau menghapus event tersebut, minta lewat chat atau buat Issue baru "
+            "(formulir koreksi atau hapus belum tersedia).")
+
+
 def komentar_gagal(pesan):
     return ("Issue ini **tidak diproses**. Perbaiki isiannya dengan mengedit Issue ini "
             "(Issue akan diproses ulang otomatis saat diedit) atau tutup lalu buat Issue baru.\n\n"
@@ -112,9 +124,15 @@ def main(argv=None):
 
     for iss in issues:
         n = iss["number"]
-        if iss.get("login") != PEMILIK or not str(iss.get("title", "")).startswith(adapter.JUDUL_ISSUE.strip()):
+        if iss.get("login") != PEMILIK:
+            continue
+        # Penanda formulir = judul kolom di isi Issue; awalan judul tetap dikenali (kolom hilang -> komentar gagal).
+        if not (adapter.adalah_formulir(iss.get("body", "")) or str(iss.get("title", "")).startswith(adapter.JUDUL_ISSUE.strip())):
             continue
         if n in diproses:
+            if n == a.edited:  # diedit setelah diproses: beri tahu, jangan diam
+                ids = next(d["id"] for d in kat["diproses"] if d["issue"] == n)
+                hasil_semua.append({"issue": n, "status": "abaikan", "id": ids, "komentar": komentar_abaikan(ids)})
             continue
         gagal_lama = [g for g in kat["gagal"] if g["issue"] == n]
         if gagal_lama and n != a.edited:

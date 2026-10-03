@@ -7,9 +7,9 @@ name: Prune & deploy
 #
 # PEMICU
 #   1. Push ke `main` yang mengubah berkas situs, scripts/, atau workflow ini.
-#   2. Issue "Tambah kajian: ..." dibuka atau diedit oleh `reconciler` (formulir
-#      Issue = jalur input event; lihat scripts/ingest.py). Issue dari akun lain
-#      atau berjudul lain membuat run dilewati.
+#   2. Issue dibuka atau diedit oleh `reconciler` (formulir Issue = jalur input event;
+#      lihat scripts/ingest.py). Issue dikenali dari ISI formulir, bukan judul. Issue dari
+#      akun lain membuat run dilewati.
 #   3. Cron pengaman HARIAN 20:17 UTC (= 03:17 WIB; disetujui Amal 2 Okt 2026):
 #      menerbitkan bila `last-deploy` tertinggal dari main, memproses Issue yang
 #      terlewat, menutup Issue yang sudah terbit. Selain itu tidak mengubah apa pun.
@@ -18,8 +18,8 @@ name: Prune & deploy
 #   4. Manual: tab Actions -> "Prune & deploy" -> Run workflow (gratis, kapan saja).
 #
 # INGEST ISSUE (satu run = ingest + komit + deploy + uji + tutup Issue)
-#   Tiap run mengambil SEMUA Issue terbuka milik `reconciler` berjudul
-#   "Tambah kajian:" lewat API (bukan dari payload event), jadi tidak ada Issue yang
+#   Tiap run mengambil SEMUA Issue terbuka milik `reconciler` lewat API
+#   (ingest.py menyaring yang berisi formulir) (bukan dari payload event), jadi tidak ada Issue yang
 #   hilang walau run lain dibatalkan antrean. Isi Issue dibaca dari berkas JSON;
 #   TIDAK PERNAH diinterpolasi ke `run:` (injeksi skrip). Issue ditutup hanya setelah
 #   uji situs live lolos. Gagal validasi: Issue tetap terbuka + komentar alasan;
@@ -70,8 +70,7 @@ jobs:
     if: >-
       github.event_name != 'issues' ||
       (github.event.issue.user.login == 'reconciler' &&
-       github.event.sender.login == 'reconciler' &&
-       startsWith(github.event.issue.title, 'Tambah kajian:'))
+       github.event.sender.login == 'reconciler')
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -96,7 +95,7 @@ jobs:
               owner: context.repo.owner, repo: context.repo.repo,
               state: 'open', creator: 'reconciler', per_page: 100 });
             const out = issues
-              .filter(i => !i.pull_request && i.title.startsWith('Tambah kajian:'))
+              .filter(i => !i.pull_request)
               .map(i => ({ number: i.number, title: i.title, body: i.body || '', login: i.user.login }));
             fs.writeFileSync(process.env.RUNNER_TEMP + '/issues.json', JSON.stringify(out));
             core.info('Issue terbuka yang cocok: ' + out.length);
@@ -117,8 +116,8 @@ jobs:
               --out "$RUNNER_TEMP/ingest.json" --commit-msg "$RUNNER_TEMP/commit-msg.txt" \
               ${EDITED_ISSUE:+--edited "$EDITED_ISSUE"}
             CHANGED_INGEST=$(git status --porcelain index.html data/kategori.json)
-            # Cron tanpa Issue baru: jangan prune/build supaya tidak ada commit/deploy harian.
-            if [ "$EVENT_NAME" != "schedule" ] || [ -n "$CHANGED_INGEST" ]; then
+            # Cron atau Issue tanpa perubahan data: jangan prune/build supaya tidak ada commit/deploy sia-sia.
+            if { [ "$EVENT_NAME" != "schedule" ] && [ "$EVENT_NAME" != "issues" ]; } || [ -n "$CHANGED_INGEST" ]; then
               python scripts/prune.py
               python scripts/build.py
             fi
@@ -306,7 +305,7 @@ jobs:
             const dilaporkan = new Set();
             for (const h of hasil) {
               dilaporkan.add(h.issue);
-              if (h.status === 'gagal') { await komentar(h.issue, h.komentar); continue; }  // tetap terbuka
+              if (h.status === 'gagal' || h.status === 'abaikan') { await komentar(h.issue, h.komentar); continue; }  // gagal: tetap terbuka; abaikan: diedit setelah diproses
               if (terbit) { await komentar(h.issue, h.komentar); await tutup(h.issue); }
               else { await komentar(h.issue, h.komentar_tertunda); }                          // tetap terbuka
             }
@@ -322,3 +321,18 @@ jobs:
                 await tutup(i.number);
               }
             }
+
+      - name: Komentar di Issue bila run gagal
+        # Tanpa ini Issue tetap terbuka tanpa kabar bila run mati sebelum sempat berkomentar.
+        if: ${{ failure() && github.event_name == 'issues' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const n = context.payload.issue.number;
+            const { data: issue } = await github.rest.issues.get({ owner, repo, issue_number: n });
+            if (issue.state !== 'open') return;  // sudah ditutup = sudah terbit
+            const run = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.createComment({ owner, repo, issue_number: n,
+              body: `Run workflow untuk Issue ini **gagal** sebelum selesai (${run}). Issue tetap terbuka, artinya **belum terbit**. ` +
+                    'Run berikutnya (push atau cron harian sekitar 03:17 WIB) akan mencoba lagi; Anda juga bisa menjalankannya dari tab Actions.' });

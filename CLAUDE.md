@@ -73,8 +73,8 @@ sistem input Issue):
 - **Push ke `main`** yang mengubah `index.html`, `robots.txt`, `sitemap.xml`,
   `favicon.svg`, `og-image.png`, `scripts/**`, atau `deploy.yml` — otomatis.
   Push yang hanya mengubah `CLAUDE.md`/`AUDIT-HANDOFF-*.md` tidak memicu apa pun.
-- **Issue "Tambah kajian: ..."** dibuka/diedit oleh `reconciler` — lihat bagian
-  "Input event lewat formulir Issue" di bawah.
+- **Issue dari `reconciler`** dibuka/diedit — dikenali dari **isi** formulir (judul
+  kolom), bukan judul Issue; lihat bagian "Input event lewat formulir Issue" di bawah.
 - **Cron pengaman harian** `17 20 * * *` UTC (03:17 WIB; satu-satunya cron yang
   disetujui Amal 2 Okt 2026): menerbitkan bila `last-deploy` tertinggal dari
   `main`, memproses Issue yang terlewat, menutup Issue yang sudah terbit. Tanpa
@@ -109,7 +109,9 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
 `AUDIT-HANDOFF-2026-10-02.md` bagian 6.
 
 - **Cara pakai (Amal):** tab Issues → New issue → "Tambah kajian" → isi → Submit.
-  Hanya Issue dari `reconciler` berjudul "Tambah kajian: ..." yang diproses.
+  Hanya Issue dari `reconciler` yang **isinya formulir** (judul kolom `### Tanggal`,
+  `### Jenis waktu`, `### Masjid`) yang diproses; judul Issue bebas (awalan "Tambah
+  kajian:" tetap dikenali). Issue non-formulir dari `reconciler` diabaikan.
   Dalam beberapa menit: event masuk, situs terbit, Issue diberi komentar dan
   ditutup. **Issue terbuka = belum terbit.** Gagal validasi: Issue tetap terbuka
   dengan komentar alasan; edit Issue untuk memproses ulang.
@@ -122,7 +124,8 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   bersih tanpa gelar**) + Pemateri baru, Pemateri perempuan (→ `Khusus Akhwat`),
   Masjid (dropdown **`Nama (Kota)`**) + Nama/Alamat masjid baru, Kota masjid baru /
   Kota lain, Audience (bawaan Terbuka untuk umum), Kajian rutin (dropdown tiga
-  keadaan, lihat di bawah), Catatan (opsional). Masjid = **Online**: isi penyelenggara di "Nama masjid baru" →
+  keadaan, lihat di bawah), Abaikan kemiripan nama (kotak centang, lihat "Dumb-proof"),
+  Catatan (opsional). Masjid = **Online**: isi penyelenggara di "Nama masjid baru" →
   `masjid` = `<penyelenggara> (Online)`, `area` = `Online`. Komentar balasan
   menampilkan tiap tanggal dengan nama hari; cek di sana.
 - **Sintaks Tanggal lengkap** (`scripts/tanggal_bebas.py`, instruksi Auditor 3 Okt 2026):
@@ -146,6 +149,24 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   tanggal dikecualikan, jumlah event, dan apakah rutin (beserta alasannya).
 - `diproses` menyimpan `Issue -> daftar id event` (`{"issue": n, "id": [..]}`); dasar
   untuk formulir koreksi/hapus kelak (belum diminta).
+- **Dumb-proof — kebijakan: tolak yang meragukan, jangan diam, jangan terbitkan data
+  yang kemungkinan salah** (analisis dan keputusan Amal 3 Okt 2026). Ditolak (Issue
+  tetap terbuka, komentar menyebut alasan; edit Issue untuk memproses ulang):
+  isian bertentangan — Jam diisi padahal Jenis waktu bukan Jam eksak; jam selesai ≤ jam
+  mulai (rentang melewati tengah malam tidak didukung); "Pemateri baru" terisi tetapi
+  Pemateri bukan Lainnya; kolom masjid baru (nama, alamat, Kota lain) terisi padahal
+  masjid dipilih dari daftar; Online dengan alamat/Kota lain terisi; Kota lain terisi
+  padahal kota dipilih dari daftar; nama pengganti (`belum ditentukan`, `-`, `TBD`, `?`,
+  dst.) sebagai nama masjid, penyelenggara Online, atau pemateri baru; nama kota/masjid/
+  pemateri baru yang **mirip** (kemiripan ≥ 0,85) dengan yang ada, kecuali kotak
+  **Abaikan kemiripan nama** dicentang (lalu hanya peringatan). Otomatis: pemateri
+  perempuan (master menandai `perempuan`; nama baru berawalan Ustadzah/Ustadzaat) →
+  `Khusus Akhwat`; konflik dengan Audience Ikhwan ditolak. Issue yang **sudah diproses
+  lalu diedit** mendapat komentar "perubahan tidak diterapkan" (bukan diam). Run yang
+  gagal sebelum berkomentar menempelkan komentar kegagalan di Issue pemicu.
+  Penolakan dilaporkan dalam dua tahap (kolom/kondisi formulir dulu, lalu aturan data).
+  Salah ketik semantik (judul, pemateri keliru) tidak bisa dideteksi mesin; jalur
+  koreksi/hapus (formulir koreksi) belum ada — minta lewat chat.
 - **Pemateri** (keputusan Amal 3 Okt 2026): master menyimpan `nama` (bersih, untuk
   dropdown/pencarian/deteksi duplikat) dan `tampil` (lengkap dengan gelar, yang
   muncul di kartu situs), plus `alias`. Memilih dari dropdown → event memakai

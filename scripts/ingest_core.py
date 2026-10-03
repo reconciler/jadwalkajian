@@ -173,6 +173,21 @@ def label_masjid(m):
     return f"{m['nama']} ({m['kota']})"
 
 
+PLACEHOLDER = {"belum ditentukan", "belum ada", "belum diketahui", "tbd", "tba", "-", "--", "?", "??",
+               "n/a", "na", "tidak ada", "kosong", "nama masjid", "nama pemateri"}
+_PEREMPUAN = re.compile(r"^(?:ustadzah|ustadzaat|ustazah)\b", re.I)
+
+
+def placeholder(teks):
+    """True bila teks hanya isian pengganti (mis. 'belum ditentukan', '-'), bukan nama sungguhan."""
+    return kunci(re.sub(r"\s*\(online\)\s*$", "", str(teks), flags=re.I)) in PLACEHOLDER
+
+
+def pemateri_perempuan(tampil):
+    """Sapaan perempuan di nama lengkap (Ustadzah/Ustadzaat) -> kajiannya Khusus Akhwat."""
+    return bool(_PEREMPUAN.match(str(tampil).strip()))
+
+
 # ---------- daftar induk ----------
 #   kota        list[str]
 #   kota_khusus list[str]   (Online)
@@ -227,6 +242,9 @@ def parse_jam(jam):
         if h > 23 or mnt > 59:
             raise InputError(f"Jam: '{b}' di luar rentang 00.00-23.59.")
         hasil.append((h, mnt))
+    if len(hasil) == 2 and hasil[1][0] * 60 + hasil[1][1] <= hasil[0][0] * 60 + hasil[0][1]:
+        raise InputError("Jam: jam selesai harus setelah jam mulai (rentang yang melewati tengah malam tidak didukung; "
+                         "tulis jam mulai saja atau pecah menjadi Issue terpisah).")
     label = " – ".join(f"{h:02d}.{m:02d}" for h, m in hasil) + " WIB"
     order = round(hasil[0][0] + hasil[0][1] / 60, 2)
     if order == int(order):
@@ -243,9 +261,10 @@ def label_waktu(jenis, jam):
         return label, order, None
     if jenis not in WAKTU_SALAT:
         raise InputError(f"Jenis waktu: '{jenis}' tidak dikenal.")
-    order = WAKTU_SALAT[jenis]
-    peringatan = "Kolom Jam diabaikan karena Jenis waktu bukan Jam eksak." if jam else None
-    return jenis, order, peringatan
+    if jam:
+        raise InputError(f"Jam: diisi '{jam}' tetapi Jenis waktu '{jenis}' bukan Jam eksak. "
+                         "Pilih Jenis waktu 'Jam eksak' atau kosongkan kolom Jam.")
+    return jenis, WAKTU_SALAT[jenis], None
 
 
 def parse_tanggal(teks_list, hari_ini):
@@ -307,12 +326,18 @@ def bangun_event(paket, kat, hari_ini, events_ada):
     audience = paket.get("audience")
     if audience not in AUDIENCE:
         galat.append(f"Audience: '{audience}' tidak dikenal.")
-    if paket.get("pemateri_perempuan"):
-        if audience == "Khusus Ikhwan":
-            galat.append("Audience: pemateri perempuan tidak cocok dengan Khusus Ikhwan.")
-        audience = "Khusus Akhwat"
+    perempuan = bool(paket.get("pemateri_perempuan"))
+    abaikan_mirip = bool(paket.get("abaikan_mirip"))
 
     peringatan = []
+
+    def kemiripan(pesan):
+        """Nama baru yang mirip nama lama: ditolak kecuali pengguna mencentang 'Abaikan kemiripan nama'."""
+        if abaikan_mirip:
+            peringatan.append(pesan + " (kemiripan diabaikan atas permintaan pengguna)")
+        else:
+            galat.append(pesan + " Pilih dari daftar, atau centang 'Abaikan kemiripan nama' bila yakin ini baru.")
+
     baru = {"kota": [], "masjid": [], "pemateri": [], "alias": []}
 
     # pemateri: cocokkan otomatis ke master (nama bersih/alias); event memakai nama lengkap master
@@ -324,15 +349,23 @@ def bangun_event(paket, kat, hari_ini, events_ada):
             p = cari_pemateri(kat, pemateri_in)
             if p:
                 ustadz = p["tampil"]
+                if p.get("perempuan") or pemateri_perempuan(p["tampil"]):
+                    perempuan = True
                 if kunci(pemateri_in) not in (kunci(p["tampil"]), kunci(p["nama"])):
                     peringatan.append(f"Pemateri '{pemateri_in}' dicocokkan otomatis dengan '{p['tampil']}'; event memakai '{p['tampil']}'.")
                     baru["alias"].append((p["nama"], pemateri_in))
+            elif placeholder(pemateri_in):
+                galat.append(f"Pemateri: '{pemateri_in}' bukan nama. Isi nama pemateri, atau pilih 'Belum ditentukan'.")
             else:
                 nama = nama_bersih(pemateri_in)
                 ustadz = pemateri_in
-                baru["pemateri"].append({"nama": nama, "tampil": pemateri_in, "alias": []})
+                ent = {"nama": nama, "tampil": pemateri_in, "alias": []}
+                if pemateri_perempuan(pemateri_in):
+                    ent["perempuan"] = True
+                    perempuan = True
+                baru["pemateri"].append(ent)
                 for m in mirip(nama, [x["nama"] for x in kat["pemateri"]])[:3]:
-                    peringatan.append(f"Pemateri baru '{nama}' mirip dengan yang sudah ada: '{m}'. Diproses sebagai pemateri baru.")
+                    kemiripan(f"Pemateri baru '{nama}' mirip dengan yang sudah ada: '{m}'.")
 
     # masjid + kota: identitas = (nama, kota)
     entri = None
@@ -355,6 +388,8 @@ def bangun_event(paket, kat, hari_ini, events_ada):
             if a and k:
                 kota = ONLINE if kunci(k) == kunci(ONLINE) else (cocok(k, kat["kota"]) or rapikan_huruf(k))
                 nama = bersihkan_nama_masjid(masjid_in, kota)
+                if placeholder(nama):
+                    galat.append(f"Masjid: '{masjid_in}' bukan nama. Isi nama masjid atau penyelenggara yang sebenarnya.")
                 if nama != masjid_in:
                     peringatan.append(f"Nama masjid dirapikan: '{masjid_in}' menjadi '{nama}' (kota dicatat terpisah: {kota}).")
                 ada = [m for m in kat["masjid"] if kunci(m["nama"]) == kunci(nama) and kunci(m["kota"]) == kunci(kota)]
@@ -368,13 +403,21 @@ def bangun_event(paket, kat, hari_ini, events_ada):
                     if bentrok:
                         peringatan.append(f"Nama '{nama}' sudah dipakai masjid di {', '.join(m['kota'] for m in bentrok)}; masjid baru ditulis '{tampil}' agar filter tidak tertukar.")
                     for m in mirip(nama, [x["nama"] for x in kat["masjid"]])[:3]:
-                        peringatan.append(f"Masjid baru '{nama}' mirip dengan yang sudah ada: '{m}'. Diproses sebagai masjid baru.")
+                        kemiripan(f"Masjid baru '{nama}' mirip dengan yang sudah ada: '{m}'.")
                     entri = {"nama": nama, "kota": kota, "alamat": a, "tampil": tampil}
                     baru["masjid"].append(entri)
                     if kota != ONLINE and kota not in kat["kota"]:
                         baru["kota"].append(kota)
                         for m in mirip(kota, kat["kota"])[:3]:
-                            peringatan.append(f"Kota baru '{kota}' mirip dengan yang sudah ada: '{m}'. Diproses sebagai kota baru.")
+                            kemiripan(f"Kota baru '{kota}' mirip dengan yang sudah ada: '{m}'.")
+
+    if perempuan:
+        if audience == "Khusus Ikhwan":
+            galat.append("Audience: pemateri perempuan tidak cocok dengan Khusus Ikhwan.")
+        elif audience != "Khusus Akhwat":
+            if not paket.get("pemateri_perempuan"):
+                peringatan.append("Pemateri perempuan terdeteksi (Ustadzah); Audience otomatis 'Khusus Akhwat'.")
+            audience = "Khusus Akhwat"
 
     if galat:
         raise InputError(galat)

@@ -271,7 +271,7 @@ def _():
     h = jalankan(d, [iss(41, form(Tanggal="2026-11-01"))], edited=41)
     assert h and h[0]["status"] == "ok" and not [g for g in kat(d)["gagal"] if g["issue"] == 41]
     assert jalankan(d, [iss(42, form(), login="orang-lain")]) == []
-    assert jalankan(d, [iss(43, form(), title="Pertanyaan biasa")]) == []
+    assert jalankan(d, [iss(43, "Hanya catatan biasa, bukan formulir.", title="Pertanyaan biasa")]) == []
 
 
 @uji("id berlanjut dari max di main terbaru (simulasi konflik: ingest ulang di atas hasil lain)")
@@ -285,11 +285,11 @@ def _():
     assert len(ids) == len(set(ids)) and h[0]["id"] == [events(a)[-1]["id"]]
 
 
-@uji("templat YAML sah: 15 unsur, id unik, opsi dropdown unik tanpa koma ASCII, label = kunci parser")
+@uji("templat YAML sah: 16 unsur, id unik, opsi dropdown unik tanpa koma ASCII, label = kunci parser")
 def _():
     import yaml
     t = yaml.safe_load(ad.render_template(core.muat_kategori(REPO / "data" / "kategori.json")))
-    assert t["title"] == ad.JUDUL_ISSUE and len(t["body"]) == 15
+    assert t["title"] == ad.JUDUL_ISSUE and len(t["body"]) == 16
     assert next(x for x in t["body"] if x["id"] == "tanggal")["type"] == "input"
     rt = next(x for x in t["body"] if x["id"] == "rutin")
     assert rt["type"] == "dropdown" and rt["attributes"]["options"] == ad.OPSI_RUTIN and rt["attributes"]["default"] == 0
@@ -406,6 +406,91 @@ def _():
         r = subprocess.run([sys.executable, str(d / "scripts" / s)], capture_output=True, text=True, env=env)
         assert r.returncode == 0, r.stderr
     assert len([e for e in events(d) if e["title"] == "Mingguan uji"]) == 4
+
+
+@uji("dumb-proof: isian bertentangan ditolak (Jam vs jenis waktu, jam terbalik, kolom baru vs dropdown), tidak ada event tertulis")
+def _():
+    d = siapkan(); n0 = len(events(d))
+    kasus = [
+        ("Jam diisi tapi Jenis waktu bukan Jam eksak", dict(Jenis_waktu="Ba'da Maghrib", Jam="10.00"), "bukan Jam eksak"),
+        ("jam selesai sebelum mulai", dict(Jenis_waktu="Jam eksak", Jam="18.00-09.00"), "jam selesai harus setelah"),
+        ("jam selesai sama dengan mulai", dict(Jenis_waktu="Jam eksak", Jam="09.00-09.00"), "jam selesai harus setelah"),
+        ("Pemateri baru terisi tanpa Lainnya", dict(Pemateri="Belum ditentukan", Pemateri_baru="Ustadz Penting, Lc."), "Pemateri baru: terisi"),
+        ("kolom masjid baru terisi, masjid dari daftar", dict(Masjid="Masjid Al-Adhim (Depok)", Nama_masjid_baru="Masjid Lain", Alamat_masjid_baru="Jl X"), "dipilih dari daftar"),
+        ("Kota lain terisi, masjid dari daftar", dict(Masjid="Masjid Al-Adhim (Depok)", Kota_lain="Bogor"), "dipilih dari daftar"),
+        ("Online dengan alamat terisi", dict(Masjid="Online", Nama_masjid_baru="Penyelenggara X", Alamat_masjid_baru="Jl X"), "Online tidak memakai"),
+        ("Kota lain terisi padahal kota dipilih dari daftar", dict(Masjid=ad.LAINNYA, Nama_masjid_baru="Masjid Contoh", Alamat_masjid_baru="Jl C", Kota_masjid_baru="Depok", Kota_lain="Bogor"), "Kota lain: terisi"),
+    ]
+    for i, (nama, k, harap) in enumerate(kasus):
+        h = jalankan(d, [iss(400 + i, form(Judul=f"DP{i}", **k))])
+        assert h[0]["status"] == "gagal" and harap in h[0]["komentar"], (nama, h[0]["komentar"])
+    assert len(events(d)) == n0
+
+
+@uji("dumb-proof: nama pengganti (belum ditentukan, -, TBD) ditolak untuk masjid/penyelenggara/pemateri baru")
+def _():
+    d = siapkan(); n0 = len(events(d))
+    for i, k in enumerate([dict(Masjid="Online", Nama_masjid_baru="belum ditentukan"), dict(Masjid="Online", Nama_masjid_baru="-"),
+                           dict(Masjid=ad.LAINNYA, Nama_masjid_baru="TBD", Alamat_masjid_baru="Jl X", Kota_masjid_baru="Depok"),
+                           dict(Pemateri=ad.LAINNYA, Pemateri_baru="-"), dict(Pemateri=ad.LAINNYA, Pemateri_baru="TBA")]):
+        h = jalankan(d, [iss(420 + i, form(Judul=f"PH{i}", **k))])
+        assert h[0]["status"] == "gagal" and "bukan nama" in h[0]["komentar"], (k, h[0]["komentar"])
+    assert len(events(d)) == n0
+    h = jalankan(d, [iss(430, form(Judul="PHok", Pemateri=ad.LAINNYA, Pemateri_baru="Belum ditentukan"))])  # sah: sama dengan opsi bawaan
+    assert h[0]["status"] == "ok" and events(d)[-1]["ustadz"] == "Belum ditentukan"
+
+
+@uji("dumb-proof: nama kota/masjid/pemateri baru yang mirip ditolak kecuali 'Abaikan kemiripan nama' dicentang")
+def _():
+    d = siapkan(); n0 = len(events(d))
+    kota_typo = dict(Masjid=ad.LAINNYA, Nama_masjid_baru="Masjid Uji Satu", Alamat_masjid_baru="Jl U", Kota_masjid_baru=ad.KOTA_LAIN, Kota_lain="Jakrta")
+    h = jalankan(d, [iss(440, form(Judul="MR1", **kota_typo))])
+    assert h[0]["status"] == "gagal" and "Jakarta" in h[0]["komentar"] and "Abaikan kemiripan nama" in h[0]["komentar"], h[0]["komentar"]
+    assert len(events(d)) == n0 and "Jakrta" not in kat(d)["kota"]
+    cek = "- [x] " + ad.OPSI_ABAIKAN
+    h = jalankan(d, [iss(441, form(Judul="MR2", Abaikan_kemiripan_nama=cek, **kota_typo))], edited=440)  # tetap Issue lain; baru
+    assert h[0]["status"] == "ok" and "diabaikan atas permintaan pengguna" in h[0]["komentar"] and "Jakrta" in kat(d)["kota"], h[0]["komentar"]
+    m0 = kat(d)["masjid"][0]
+    h = jalankan(d, [iss(442, form(Judul="MR3", Masjid=ad.LAINNYA, Nama_masjid_baru=m0["nama"] + "a", Alamat_masjid_baru="x", Kota_masjid_baru=m0["kota"]))])
+    assert h[0]["status"] == "gagal" and "mirip" in h[0]["komentar"]
+    p0 = next(p for p in kat(d)["pemateri"] if p["nama"] == "Abu Hurairah")
+    h = jalankan(d, [iss(443, form(Judul="MR4", Pemateri=ad.LAINNYA, Pemateri_baru="Abu Hurairoh"))])
+    assert h[0]["status"] == "gagal" and "mirip" in h[0]["komentar"]
+
+
+@uji("dumb-proof: pemateri ustadzah otomatis Khusus Akhwat (master dan nama baru); konflik dengan Ikhwan ditolak")
+def _():
+    d = siapkan()
+    assert next(p for p in kat(d)["pemateri"] if p["nama"] == "Poppy Yuditya").get("perempuan") is True
+    h = jalankan(d, [iss(450, form(Judul="UA1", Pemateri="Poppy Yuditya"))])
+    assert events(d)[-1]["audience"] == "Khusus Akhwat" and "Ustadzah" in h[0]["komentar"]
+    h = jalankan(d, [iss(451, form(Judul="UA2", Pemateri=ad.LAINNYA, Pemateri_baru="Ustadzah Fulanah binti Contoh, Lc."))])
+    assert events(d)[-1]["audience"] == "Khusus Akhwat"
+    assert next(p for p in kat(d)["pemateri"] if p["tampil"].startswith("Ustadzah Fulanah"))["perempuan"] is True
+    h = jalankan(d, [iss(452, form(Judul="UA3", Pemateri="Poppy Yuditya", Audience="Khusus Ikhwan"))])
+    assert h[0]["status"] == "gagal" and "Ikhwan" in h[0]["komentar"]
+
+
+@uji("dumb-proof: Issue diedit setelah diproses mendapat komentar (bukan diam); tanpa edit tidak ada komentar")
+def _():
+    d = siapkan()
+    h = jalankan(d, [iss(460, form(Judul="ED"))]); ids = h[0]["id"]
+    assert jalankan(d, [iss(460, form(Judul="ED2"))]) == []
+    h = jalankan(d, [iss(460, form(Judul="ED2"))], edited=460)
+    assert h[0]["status"] == "abaikan" and h[0]["id"] == ids and str(ids[0]) in h[0]["komentar"] and "tidak diterapkan" in h[0]["komentar"]
+    assert [e["title"] for e in events(d) if e["id"] in ids] == ["ED"]  # data tidak berubah
+
+
+@uji("Issue dikenali dari isi formulir, bukan judul; judul berawalan tetapi kolom hilang -> gagal berpesan; non-formulir diabaikan")
+def _():
+    d = siapkan(); n0 = len(events(d))
+    h = jalankan(d, [iss(470, form(Judul="TanpaAwalan"), title="UJI")])
+    assert h[0]["status"] == "ok" and len(events(d)) == n0 + 1
+    h = jalankan(d, [iss(471, "### Tanggal\n\n10 Okt 2026\n", title="Tambah kajian: setengah")])
+    assert h[0]["status"] == "gagal" and "formulir" in h[0]["komentar"]
+    assert jalankan(d, [iss(472, "Catatan pribadi tanpa formulir.", title="Ingatkan beli kopi")]) == []
+    assert jalankan(d, [iss(473, form(Judul="Orang lain"), title="UJI", login="orang-lain")]) == []
+    assert ad.adalah_formulir(form()) and not ad.adalah_formulir("### Tanggal\n\nx\n") and not ad.adalah_formulir("")
 
 
 @uji("pecah_body: heading, _No response_, centang")

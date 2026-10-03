@@ -36,6 +36,7 @@ LABEL = {
     "kota_lain": "Kota lain",
     "audience": "Audience",
     "rutin": "Kajian rutin",
+    "abaikan_mirip": "Abaikan kemiripan nama",
     "catatan": "Catatan",
 }
 WAJIB = ["tanggal", "jenis_waktu", "judul", "pemateri", "masjid", "audience"]
@@ -48,6 +49,9 @@ RUTIN_OTOMATIS = "Otomatis (rutin bila berulang tiap minggu)"
 RUTIN_YA = "Ya (rutin)"
 RUTIN_TIDAK = "Tidak"
 OPSI_RUTIN = [RUTIN_OTOMATIS, RUTIN_YA, RUTIN_TIDAK]
+OPSI_ABAIKAN = "Abaikan kemiripan nama (saya yakin ini baru)"
+# Judul kolom yang menandai Issue sebagai isian formulir "Tambah kajian" (judul Issue tidak lagi menentukan)
+PENANDA_FORMULIR = ("Tanggal", "Jenis waktu", "Masjid")
 MAKS_OPSI_DROPDOWN = 150  # lebih dari ini, kolom Pemateri/Masjid dibuat isian teks
 RESPON_KOSONG = "_No response_"
 
@@ -141,6 +145,9 @@ def render_template(kat):
                "Otomatis: rutin bila tanggal berasal dari rentang dengan filter hari (>= 2 tanggal) atau "
                "tiga tanggal atau lebih berjarak tepat 7 hari. Selain itu pilih sendiri.",
                opsi=OPSI_RUTIN, bawaan=0),
+        _unsur("checkboxes", "abaikan_mirip", LABEL["abaikan_mirip"],
+               "Hanya bila sistem menolak karena nama kota, masjid, atau pemateri baru mirip nama yang sudah ada "
+               "dan Anda yakin nama itu memang baru. Biarkan kosong untuk pengisian biasa.", kotak=OPSI_ABAIKAN),
         _unsur("textarea", "catatan", LABEL["catatan"], "Opsional."),
     ]
     kepala = (
@@ -170,6 +177,12 @@ def pecah_body(body):
 
 def _centang(nilai):
     return bool(re.search(r"^\s*-\s*\[[xX]\]", nilai or "", re.M))
+
+
+def adalah_formulir(body):
+    """True bila isi Issue memuat judul kolom penanda formulir 'Tambah kajian'."""
+    f = pecah_body(body)
+    return all(k in f for k in PENANDA_FORMULIR)
 
 
 def ke_paket(body, kat, hari_ini=None):
@@ -210,6 +223,9 @@ def ke_paket(body, kat, hari_ini=None):
             galat.append("Pemateri baru: wajib diisi bila Pemateri = Lainnya.")
     else:
         pemateri = peta_tampil([p["nama"] for p in kat["pemateri"]]).get(pem, pem)
+        if v("pemateri_baru"):
+            galat.append(f"Pemateri baru: terisi '{v('pemateri_baru')}' tetapi Pemateri bukan '{LAINNYA}'. "
+                         "Pilih 'Lainnya' atau kosongkan kolom Pemateri baru.")
 
     # masjid
     mas = v("masjid")
@@ -217,6 +233,9 @@ def ke_paket(body, kat, hari_ini=None):
     masjid_kota = ""
     if mas == ONLINE:
         penyelenggara = v("masjid_baru")
+        if v("alamat_baru") or v("kota_lain"):
+            galat.append("Masjid = Online tidak memakai Alamat masjid baru atau Kota lain. Kosongkan keduanya, "
+                         "atau pilih 'Lainnya' bila ini kajian tatap muka.")
         if not penyelenggara:
             galat.append("Nama masjid baru: untuk Masjid = Online, isi nama penyelenggara.")
             masjid = ""
@@ -237,6 +256,9 @@ def ke_paket(body, kat, hari_ini=None):
                 galat.append("Kota lain: wajib diisi bila Kota masjid baru = Kota lain.")
         else:
             kota = peta_tampil(kat["kota"]).get(kota, kota)
+            if v("kota_lain"):
+                galat.append(f"Kota lain: terisi '{v('kota_lain')}' tetapi Kota masjid baru bukan '{KOTA_LAIN}'. "
+                             "Pilih 'Kota lain' atau kosongkan kolom Kota lain.")
         if not masjid:
             galat.append("Nama masjid baru: wajib diisi bila Masjid = Lainnya.")
         if not v("alamat_baru"):
@@ -250,6 +272,10 @@ def ke_paket(body, kat, hari_ini=None):
             masjid, masjid_kota = peta[mas]["nama"], peta[mas]["kota"]
         else:  # isian bebas / label usang: serahkan ke inti (cocok nama; ambigu ditolak)
             masjid = mas
+        terisi = [LABEL[k] for k in ("masjid_baru", "alamat_baru", "kota_lain") if v(k)]
+        if terisi:
+            galat.append(f"Masjid '{mas}' dipilih dari daftar, tetapi kolom masjid baru terisi ({', '.join(terisi)}). "
+                         "Pilih 'Lainnya' untuk masjid baru, atau kosongkan kolom tersebut.")
 
     if galat:
         raise InputError(galat)
@@ -266,6 +292,7 @@ def ke_paket(body, kat, hari_ini=None):
         "masjid_baru": masjid_baru,
         "audience": v("audience"),
         "rutin": rutin,
+        "abaikan_mirip": _centang(v("abaikan_mirip")),
         "catatan": v("catatan"),
         "info": {"pola": rinci["pola"], "dikecualikan": rinci["dikecualikan"],
                  "peringatan": rinci["peringatan"], "rutin": mode_rutin, "rutin_nilai": rutin} if rinci else {},

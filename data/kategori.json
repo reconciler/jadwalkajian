@@ -582,7 +582,8 @@
     {
       "nama": "Poppy Yuditya",
       "tampil": "Ustadzah Poppy Yuditya",
-      "alias": []
+      "alias": [],
+      "perempuan": true
     },
     {
       "nama": "Rafael Afrianto",
@@ -642,7 +643,8 @@
     {
       "nama": "Ustadzaat Pengajar Tahsin",
       "tampil": "Ustadzaat Pengajar Tahsin",
-      "alias": []
+      "alias": [],
+      "perempuan": true
     },
     {
       "nama": "Yovin Abu Hammam",

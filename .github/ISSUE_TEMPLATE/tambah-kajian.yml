@@ -254,6 +254,13 @@ body:
       default: 0
     validations:
       required: false
+  - type: checkboxes
+    id: abaikan_mirip
+    attributes:
+      label: "Abaikan kemiripan nama"
+      description: "Hanya bila sistem menolak karena nama kota, masjid, atau pemateri baru mirip nama yang sudah ada dan Anda yakin nama itu memang baru. Biarkan kosong untuk pengisian biasa."
+      options:
+        - label: "Abaikan kemiripan nama (saya yakin ini baru)"
   - type: textarea
     id: catatan
     attributes:
