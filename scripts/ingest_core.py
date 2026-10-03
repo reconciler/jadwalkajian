@@ -68,6 +68,20 @@ KUNCI_EVENT = ["id", "date", "dayShort", "timeLabel", "timeOrder", "title", "ust
 
 _KONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f  ]")
 
+# Pengarah arah teks (bidi), spasi lebar nol, joiner kata, BOM: dibuang (bukan diganti spasi). ZWJ/ZWNJ (200C, 200D)
+# dipertahankan karena dipakai urutan emoji.
+_BIDI = re.compile("[\u200b\u200e\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]")
+
+# Kata generik (Q8): nama baru yang SELURUH katanya ada di daftar ini ditolak. Daftar eksplisit, mudah diubah di sini.
+GENERIK = frozenset({
+    "masjid", "mesjid", "musholla", "mushola", "mushalla", "musala", "surau", "langgar", "majelis", "majlis", "taklim", "talim",
+    "ustadz", "ustadzah", "ustadzaat", "ustaz", "ustazah", "ust", "ustd", "kh", "kyai", "kiai", "buya", "habib", "syaikh",
+    "syekh", "sheikh", "kang", "dr", "drs", "prof", "hj", "haji", "kajian", "pemateri", "penceramah", "narasumber",
+    "pengajar", "asatidz", "asatidzah", "nama",
+})
+MIN_HURUF = 3
+
+
 
 class InputError(Exception):
     """Isian tidak valid. .pesan = daftar alasan (Bahasa Indonesia)."""
@@ -84,6 +98,7 @@ class InputError(Exception):
 def bersihkan(nilai, nama, batas=None, wajib=False):
     """Satu baris teks aman. Ganti baris baru/tab dengan spasi, buang karakter kontrol."""
     s = unicodedata.normalize("NFC", str(nilai or ""))
+    s = _BIDI.sub("", s)
     s = _KONTROL.sub(" ", s)
     s = re.sub(r"\s+", " ", s).strip()
     if wajib and not s:
@@ -93,6 +108,18 @@ def bersihkan(nilai, nama, batas=None, wajib=False):
     if batas and len(s) > batas:
         raise InputError(f"{nama}: terlalu panjang ({len(s)} karakter, maksimum {batas}).")
     return s
+
+
+def bermakna(teks, nama, generik=False):
+    """Tolak teks yang jelas bukan nama/judul: kurang dari MIN_HURUF huruf (mis. '0', '2026', '()', 'a'), atau (bila
+    generik=True) seluruh katanya ada di GENERIK (mis. 'Masjid', 'Ustadz', 'Kajian')."""
+    huruf = sum(1 for c in teks if unicodedata.category(c).startswith("L"))
+    if huruf < MIN_HURUF:
+        raise InputError(f"{nama}: '{teks}' bukan nama yang bermakna (minimal {MIN_HURUF} huruf).")
+    if generik:
+        kata = [k for k in (re.sub(r"[^\w]", "", t).casefold() for t in teks.split()) if k]
+        if kata and all(k in GENERIK for k in kata):
+            raise InputError(f"{nama}: '{teks}' hanya kata umum; tulis nama lengkapnya.")
 
 
 def rapikan_huruf(s):
@@ -317,6 +344,11 @@ def bangun_event(paket, kat, hari_ini, events_ada):
             return None
 
     judul = aman(bersihkan, paket.get("judul"), "Judul", BATAS["judul"], True)
+    if judul:
+        if placeholder(judul):
+            galat.append(f"Judul: '{judul}' bukan judul. Isi judul kajian yang sebenarnya.")
+        else:
+            aman(bermakna, judul, "Judul")
     catatan = aman(bersihkan, paket.get("catatan"), "Catatan", BATAS["catatan"])
     pemateri_in = aman(bersihkan, paket.get("pemateri"), "Pemateri", BATAS["pemateri"], True)
     masjid_in = aman(bersihkan, paket.get("masjid"), "Masjid", BATAS["masjid"], True)
@@ -358,6 +390,7 @@ def bangun_event(paket, kat, hari_ini, events_ada):
             elif placeholder(pemateri_in):
                 galat.append(f"Pemateri: '{pemateri_in}' bukan nama. Isi nama pemateri, atau pilih 'Belum ditentukan'.")
             else:
+                aman(bermakna, pemateri_in, "Pemateri baru", True)
                 nama = nama_bersih(pemateri_in)
                 ustadz = pemateri_in
                 ent = {"nama": nama, "tampil": pemateri_in, "alias": []}
@@ -391,6 +424,10 @@ def bangun_event(paket, kat, hari_ini, events_ada):
                 nama = bersihkan_nama_masjid(masjid_in, kota)
                 if placeholder(nama):
                     galat.append(f"Masjid: '{masjid_in}' bukan nama. Isi nama masjid atau penyelenggara yang sebenarnya.")
+                else:
+                    aman(bermakna, re.sub(r"\s*\(online\)\s*$", "", nama, flags=re.I), "Nama masjid baru", True)
+                if kota != ONLINE and not cocok(kota, kat["kota"]):
+                    aman(bermakna, kota, "Kota masjid baru")
                 if nama != masjid_in:
                     peringatan.append(f"Nama masjid dirapikan: '{masjid_in}' menjadi '{nama}' (kota dicatat terpisah: {kota}).")
                 ada = [m for m in kat["masjid"] if kunci(m["nama"]) == kunci(nama) and kunci(m["kota"]) == kunci(kota)]

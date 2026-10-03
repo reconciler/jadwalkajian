@@ -303,7 +303,7 @@ def ke_paket(body, kat, hari_ini=None):
         "audience": v("audience"),
         "rutin": rutin,
         "abaikan_mirip": _centang(v("abaikan_mirip")),
-        "catatan": v("catatan"),
+        "catatan": "" if v("catatan").strip().casefold() in ("(kosongkan)", "kosongkan") else v("catatan"),
         "info": {"pola": rinci["pola"], "dikecualikan": rinci["dikecualikan"],
                  "peringatan": rinci["peringatan"], "rutin": mode_rutin, "rutin_nilai": rutin} if rinci else {},
     }

@@ -159,7 +159,11 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   Pemateri bukan Lainnya; kolom masjid baru (nama, alamat, Kota lain) terisi padahal
   masjid dipilih dari daftar; Online dengan alamat/Kota lain terisi; Kota lain terisi
   padahal kota dipilih dari daftar; nama pengganti (`belum ditentukan`, `-`, `TBD`, `?`,
-  dst.) sebagai nama masjid, penyelenggara Online, atau pemateri baru; nama kota/masjid/
+  dst.) sebagai **judul**, nama masjid, penyelenggara Online, atau pemateri baru; judul dan nama baru
+  (pemateri, masjid/penyelenggara, kota) dengan **kurang dari 3 huruf** (mis. `0`, `2026`, `()`, `a`),
+  serta nama pemateri/masjid/penyelenggara baru yang **seluruh katanya generik** (daftar eksplisit `GENERIK`
+  di `scripts/ingest_core.py`: masjid, mushola, majelis, taklim, ustadz, ustadzah, kh, dr, kajian, pemateri,
+  penceramah, dst.; ubah daftarnya di berkas itu); nama kota/masjid/
   pemateri baru yang **mirip** (kemiripan ≥ 0,85) dengan yang ada, kecuali kotak
   **Abaikan kemiripan nama** dicentang (lalu hanya peringatan). Otomatis: pemateri
   perempuan (master menandai `perempuan`; nama baru berawalan Ustadzah/Ustadzaat) →
@@ -167,7 +171,8 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   lalu diedit** mendapat komentar "perubahan tidak diterapkan" (bukan diam). Run yang
   gagal sebelum berkomentar menempelkan komentar kegagalan di Issue pemicu.
   Penolakan dilaporkan dalam dua tahap (kolom/kondisi formulir dulu, lalu aturan data).
-  Salah ketik semantik (judul, pemateri keliru) tidak bisa dideteksi mesin; jalurnya
+  Karakter pengarah arah teks dan spasi lebar nol dibuang dari semua isian; `(kosongkan)` pada Catatan
+  formulir Tambah dibaca kosong. Salah ketik semantik (judul, pemateri keliru) tidak bisa dideteksi mesin; jalurnya
   formulir **Koreksi atau hapus kajian** (di bawah).
 - **Koreksi atau hapus (tahap 2, 3 Okt 2026)** — formulir kedua di "New issue":
   `.github/ISSUE_TEMPLATE/koreksi-hapus-kajian.yml` (dibuat otomatis dari
@@ -186,7 +191,13 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
     sesuai pratinjau) → baru diterapkan. Kata atau jumlah salah, atau konfirmasi untuk Aksi
     lain, ditolak. Penolakan validasi biasa tetap muncul lebih dulu (sebelum pratinjau).
     Pratinjau dicatat di `gagal` dengan alasan "menunggu konfirmasi".
-  - **Hapus:** konfirmasi `HAPUS <jumlah>` (lihat di atas); kolom koreksi harus kosong
+  - **Konfirmasi dikunci ke pratinjau (Q12, 3 Okt 2026):** konfirmasi hanya berlaku bila Issue itu
+    **sudah pernah menampilkan pratinjau** dan isi pratinjau (event yang akan dihapus / selisih koreksi)
+    **sama** dengan keadaan sekarang. Target diubah atau data berubah sesudah pratinjau → pratinjau baru
+    muncul ("Data berubah sejak pratinjau"), konfirmasi harus diisi ulang. Konfirmasi tanpa pratinjau
+    ditolak dengan pesan serupa.
+  - **Hapus:** konfirmasi `HAPUS <jumlah>` (lihat di atas); ditolak bila penghapusan menyisakan **0
+    kajian mendatang** (prune dan build menolak daftar kosong); kolom koreksi harus kosong
     (kalau terisi ditolak: kemungkinan Aksi salah pilih). Event dihapus dari `index.html`;
     master (`kategori.json`) tidak dipangkas. Kembalikan lewat formulir Tambah (id baru).
   - **Koreksi:** isi hanya kolom yang ingin diubah (kosong atau `(tidak diubah)` = tetap).
@@ -237,7 +248,10 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   ditulis lewat `json.dumps`; tanda `<` `>` ditolak; karakter kontrol dibuang.
   Hanya action resmi `actions/*`.
 - **Daftar induk `data/kategori.json`** juga menyimpan `diproses` (Issue → id event,
-  untuk idempotensi) dan `gagal` (Issue yang ditolak; dilewati sampai diedit).
+  untuk idempotensi), `gagal` (Issue yang ditolak; dilewati sampai **isinya berubah** atau diedit;
+  tiap entri menyimpan sidik isi `isi` dan, untuk pratinjau, `pratinjau`), dan `id_tertinggi` (id event
+  tertinggi yang pernah dipakai; **id tidak pernah dipakai ulang** walau event dihapus atau di-prune,
+  supaya Target `#N` tidak salah sasaran; dihitung juga dari semua id di `diproses`).
   Jangan edit manual kecuali memperbaiki data; ia tidak tayang di situs.
 - Alur flyer ke Claude tetap memakai langkah manual (edit `index.html`). Pakai
   `tampil` dari `data/kategori.json` untuk pemateri dan masjid yang sudah ada
@@ -306,7 +320,7 @@ Satu event = satu baris di array `allEvents`, format object literal:
 
 | Field | Aturan |
 |---|---|
-| `id` | Unik. Ambil dari max id yang ada + 1. **Wajib dicek tidak duplikat.** |
+| `id` | Unik. Ambil dari **`id_tertinggi`** (lihat `core.id_tertinggi(html, kat)` di `scripts/ingest_core.py`: max dari `index.html`, `data/kategori.json` dan semua id di `diproses`) + 1, **bukan** max id di `index.html` saja (id event yang dihapus/di-prune tidak boleh dipakai ulang). **Wajib dicek tidak duplikat.** |
 | `date` | `YYYY-MM-DD` |
 | `dayShort` | `Sen Sel Rab Kam Jum Sab Min` + tanggal + bulan singkat. Minggu **selalu "Min"**, jangan "Ahd" |
 | `timeLabel` | Jam eksak (`19.30 WIB`, `10.00 – 11.45 WIB`) atau waktu sholat (`Ba'da Subuh`, `Dhuha`, `Ba'da Zuhur`, `Ba'da Ashar`, `Ba'da Maghrib`) |

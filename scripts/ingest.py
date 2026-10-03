@@ -45,7 +45,27 @@ ISI_CONFIG = "blank_issues_enabled: false\n"
 
 def kode(s):
     """Teks dari pengguna dalam code span markdown (tidak memicu mention/tautan)."""
-    return "`" + str(s).replace("`", "'") + "`"
+    return "`" + str(s).replace("`", "'").replace("|", "\\|") + "`"
+
+
+def sidik_pratinjau(aksi, isi):
+    """Sidik isi pratinjau (event yang akan dihapus, atau selisih koreksi). Konfirmasi hanya sah bila sidik saat
+    ini sama dengan sidik pratinjau yang pernah ditampilkan untuk Issue ini."""
+    return hashlib.sha256(json.dumps([aksi, isi], sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()[:16]
+
+
+def periksa_kunci(konfirmasi, aksi, jumlah, sidik, lama, buat_pratinjau):
+    """Terima konfirmasi hanya bila kata+jumlah cocok DAN ada pratinjau sebelumnya yang sidiknya sama dengan sekarang.
+    Selain itu raise PerluKonfirmasi dengan pratinjau terbaru (dan sidik baru)."""
+    cocok, cat = koreksi.periksa_konfirmasi(konfirmasi, aksi, jumlah)
+    if cocok and lama is None:
+        cocok, cat = False, ("Konfirmasi belum berlaku: Issue ini belum pernah menampilkan pratinjau. Periksa pratinjau di "
+                             "bawah, lalu edit Issue dan isi konfirmasi.")
+    elif cocok and lama != sidik:
+        cocok, cat = False, ("Data berubah sejak pratinjau sebelumnya. Periksa pratinjau terbaru di bawah, lalu isi "
+                             "konfirmasi lagi.")
+    if not cocok:
+        raise koreksi.PerluKonfirmasi(buat_pratinjau(cat), sidik)
 
 
 def hash_isi(iss):
@@ -251,17 +271,18 @@ def main(argv=None):
                         raise core.InputError(
                             "Penghapusan ini menyisakan 0 kajian mendatang. Situs tidak boleh kosong "
                             "(prune dan build menolak daftar kosong). Kurangi Target, atau tambahkan kajian lain dulu.")
-                    cocok, cat = koreksi.periksa_konfirmasi(pk["konfirmasi"], "hapus", len(dihapus))
-                    if not cocok:
-                        raise koreksi.PerluKonfirmasi(pratinjau_hapus(dihapus, cat))
+                    periksa_kunci(pk["konfirmasi"], "hapus", len(dihapus), sidik_pratinjau("hapus", dihapus),
+                                  gagal_lama[0].get("pratinjau") if gagal_lama else None,
+                                  lambda cat: pratinjau_hapus(dihapus, cat))
                     html_baru = koreksi.hapus_baris(html, pk["ids"])
                     komentar = komentar_hapus(dihapus)
                     ringkas = f"hapus {len(dihapus)} kajian (id {', '.join(map(str, pk['ids']))})"
                 else:
                     hk = koreksi.proses_koreksi(pk, kat, events_ada, hari_ini)
-                    cocok, cat = koreksi.periksa_konfirmasi(pk["konfirmasi"], "koreksi", len(hk["ganti"]))
-                    if not cocok:
-                        raise koreksi.PerluKonfirmasi(pratinjau_koreksi(hk, cat))
+                    periksa_kunci(pk["konfirmasi"], "koreksi", len(hk["ganti"]),
+                                  sidik_pratinjau("koreksi", [pk["ids"], hk["perbedaan"]]),
+                                  gagal_lama[0].get("pratinjau") if gagal_lama else None,
+                                  lambda cat: pratinjau_koreksi(hk, cat))
                     html_baru = html
                     for i_ev, ev in hk["ganti"].items():
                         html_baru = koreksi.ganti_baris(html_baru, i_ev, ev)
@@ -270,7 +291,7 @@ def main(argv=None):
                     komentar = komentar_koreksi(hk)
                     ringkas = f"koreksi {len(hk['ganti'])} kajian (id {', '.join(map(str, pk['ids']))})"
             except koreksi.PerluKonfirmasi as e:
-                kat["gagal"].append({"issue": n, "alasan": ["menunggu konfirmasi"], "isi": sidik})
+                kat["gagal"].append({"issue": n, "alasan": ["menunggu konfirmasi"], "isi": sidik, "pratinjau": e.digest})
                 hasil_semua.append({"issue": n, "status": "gagal", "id": [], "komentar": e.pratinjau})
                 continue
             except core.InputError as e:

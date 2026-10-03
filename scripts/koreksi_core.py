@@ -30,9 +30,10 @@ LABEL_KOLOM = [("date", "tanggal"), ("title", "judul"), ("timeLabel", "waktu"), 
 class PerluKonfirmasi(InputError):
     """Permintaan sah tetapi belum dikonfirmasi: .pratinjau = teks komentar (tabel sasaran/selisih + cara konfirmasi)."""
 
-    def __init__(self, pratinjau):
+    def __init__(self, pratinjau, digest=None):
         super().__init__("menunggu konfirmasi")
         self.pratinjau = pratinjau
+        self.digest = digest  # sidik isi pratinjau; konfirmasi hanya berlaku bila sidik saat ini sama (Q12)
 
 
 def periksa_konfirmasi(teks, aksi, jumlah):
@@ -184,7 +185,7 @@ def proses_koreksi(p, kat, events, hari_ini):
             masjid, masjid_kota, masjid_baru = ent["nama"], ent["kota"], None  # pengisi netral; hasilnya dibuang
         paket = {
             "tanggal": [perub.get("tanggal") or e["date"]], "jenis_waktu": jenis, "jam": jam,
-            "judul": perub.get("judul", "x"), "pemateri": perub.get("pemateri", BELUM), "pemateri_perempuan": False,
+            "judul": perub.get("judul", "Judul sementara"), "pemateri": perub.get("pemateri", BELUM), "pemateri_perempuan": False,
             "masjid": masjid, "masjid_kota": masjid_kota, "masjid_baru": masjid_baru,
             "audience": perub.get("audience", e["audience"]), "rutin": e["isRutin"],
             "catatan": perub.get("catatan", ""), "abaikan_mirip": p.get("abaikan_mirip", False),

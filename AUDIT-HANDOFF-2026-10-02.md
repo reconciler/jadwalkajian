@@ -237,3 +237,28 @@ Dasar: pertanyaan Amal "apakah sistem form koreksi dan hapus ini dumb proof?" da
 2. Butir bertanda "ya" (Q3, Q4, Q9, Q13) menyentuh `prune.py`/pipeline/aturan data: menurut `CLAUDE.md` tetap perlu **konfirmasi Amal di chat PIC**, selain approval Auditor.
 3. Urutan pengerjaan yang diusulkan PIC (usulan, bukan keputusan): (a) Q1, Q2, Q16; (b) Q5, Q6, Q7; (c) Q8, Q10, Q11, Q12; (d) Q3, Q4, Q9, Q13 setelah konfirmasi Amal. Setiap kelompok: uji regresi lokal, validasi 4 langkah, push, verifikasi run `success`, lapor.
 4. Auditor diminta menilai khusus Q4: apakah pengaman per Issue (simulasi build sebelum terima) cukup, atau perlu pemisahan job ingest dan deploy. Itu perubahan arsitektur pipeline.
+
+## 15. Pengerjaan antrian Q1-Q16 setelah approval Auditor (`AUDIT-HANDOFF-2026-10-03-auditor.md` bagian 6, komit `d523995`) — 3 Okt 2026
+Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor) sebelum bertindak; pemberitahuan lewat trigger terjadwal hanya penanda. Q3, Q9, Q13 dan bagian Q4 yang mengubah workflow **tetap menunggu Amal** (belum dikerjakan, belum ditanyakan di chat sampai kelompok ini selesai).
+
+### Kelompok A (komit `b2fedd2`, run #23 `success`)
+- **Q16:** `siapkan()` di `test_ingest.py` mengosongkan `diproses` dan `gagal` di salinan master; suite kembali hijau (42, lalu 44 dengan uji baru).
+- **Q1:** `build.py` `replace_between` memakai fungsi sebagai pengganti `re.sub`. Pola serupa dicari di `prune.py`, `ingest*.py`, `koreksi_core.py`: tidak ada lagi pengganti dari data (yang lain konstanta atau lambda). Uji regresi dengan backslash (`\s`, `C:\Users`, `\1`, `\n` literal, backslash di akhir); terbukti **gagal pada `build.py` lama**.
+- **Q2:** Hapus ditolak bila menyisakan 0 kajian **mendatang** (tanggal >= hari ini), bukan hanya 0 baris, karena itu syarat `prune.py`. Penolakan, bukan penghapusan data.
+
+### Kelompok B (komit `6fa6eec`, run #24 `success`)
+- **Q5:** entri `gagal` menyimpan `isi` (sidik judul+isi Issue); Issue gagal diproses ulang bila isinya berubah walau sinyal `--edited` hilang. Isi sama dan tanpa sinyal: tetap dilewati tanpa komentar. Batas: Issue yang **sudah diproses lalu diedit** tetap bergantung pada sinyal edit (komentar "tidak diterapkan" hilang bila sinyal hilang; tidak ada data yang berubah).
+- **Q6 (perubahan skema internal `kategori.json`):** kolom baru `id_tertinggi`. Id berikutnya = max(index.html, `id_tertinggi`, semua id di `diproses`) + 1. Disimpan tiap kali master/HTML berubah. Master lama tanpa kolom tetap aman (dihitung dari `diproses`: sekarang 748). Alur flyer manual: CLAUDE.md diperbarui (pakai `core.id_tertinggi`).
+- **Q7:** `jse()` di `index.html` meng-escape backslash sebelum tanda kutip. Diuji di Chromium: nama `back\slash`, `akhir\`, `O'Neil`, `"Q"`, `A&B <x>` semuanya menyaring tepat satu kartu; `SyntaxError` hilang. Uji otomatis mengevaluasi hasil `jse` di node. Terbukti **gagal pada `index.html` lama**.
+
+### Kelompok C (komit lihat git log; run diverifikasi sebelum dicatat)
+- **Q8:** `bermakna()` di `ingest_core.py`: judul dan nama baru (pemateri, masjid, penyelenggara Online, kota baru) minimal 3 huruf; judul memakai cek `placeholder()`; nama pemateri/masjid/penyelenggara yang seluruh katanya generik ditolak. **Daftar generik (eksplisit, `GENERIK`):** masjid, mesjid, musholla, mushola, mushalla, musala, surau, langgar, majelis, majlis, taklim, talim, ustadz, ustadzah, ustadzaat, ustaz, ustazah, ust, ustd, kh, kyai, kiai, buya, habib, syaikh, syekh, sheikh, kang, dr, drs, prof, hj, haji, kajian, pemateri, penceramah, narasumber, pengajar, asatidz, asatidzah, nama. Akhiran `(Online)` diabaikan saat memeriksa. Pengisi judul formulir Koreksi diganti dari `x` menjadi `Judul sementara` (agar tidak kena aturan baru). Fixture uji dengan judul 1-2 huruf diganti.
+- **Q10:** karakter pengarah arah (U+202A-202E, U+2066-2069, U+200E/F), spasi lebar nol (U+200B), joiner kata (U+2060-2064) dan BOM dibuang; ZWJ/ZWNJ (U+200C/D) dipertahankan untuk emoji. `(kosongkan)` pada Catatan formulir Tambah dibaca kosong. **Koreksi atas temuan PIC:** butir "batas panjang tidak seragam" salah baca; `BATAS` memang per kolom (judul 200, catatan 600) dan dipakai sama oleh Tambah dan Koreksi. Tidak diubah.
+- **Q11:** `kode()` meng-escape `|` (`\|`); uji jumlah kolom tabel komentar tetap.
+- **Q12:** konfirmasi Hapus/Koreksi hanya berlaku bila Issue itu sudah menampilkan pratinjau dan sidik isi pratinjau (`pratinjau` di entri `gagal`) sama dengan keadaan sekarang. **Perubahan perilaku:** konfirmasi di pengiriman pertama (tanpa pratinjau) tidak lagi langsung menerapkan; Target diubah sesudah pratinjau juga memicu pratinjau baru.
+- **Q14:** batas jumlah opsi dropdown formulir GitHub: **tidak diketahui**. Halaman docs tidak terjangkau dari sesi PIC (`EGRESS_BLOCKED`); cuplikan hasil pencarian hanya menyebut opsi tidak boleh kosong dan harus unik, tanpa batas maksimum (belum divalidasi dari halaman aslinya). Secara empiris formulir dengan sekitar 97 opsi pemateri berjalan di GitHub pada uji Amal sebelumnya.
+
+### Belum dikerjakan
+- **Kelompok D (Q4 bagian skrip)** setelah kelompok C terverifikasi.
+- **Menunggu Amal:** Q3 (`prune.py`), Q9 (aturan tanggal tanpa tahun), Q13 (`deploy.yml`), Q4 bagian workflow.
+
