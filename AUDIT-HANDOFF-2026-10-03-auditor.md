@@ -280,3 +280,44 @@ atau belum) | usulan teks (maksimal dua baris).
 - **Jangan menyalin data pribadi atau sensitif** (isi CV, kontak, kredensial, token); kutip seperlunya.
 
 **Lapor:** commit ke repo (jalur utama). Beri tahu Auditor lewat pesan hanya sebagai tambahan.
+
+## 12. Konsolidasi ekstraksi aturan dari tiga PIC (3 Okt 2026) — usulan, menunggu keputusan Amal
+
+Penanda: **[Terverifikasi Auditor]** = diperiksa langsung (git, diff, data, Actions). **[Dari handoff PIC]** = kutipan Amal di chat PIC yang tidak terjangkau Auditor; tidak diverifikasi. Belum ada butir di bawah yang ditulis ke bagian "Aturan lintas-repo".
+
+### 12.1 Verifikasi hasil kerja PIC
+- **[Terverifikasi Auditor]** Bagian "Aturan lintas-repo" di tiga `CLAUDE.md` masih identik (`diff`). Run Actions terbaru semua `success`: jadwalkajian #34-#35, catatankajian #15-#18, bikin-cv-taaruf #7-#8.
+- **[Terverifikasi Auditor]** Penambahan `CLAUDE.md` oleh PIC kecil: jadwalkajian +4/-1 baris, catatankajian +15/-6, bikin-cv-taaruf +13/-1 (batas 30 tidak terlampaui). Tidak ada data pribadi di handoff baru (dibaca penuh).
+- **[Terverifikasi Auditor]** catatankajian: 8 nilai `theme` yang ditulis PIC ke `CLAUDE.md` sama persis dengan `themes[]` di `data.json` (dan semuanya dipakai sesi); contoh slug sesuai pola `id` ustadz yang ada. Bahwa itu "keputusan Amal dari brief awal" **[Dari handoff PIC]**.
+- Butir B (uji 404 semua handoff) dikerjakan di jadwalkajian dan catatankajian setelah "lanjut" Amal di chat PIC (run #35 dan #18 `success`). jadwalkajian mempertahankan daftar tetap lama dan menambah glob (penyimpangan lebih aman, dicatat). **Temuan:** handoff catatankajian bagian 3 masih menulis Butir B "menunggu konfirmasi", padahal komit `811ce74` menyatakan sudah dikonfirmasi dan dikerjakan; catatan itu basi.
+
+### 12.2 Baseline axe-core (aturan lintas-repo butir 13) — keputusan visual menunggu Amal
+| Repo | Hasil (dari handoff PIC) | Sudah diperbaiki | Menunggu Amal |
+|---|---|---|---|
+| jadwalkajian | 4 jenis pelanggaran | Atribut landmark (`banner`, `region`, `main`, `contentinfo`); tangkapan layar sebelum/sesudah identik per piksel menurut PIC (belum saya reproduksi) | `color-contrast` badge kota (4 dari 7 kota di bawah 4,5:1: Bandung 3,73; Bogor 3,60; Jakarta 3,81; Tangerang 3,04); usul PIC teks L=70% di atas L=20% (minimum 4,76 untuk semua hue), diubah serentak di `index.html` dan `scripts/build.py`. `link-in-text-block`: usul garis bawah pada tautan di kotak "Ingin menambahkan info kajian?" |
+| catatankajian | 1 jenis pelanggaran (`color-contrast`) di beranda (26 elemen) dan satu rekap (21 elemen) | Tidak ada (perubahan warna) | Warna `--muted` (`#6B7A8D`) dan chip tema; PIC belum mengusulkan nilai pengganti |
+| bikin-cv-taaruf | 0 pelanggaran (praktik lama) | - | - |
+- Cara memasang axe-core yang berhasil dipakai tiga PIC: `npm i axe-core playwright-core` di folder sementara, Chromium `executablePath: '/opt/pw-browsers/chromium'`, **terverifikasi bisa dijalankan di sesi kerja** (butir 13 layak).
+
+### 12.3 Usulan butir lintas-repo baru (sudah dihapus duplikatnya)
+| # | Usulan aturan (satu kalimat) | Sumber | Rekomendasi Auditor |
+|---|---|---|---|
+| N1 | Bila konteks kurang, baca riwayat chat, handoff, dan git dulu; baru sumber eksternal. | [Dari handoff PIC] preferensi Amal; sama dengan preferensi akun Amal | Masukkan |
+| N2 | Bagian bersama "Preferensi melapor" (sekarang hanya di jadwalkajian): Indonesia, formal, poin/tabel, tanpa emoji; tandai terverifikasi vs saran; jangan mengarang hasil, katakan bila alat/akses tidak tersedia; penjelasan "awam" = analogi dan tabel kecil; akhiri pekerjaan besar dengan "yang perlu Anda ketahui" (belum terbukti, perubahan perilaku, kejadian otomatis, keputusan menunggu). | Gabungan: jadwalkajian A2, A3; catatankajian (jangan mengarang); bikin (label terverifikasi); `CLAUDE.md` jadwalkajian yang ada | Masukkan sebagai bagian bersama identik di tiga repo |
+| N3 | Jangan memasang batas buatan yang tidak berdasar platform terverifikasi (kecuali keamanan); catat risikonya. | [Dari handoff PIC] Amal 3 Okt: "Kalo 150 bukan batasan dari github, maka tak perlu dibatasi" | Masukkan |
+| N4 | Bila status diragukan (termasuk klaim "sukses" dari jalur otomatis), verifikasi manual sendiri dulu, lalu konfirmasi ke Amal dan Auditor lewat chat dan git. | [Dari handoff PIC] Amal 22 Sep; tertulis di handoff catatankajian 22 Sep | Masukkan |
+| N5 | Kerjakan sendiri yang bisa dikerjakan sesi; minta Amal hanya untuk akses yang sesi tidak punya. Pengaturan Pages diubah Amal; PIC menyiapkan workflow dan langkahnya, dan memberi jalur kembali satu langkah sebelum mengalihkan pipeline. | [Dari handoff PIC] Amal; praktik migrasi bikin 30 Sep | Masukkan |
+| N6 | Repo publik: jangan commit data pribadi (isi CV, kontak, kredensial), termasuk di handoff dan kutipan chat. | [Dari handoff PIC] praktik bikin | Masukkan (biaya rendah, risiko tinggi bila terlewat) |
+| N7 | Praktik uji: uji otomatis deterministik (data beku, jam terkunci); skrip workflow disimulasikan lokal untuk jalur sukses dan gagal sebelum push; perubahan UI diuji dengan tangkapan layar di 320/375/430 px, font asli dari paket npm, jaringan luar diblokir. | Praktik tiga PIC (bukan keputusan Amal) | Masukkan sebagai praktik, bukan aturan keras |
+| N8 | Cara menyajikan butir keputusan: pertahankan penomoran asli, "semua" = seluruh butir asli; tiap butir memuat tujuan, akibat bila ditunda, rekomendasi dengan default konservatif; pertanyaan Amal dijawab dengan analisis dan usulan bernomor, perubahan menunggu persetujuan. | [Dari handoff PIC] jadwalkajian A4-A6 (praktik, sebagian dari ucapan Amal) | Opsional; ringkas bila dimasukkan |
+| N9 | "Satu batch = satu push = satu deploy". | [Praktik] bikin; berasal dari batas kredit Netlify | **Jangan dimasukkan**: alasan lamanya hilang sejak pindah ke GitHub Pages (gratis); bagian "lapor setelah run `success` terbaca" sudah ada |
+
+### 12.4 Aturan khusus repo yang PIC tambahkan sendiri
+- catatankajian: 8 tema baku, deskripsi Bahasa Indonesia, `content` padat satu paragraf untuk mesin pencari, format slug `id`, riset alamat masjid baru.
+- bikin-cv-taaruf: footer PDF memuat alamat situs sebagai kredit; persetujuan A.02 memakai "data pribadi yang sensitif"; cara menjalankan axe-core.
+- jadwalkajian: keputusan opsi A (uji YAML hanya lokal).
+
+### 12.5 Yang diminta dari Amal
+1. Putuskan N1-N8 mana yang masuk (rekomendasi: N1-N6 dan N7 sebagai praktik; N8 opsional; N9 tidak).
+2. Putuskan dua temuan visual axe-core: jadwalkajian (kontras badge kota, garis bawah tautan) dan catatankajian (kontras warna muted). Auditor menyarankan PIC catatankajian mengusulkan nilai pengganti dengan angka kontras, seperti yang dilakukan PIC jadwalkajian.
+3. Setelah keputusan, Auditor menulis bagian bersama identik di tiga `CLAUDE.md`; PIC catatankajian diminta memperbarui handoff-nya (bagian 3 basi).
