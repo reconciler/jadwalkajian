@@ -667,6 +667,14 @@
       "alias": []
     }
   ],
-  "diproses": [],
+  "diproses": [
+    {
+      "issue": 3,
+      "id": [
+        747,
+        748
+      ]
+    }
+  ],
   "gagal": []
 }
