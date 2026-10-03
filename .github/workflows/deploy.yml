@@ -274,8 +274,19 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -f last-deploy HEAD
-          git push -f origin last-deploy
-          echo "Tag last-deploy dipindahkan ke $(git rev-parse --short HEAD)."
+          # Run #7 (3 Okt 2026): push tag ditolak GitHub ("fatal error in commit_refs") padahal situs
+          # sudah terbit; run berikutnya berhasil dengan perintah yang sama. Ulangi sampai 3 kali
+          # dengan jeda; bila tetap gagal, langkah ini merah seperti sebelumnya (tidak disembunyikan).
+          for TRY in 1 2 3; do
+            if git push -f origin last-deploy; then
+              echo "Tag last-deploy dipindahkan ke $(git rev-parse --short HEAD) (percobaan $TRY)."
+              exit 0
+            fi
+            echo "Push tag last-deploy gagal pada percobaan $TRY/3."
+            if [ "$TRY" -lt 3 ]; then sleep $((TRY * 10)); fi
+          done
+          echo "::error::Push tag last-deploy gagal setelah 3 percobaan. Situs sudah terbit; run berikutnya akan menerbitkan ulang."
+          exit 1
 
       - name: Komentar hasil dan tutup Issue
         if: ${{ always() && steps.pipeline.outcome == 'success' }}
