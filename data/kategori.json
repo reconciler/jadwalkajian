@@ -674,14 +674,15 @@
         747,
         748
       ]
-    }
-  ],
-  "gagal": [
+    },
     {
       "issue": 4,
-      "alasan": [
-        "menunggu konfirmasi"
-      ]
+      "id": [
+        747,
+        748
+      ],
+      "aksi": "koreksi"
     }
-  ]
+  ],
+  "gagal": []
 }
