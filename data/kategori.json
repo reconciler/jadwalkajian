@@ -676,5 +676,12 @@
       ]
     }
   ],
-  "gagal": []
+  "gagal": [
+    {
+      "issue": 4,
+      "alasan": [
+        "menunggu konfirmasi"
+      ]
+    }
+  ]
 }
