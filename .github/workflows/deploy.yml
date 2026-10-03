@@ -199,7 +199,7 @@ jobs:
           cp index.html robots.txt sitemap.xml favicon.svg og-image.png _site/
           echo "Isi _site:"
           ls -1 _site
-          for f in CLAUDE.md scripts .github data; do
+          for f in CLAUDE.md scripts .github data docs; do
             if [ -e "_site/$f" ]; then
               echo "::error::Berkas internal ikut ter-copy ke _site: $f"
               exit 1
@@ -235,7 +235,7 @@ jobs:
           fi
           BASE="${PAGE_URL%/}/"
           MARKER="Jadwal Kajian"
-          INTERNAL="CLAUDE.md AUDIT-HANDOFF-2026-09-30.md scripts/prune.py data/kategori.json"
+          INTERNAL="CLAUDE.md AUDIT-HANDOFF-2026-09-30.md scripts/prune.py data/kategori.json docs/formulir-issue.md docs/riwayat-migrasi.md"
           http_code() {
             curl -s -o "$2" -w '%{http_code}' --max-time 15 "${BASE}$1?v=${SHA}" || true
           }
@@ -300,27 +300,52 @@ jobs:
             // Terbit = tidak ada yang perlu diterbitkan, atau deploy + uji situs live lolos.
             const terbit = process.env.PERLU === 'false' || process.env.LIVE === 'success';
             const { owner, repo } = context.repo;
-            const komentar = (n, body) => github.rest.issues.createComment({ owner, repo, issue_number: n, body });
-            const tutup = n => github.rest.issues.update({ owner, repo, issue_number: n, state: 'closed', state_reason: 'completed' });
+            const tunggu = ms => new Promise(r => setTimeout(r, ms));
+            let galatApi = 0;
+            // Satu galat API (Issue dikunci/dihapus, batas laju, gangguan sesaat) TIDAK boleh menghentikan komentar/penutupan
+            // Issue lain: catatan "gagal" sudah ter-commit, jadi komentar yang terlewat tidak akan dikirim ulang.
+            // Coba sampai 3 kali; 404/410 (Issue hilang) tidak diulang. Gagal permanen = peringatan, lanjut.
+            const coba = async (label, fn) => {
+              for (let i = 1; i <= 3; i++) {
+                try { await fn(); return true; }
+                catch (e) {
+                  core.warning(`${label}: percobaan ${i}/3 gagal (${e.status || ''} ${e.message})`);
+                  if ([404, 410].includes(e.status)) break;
+                  if (i < 3) await tunggu(i * 2000);
+                }
+              }
+              galatApi++;
+              return false;
+            };
+            const komentar = (n, body) => coba(`komentar Issue #${n}`,
+              () => github.rest.issues.createComment({ owner, repo, issue_number: n, body }));
+            const tutup = n => coba(`tutup Issue #${n}`,
+              () => github.rest.issues.update({ owner, repo, issue_number: n, state: 'closed', state_reason: 'completed' }));
             const dilaporkan = new Set();
             for (const h of hasil) {
               dilaporkan.add(h.issue);
               if (h.status === 'gagal' || h.status === 'abaikan') { await komentar(h.issue, h.komentar); continue; }  // gagal: tetap terbuka; abaikan: diedit setelah diproses
-              if (terbit) { await komentar(h.issue, h.komentar); await tutup(h.issue); }
-              else { await komentar(h.issue, h.komentar_tertunda); }                          // tetap terbuka
+              if (terbit) {
+                // Issue baru ditutup bila komentar hasilnya terkirim; bila tidak, run berikutnya menutupnya lewat penyapu.
+                if (await komentar(h.issue, h.komentar)) await tutup(h.issue);
+              } else { await komentar(h.issue, h.komentar_tertunda); }                          // tetap terbuka
             }
             // Sapu: Issue terbuka yang sudah diproses di run sebelumnya tetapi belum sempat ditutup.
             if (terbit) {
-              const kat = JSON.parse(fs.readFileSync('data/kategori.json', 'utf8'));
-              const diproses = new Set(kat.diproses.map(d => d.issue));
-              const terbuka = await github.paginate(github.rest.issues.listForRepo,
-                { owner, repo, state: 'open', creator: 'reconciler', per_page: 100 });
-              for (const i of terbuka) {
-                if (i.pull_request || dilaporkan.has(i.number) || !diproses.has(i.number)) continue;
-                await komentar(i.number, 'Isi Issue ini sudah tayang di situs. Issue ditutup otomatis.');
-                await tutup(i.number);
+              try {
+                const kat = JSON.parse(fs.readFileSync('data/kategori.json', 'utf8'));
+                const diproses = new Set(kat.diproses.map(d => d.issue));
+                const terbuka = await github.paginate(github.rest.issues.listForRepo,
+                  { owner, repo, state: 'open', creator: 'reconciler', per_page: 100 });
+                for (const i of terbuka) {
+                  if (i.pull_request || dilaporkan.has(i.number) || !diproses.has(i.number)) continue;
+                  if (await komentar(i.number, 'Isi Issue ini sudah tayang di situs. Issue ditutup otomatis.')) await tutup(i.number);
+                }
+              } catch (e) {
+                core.warning(`penyapu Issue dilewati: ${e.message}`);
               }
             }
+            if (galatApi) core.warning(`${galatApi} panggilan API komentar/penutupan Issue gagal permanen; lihat peringatan di atas.`);
 
       - name: Komentar di Issue bila run gagal
         # Tanpa ini Issue tetap terbuka tanpa kabar bila run mati sebelum sempat berkomentar.

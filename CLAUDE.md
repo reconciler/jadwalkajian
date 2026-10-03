@@ -137,8 +137,8 @@ sintaks Tanggal, rutin otomatis, aturan dumb-proof, Koreksi/hapus, pemateri, mas
 Sejak 1 Okt 2026 workflow **tidak lagi** mengunggah seluruh root repo. Langkah
 "Siapkan folder situs (_site)" menyalin hanya: `index.html`, `robots.txt`,
 `sitemap.xml`, `favicon.svg`, `og-image.png`. `CLAUDE.md`, `AUDIT-HANDOFF-*.md`,
-`scripts/`, dan `.github/` **tidak tayang** (workflow gagal bila ada yang ikut
-tersalin).
+`scripts/`, `data/`, `docs/`, dan `.github/` **tidak tayang** (workflow gagal bila ada yang ikut
+tersalin; `docs` masuk penjaga sejak 3 Okt 2026).
 
 - **Menambah aset baru yang dirujuk `index.html`** (gambar, CSS/JS terpisah,
   dll.)? Tambahkan ke daftar `cp` di langkah itu **dan** ke variabel `WATCH`
@@ -152,7 +152,8 @@ tersalin).
   `deploy.yml`, atas keputusan Amal 1 Okt 2026): runner memeriksa URL
   publik sampai 12 kali (jeda 10 detik): beranda 200 dan memuat teks "Jadwal
   Kajian"; setiap berkas langsung di `_site/` 200; `CLAUDE.md`,
-  `AUDIT-HANDOFF-2026-09-30.md`, `scripts/prune.py` 404. Gagal = run merah dan
+  `AUDIT-HANDOFF-2026-09-30.md`, `scripts/prune.py`, `data/kategori.json`, `docs/formulir-issue.md`,
+  `docs/riwayat-migrasi.md` 404. Gagal = run merah dan
   tag `last-deploy` tidak dipindah, jadi run berikutnya menerbitkan ulang.
   **Jangan dilonggarkan supaya hijau**; selidiki penyebabnya. Uji ini tidak
   menilai tampilan. Bila nama berkas internal di daftar `INTERNAL` pada langkah
