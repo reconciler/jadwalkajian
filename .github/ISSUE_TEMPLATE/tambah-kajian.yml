@@ -167,7 +167,6 @@ body:
       description: "Format: Nama (Kota). Tidak ada di daftar: pilih Lainnya dan isi kolom masjid baru."
       options:
         - "Baitusyaakiriin Depok"
-        - "belum ditentukan (Online)"
         - "Kupinami Cafe (Jakarta)"
         - "Masjid Al Ukhuwah BSD (Tangerang)"
         - "Masjid Al-Adhim (Depok)"
