@@ -243,6 +243,13 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
 - **Arsitektur:** `ingest_core.py` hanya menerima "paket baku"; formulir Issue
   hanya satu adapter (`adapter_issue_form.py`). Jalur lain (mis. Google Form)
   cukup menulis adapter baru.
+- **Pengaman per Issue (Q4, 3 Okt 2026):** pemrosesan tiap Issue dibungkus `try/except`;
+  exception tak terduga di satu Issue memulihkan `index.html`/master ke keadaan sebelum Issue itu,
+  mencatatnya di `gagal` ("kesalahan internal"), mengomentari Issue, dan **tidak menjatuhkan Issue lain**
+  atau run. Sebelum menerima perubahan, `simulasi_terbit()` (di `ingest.py`) menguji kering prune + build
+  di memori (baris event terbaca, ada kajian mendatang, blok statis/JSON-LD bisa dibangun); gagal →
+  "kesalahan internal", tidak ada yang ditulis. Kegagalan membuat templat formulir tidak fatal.
+  Entri "kesalahan internal" tidak diulang otomatis; diproses lagi saat isi Issue berubah.
 - **Keamanan (jangan dilanggar):** isi/judul Issue **tidak pernah** diinterpolasi
   ke `run:` di workflow (injeksi skrip) — dibaca dari berkas JSON. Baris event
   ditulis lewat `json.dumps`; tanda `<` `>` ditolak; karakter kontrol dibuang.

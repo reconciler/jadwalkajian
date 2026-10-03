@@ -251,14 +251,20 @@ Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor
 - **Q6 (perubahan skema internal `kategori.json`):** kolom baru `id_tertinggi`. Id berikutnya = max(index.html, `id_tertinggi`, semua id di `diproses`) + 1. Disimpan tiap kali master/HTML berubah. Master lama tanpa kolom tetap aman (dihitung dari `diproses`: sekarang 748). Alur flyer manual: CLAUDE.md diperbarui (pakai `core.id_tertinggi`).
 - **Q7:** `jse()` di `index.html` meng-escape backslash sebelum tanda kutip. Diuji di Chromium: nama `back\slash`, `akhir\`, `O'Neil`, `"Q"`, `A&B <x>` semuanya menyaring tepat satu kartu; `SyntaxError` hilang. Uji otomatis mengevaluasi hasil `jse` di node. Terbukti **gagal pada `index.html` lama**.
 
-### Kelompok C (komit lihat git log; run diverifikasi sebelum dicatat)
+### Kelompok C (komit `1d1d515`, run #25 `success`)
 - **Q8:** `bermakna()` di `ingest_core.py`: judul dan nama baru (pemateri, masjid, penyelenggara Online, kota baru) minimal 3 huruf; judul memakai cek `placeholder()`; nama pemateri/masjid/penyelenggara yang seluruh katanya generik ditolak. **Daftar generik (eksplisit, `GENERIK`):** masjid, mesjid, musholla, mushola, mushalla, musala, surau, langgar, majelis, majlis, taklim, talim, ustadz, ustadzah, ustadzaat, ustaz, ustazah, ust, ustd, kh, kyai, kiai, buya, habib, syaikh, syekh, sheikh, kang, dr, drs, prof, hj, haji, kajian, pemateri, penceramah, narasumber, pengajar, asatidz, asatidzah, nama. Akhiran `(Online)` diabaikan saat memeriksa. Pengisi judul formulir Koreksi diganti dari `x` menjadi `Judul sementara` (agar tidak kena aturan baru). Fixture uji dengan judul 1-2 huruf diganti.
 - **Q10:** karakter pengarah arah (U+202A-202E, U+2066-2069, U+200E/F), spasi lebar nol (U+200B), joiner kata (U+2060-2064) dan BOM dibuang; ZWJ/ZWNJ (U+200C/D) dipertahankan untuk emoji. `(kosongkan)` pada Catatan formulir Tambah dibaca kosong. **Koreksi atas temuan PIC:** butir "batas panjang tidak seragam" salah baca; `BATAS` memang per kolom (judul 200, catatan 600) dan dipakai sama oleh Tambah dan Koreksi. Tidak diubah.
 - **Q11:** `kode()` meng-escape `|` (`\|`); uji jumlah kolom tabel komentar tetap.
 - **Q12:** konfirmasi Hapus/Koreksi hanya berlaku bila Issue itu sudah menampilkan pratinjau dan sidik isi pratinjau (`pratinjau` di entri `gagal`) sama dengan keadaan sekarang. **Perubahan perilaku:** konfirmasi di pengiriman pertama (tanpa pratinjau) tidak lagi langsung menerapkan; Target diubah sesudah pratinjau juga memicu pratinjau baru.
 - **Q14:** batas jumlah opsi dropdown formulir GitHub: **tidak diketahui**. Halaman docs tidak terjangkau dari sesi PIC (`EGRESS_BLOCKED`); cuplikan hasil pencarian hanya menyebut opsi tidak boleh kosong dan harus unik, tanpa batas maksimum (belum divalidasi dari halaman aslinya). Secara empiris formulir dengan sekitar 97 opsi pemateri berjalan di GitHub pada uji Amal sebelumnya.
 
-### Belum dikerjakan
-- **Kelompok D (Q4 bagian skrip)** setelah kelompok C terverifikasi.
-- **Menunggu Amal:** Q3 (`prune.py`), Q9 (aturan tanggal tanpa tahun), Q13 (`deploy.yml`), Q4 bagian workflow.
+### Kelompok D (Q4 bagian skrip; tanpa mengubah `deploy.yml`)
+- Pemrosesan tiap Issue di `ingest.py` dibungkus `try/except Exception`: snapshot `index.html` dan master sebelum Issue; bila ada exception, keduanya dipulihkan, Issue dicatat di `gagal` ("kesalahan internal", dengan sidik isi), diberi komentar berisi jenis galat, dan Issue lain tetap diproses. Tidak diulang tiap run (diproses lagi bila isi berubah).
+- `simulasi_terbit(html, hari_ini)`: uji kering prune + build di memori (regex prune mengenali baris, ada kajian mendatang, `build.parse_events`, blok statis dan JSON-LD bisa dibangun dan JSON-LD terbaca). Dipanggil untuk Tambah, Koreksi, dan Hapus sebelum perubahan diterima; gagal -> "kesalahan internal" dan tidak ada yang ditulis. `build.py` dan `prune.py` **tidak diubah** (hanya diimpor).
+- Pembuatan templat formulir tidak lagi fatal (peringatan ke stderr).
+- Uji: 54 lulus (3 uji baru; terbukti **gagal pada `ingest.py` lama**). Dicakup uji: exception acak di satu Issue dengan Issue lain tetap ok dan master dipulihkan; simulasi menolak build rusak tanpa menulis; templat rusak tidak menghalangi.
+- Batas yang diketahui: simulasi hanya meniru langkah prune/build, bukan langkah deploy atau uji situs live; kegagalan di luar `ingest.py` (git push, token, Pages) tidak tercakup.
 
+### Belum dikerjakan
+- **Menunggu Amal di chat PIC:** Q3 (`prune.py`), Q9 (aturan tanggal tanpa tahun), Q13 (`deploy.yml`), dan bagian Q4 yang mengubah workflow (pemisahan job tidak disarankan Auditor, bagian 6.3).
+- Uji GitHub nyata untuk perubahan baru (Q8/Q12/Q4 dengan Issue sungguhan) **belum dilakukan**: Auditor meminta bertanya ke Amal dulu bila uji menerbitkan data ke situs publik; PIC hanya menguji lokal.

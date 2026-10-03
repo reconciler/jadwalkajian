@@ -881,6 +881,72 @@ def _():
     assert h[0]["status"] == "ok" and all(e["title"] == "Judul akhir" for e in events(d) if e["id"] in ids)
 
 
+@uji("Q4: exception tak terduga di satu Issue -> 'kesalahan internal', data tidak berubah, Issue lain tetap diproses; tidak diulang tiap run")
+def _():
+    d = siapkan(); n0 = len(events(d)); k0 = kat(d)
+    asli = core.bangun_event
+
+    def bom(paket, kat_, hari, ada):
+        if paket.get("judul") == "Judul BOOM":
+            kat_["pemateri"].append({"nama": "kotor", "tampil": "kotor"})  # perubahan sebagian yang harus dibatalkan
+            raise ValueError("ledakan uji")
+        return asli(paket, kat_, hari, ada)
+    core.bangun_event = bom
+    try:
+        h = jalankan(d, [iss(1030, form(Judul="Judul BOOM", Tanggal="10 Okt 2026")),
+                         iss(1031, form(Judul="Judul aman", Tanggal="11 Okt 2026"))])
+        assert [x["status"] for x in h] == ["gagal", "ok"], h
+        assert "kesalahan internal" in h[0]["komentar"] and "ValueError" in h[0]["komentar"]
+        assert [e["title"] for e in events(d)].count("Judul BOOM") == 0 and len(events(d)) == n0 + 1
+        assert not any(p_["nama"] == "kotor" for p_ in kat(d)["pemateri"])  # master dipulihkan
+        assert not any(x["issue"] == 1030 for x in kat(d)["diproses"])
+        assert any(g["issue"] == 1030 and g["alasan"] == ["kesalahan internal"] for g in kat(d)["gagal"])
+        assert jalankan(d, [iss(1030, form(Judul="Judul BOOM", Tanggal="10 Okt 2026"))]) == []  # run berikutnya: tanpa komentar ulang
+        h = jalankan(d, [iss(1030, form(Judul="Judul BOOM", Tanggal="10 Okt 2026", Catatan="diedit"))])  # isi berubah -> dicoba lagi
+        assert h and h[0]["status"] == "gagal" and "kesalahan internal" in h[0]["komentar"]
+    finally:
+        core.bangun_event = asli
+    h = jalankan(d, [iss(1030, form(Judul="Judul BOOM", Tanggal="10 Okt 2026", Catatan="diedit lagi"))])  # setelah diperbaiki: berhasil
+    assert h and h[0]["status"] == "ok"
+
+
+@uji("Q4: simulasi prune/build menolak perubahan yang akan merusak pipeline (tanpa menulis apa pun)")
+def _():
+    d = siapkan(); html = (d / "index.html").read_text(encoding="utf-8")
+    assert ingest.simulasi_terbit(html, core.date.fromisoformat(TODAY)) is None
+    assert "tidak ada kajian mendatang" in ingest.simulasi_terbit(html, core.date.fromisoformat("2035-01-01"))
+    assert "prune tidak mengenali" in ingest.simulasi_terbit("<html></html>", core.date.fromisoformat(TODAY))
+    rusak = html.replace("<!--STATIC_EVENTS_START-->", "<!--HILANG-->", 1)
+    assert "penanda blok" in ingest.simulasi_terbit(rusak, core.date.fromisoformat(TODAY))
+    n0 = len(events(d)); html0 = (d / "index.html").read_text(encoding="utf-8")
+    asli = build.build_jsonld
+
+    def pecah(*a, **k):
+        raise RuntimeError("build rusak uji")
+    build.build_jsonld = pecah
+    try:
+        h = jalankan(d, [iss(1040, form(Judul="Judul sim", Tanggal="10 Okt 2026"))])
+    finally:
+        build.build_jsonld = asli
+    assert h[0]["status"] == "gagal" and "kesalahan internal" in h[0]["komentar"] and "uji prune/build gagal" in h[0]["komentar"], h[0]["komentar"]
+    assert (d / "index.html").read_text(encoding="utf-8") == html0 and len(events(d)) == n0
+    assert not any(x["issue"] == 1040 for x in kat(d)["diproses"])
+
+
+@uji("Q4: kegagalan membuat templat formulir tidak menghalangi data terbit")
+def _():
+    d = siapkan(); asli = ad.render_template
+
+    def pecah(*a, **k):
+        raise RuntimeError("templat rusak uji")
+    ad.render_template = pecah
+    try:
+        h = jalankan(d, [iss(1050, form(Judul="Judul templat", Tanggal="10 Okt 2026"))])
+    finally:
+        ad.render_template = asli
+    assert h[0]["status"] == "ok" and any(e["title"] == "Judul templat" for e in events(d))
+
+
 @uji("pecah_body: heading, _No response_, centang")
 def _():
     f = ad.pecah_body("### Tanggal\n\n2026-10-10\n\n### Jam\n\n_No response_\n\n### Kajian rutin\n\n- [X] Kajian rutin atau berkala\n")

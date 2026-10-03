@@ -24,6 +24,7 @@ Format issues.json: [{"number": 12, "title": "Tambah kajian: ...", "body": "..."
 """
 
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -35,6 +36,8 @@ import adapter_issue_form as adapter  # noqa: E402
 import adapter_koreksi_form as adapter_k  # noqa: E402
 import ingest_core as core  # noqa: E402
 import koreksi_core as koreksi  # noqa: E402
+import build  # noqa: E402
+import prune  # noqa: E402
 
 PEMILIK = os.environ.get("INGEST_PEMILIK", "reconciler")
 FILE_TEMPLATE = ".github/ISSUE_TEMPLATE/tambah-kajian.yml"
@@ -66,6 +69,44 @@ def periksa_kunci(konfirmasi, aksi, jumlah, sidik, lama, buat_pratinjau):
                              "konfirmasi lagi.")
     if not cocok:
         raise koreksi.PerluKonfirmasi(buat_pratinjau(cat), sidik)
+
+
+class GalatInternal(Exception):
+    """Kegagalan sistem (bukan isian pengguna) yang terdeteksi sebelum perubahan diterima."""
+
+
+def simulasi_terbit(html, hari_ini):
+    """Uji kering (dalam memori) langkah prune + build pada html hasil perubahan. -> None bila lolos, atau teks alasan.
+    Mencegah satu Issue membuat prune.py/build.py gagal di langkah workflow berikutnya (yang menjatuhkan semua run)."""
+    hari = hari_ini.isoformat()
+    cocok = [m for m in (prune.EVENT_RX.match(l) for l in html.splitlines()) if m]
+    if not cocok:
+        return "prune tidak mengenali satu pun baris event"
+    if not any(m.group(2) >= hari for m in cocok):
+        return "tidak ada kajian mendatang (prune dan build menolak daftar tanpa kajian mendatang)"
+    try:
+        events = build.parse_events(html)
+        upcoming = sorted((e for e in events if e["date"] >= hari), key=lambda e: (e["date"], e["timeOrder"]))
+        if not upcoming:
+            return "build tidak menemukan kajian mendatang"
+        keluar = build.replace_between(html, "<!--STATIC_EVENTS_START-->", "<!--STATIC_EVENTS_END-->",
+                                       build.build_static_html(upcoming))
+        keluar = build.replace_between(keluar, "<!--LD_JSON_START-->", "<!--LD_JSON_END-->",
+                                       "\n" + build.build_jsonld(upcoming) + "\n")
+        json.loads(keluar.split("<!--LD_JSON_START-->")[1].split("<!--LD_JSON_END-->")[0]
+                   .split(">", 1)[1].rsplit("</script>", 1)[0])
+    except SystemExit:
+        return "build menolak berkas (penanda blok tidak ditemukan)"
+    except Exception as e:  # noqa: BLE001
+        return f"build gagal ({type(e).__name__}: {e})"
+    return None
+
+
+def komentar_internal(e):
+    return ("Issue ini **tidak diproses** karena **kesalahan internal sistem** (bukan isian Anda): "
+            f"{kode(type(e).__name__ + ': ' + str(e)[:200])}. Tidak ada data yang berubah dan Issue tetap terbuka. "
+            "Sistem tidak mencoba ulang otomatis; edit Issue ini (mis. tambahkan satu spasi) untuk mencoba lagi setelah "
+            "pemelihara memperbaiki, atau laporkan ke pemelihara.")
 
 
 def hash_isi(iss):
@@ -234,102 +275,120 @@ def main(argv=None):
         n = iss["number"]
         if iss.get("login") != PEMILIK:
             continue
-        # Penanda formulir = judul kolom di isi Issue; awalan judul tetap dikenali (kolom hilang -> komentar gagal).
-        judul_iss, isi_iss = str(iss.get("title", "")), iss.get("body", "")
-        # Isi menentukan lebih dulu (judul bebas diedit); awalan judul hanya dipakai bila isi tidak dikenali.
-        if adapter.adalah_formulir(isi_iss):
-            bentuk = "tambah"
-        elif adapter_k.adalah_koreksi(isi_iss):
-            bentuk = "koreksi"
-        elif judul_iss.startswith(adapter.JUDUL_ISSUE.strip()):
-            bentuk = "tambah"
-        elif judul_iss.startswith(adapter_k.JUDUL_KOREKSI.strip()):
-            bentuk = "koreksi"
-        else:
-            continue
-        if n in diproses:
-            if n == a.edited:  # diedit setelah diproses: beri tahu, jangan diam
-                ids = next(d["id"] for d in kat["diproses"] if d["issue"] == n)
-                hasil_semua.append({"issue": n, "status": "abaikan", "id": ids, "komentar": komentar_abaikan(ids)})
-            continue
-        gagal_lama = [g for g in kat["gagal"] if g["issue"] == n]
         sidik = hash_isi(iss)
-        if gagal_lama and n != a.edited and gagal_lama[0].get("isi") in (None, sidik):
-            continue  # sudah dilaporkan gagal dan isinya belum berubah; tunggu diedit
-        kat["gagal"] = [g for g in kat["gagal"] if g["issue"] != n]
-
-        events_ada = core.events_dari_html(html)
-        if bentuk == "koreksi":
-            try:
-                pk = adapter_k.ke_paket(isi_iss, kat, events_ada, hari_ini)
-                if pk["aksi"] == "hapus":
-                    dihapus = [e for e in events_ada if e["id"] in set(pk["ids"])]
-                    # Prune menolak daftar tanpa event mendatang (pengaman "hapus SEMUA"): tolak sebelum menulis apa pun.
-                    sisa = [e for e in events_ada
-                            if e["id"] not in set(pk["ids"]) and e["date"] >= hari_ini.isoformat()]
-                    if not sisa:
-                        raise core.InputError(
-                            "Penghapusan ini menyisakan 0 kajian mendatang. Situs tidak boleh kosong "
-                            "(prune dan build menolak daftar kosong). Kurangi Target, atau tambahkan kajian lain dulu.")
-                    periksa_kunci(pk["konfirmasi"], "hapus", len(dihapus), sidik_pratinjau("hapus", dihapus),
-                                  gagal_lama[0].get("pratinjau") if gagal_lama else None,
-                                  lambda cat: pratinjau_hapus(dihapus, cat))
-                    html_baru = koreksi.hapus_baris(html, pk["ids"])
-                    komentar = komentar_hapus(dihapus)
-                    ringkas = f"hapus {len(dihapus)} kajian (id {', '.join(map(str, pk['ids']))})"
-                else:
-                    hk = koreksi.proses_koreksi(pk, kat, events_ada, hari_ini)
-                    periksa_kunci(pk["konfirmasi"], "koreksi", len(hk["ganti"]),
-                                  sidik_pratinjau("koreksi", [pk["ids"], hk["perbedaan"]]),
-                                  gagal_lama[0].get("pratinjau") if gagal_lama else None,
-                                  lambda cat: pratinjau_koreksi(hk, cat))
-                    html_baru = html
-                    for i_ev, ev in hk["ganti"].items():
-                        html_baru = koreksi.ganti_baris(html_baru, i_ev, ev)
-                    for kunci_kat in ("kota", "masjid", "pemateri"):
-                        kat[kunci_kat] = hk["kat_kerja"][kunci_kat]
-                    komentar = komentar_koreksi(hk)
-                    ringkas = f"koreksi {len(hk['ganti'])} kajian (id {', '.join(map(str, pk['ids']))})"
-            except koreksi.PerluKonfirmasi as e:
-                kat["gagal"].append({"issue": n, "alasan": ["menunggu konfirmasi"], "isi": sidik, "pratinjau": e.digest})
-                hasil_semua.append({"issue": n, "status": "gagal", "id": [], "komentar": e.pratinjau})
+        snap_html, snap_kat = html, copy.deepcopy(kat)
+        try:
+            # Penanda formulir = judul kolom di isi Issue; awalan judul tetap dikenali (kolom hilang -> komentar gagal).
+            judul_iss, isi_iss = str(iss.get("title", "")), iss.get("body", "")
+            # Isi menentukan lebih dulu (judul bebas diedit); awalan judul hanya dipakai bila isi tidak dikenali.
+            if adapter.adalah_formulir(isi_iss):
+                bentuk = "tambah"
+            elif adapter_k.adalah_koreksi(isi_iss):
+                bentuk = "koreksi"
+            elif judul_iss.startswith(adapter.JUDUL_ISSUE.strip()):
+                bentuk = "tambah"
+            elif judul_iss.startswith(adapter_k.JUDUL_KOREKSI.strip()):
+                bentuk = "koreksi"
+            else:
                 continue
+            if n in diproses:
+                if n == a.edited:  # diedit setelah diproses: beri tahu, jangan diam
+                    ids = next(d["id"] for d in kat["diproses"] if d["issue"] == n)
+                    hasil_semua.append({"issue": n, "status": "abaikan", "id": ids, "komentar": komentar_abaikan(ids)})
+                continue
+            gagal_lama = [g for g in kat["gagal"] if g["issue"] == n]
+            if gagal_lama and n != a.edited and gagal_lama[0].get("isi") in (None, sidik):
+                continue  # sudah dilaporkan gagal dan isinya belum berubah; tunggu diedit
+            kat["gagal"] = [g for g in kat["gagal"] if g["issue"] != n]
+
+            events_ada = core.events_dari_html(html)
+            if bentuk == "koreksi":
+                try:
+                    pk = adapter_k.ke_paket(isi_iss, kat, events_ada, hari_ini)
+                    if pk["aksi"] == "hapus":
+                        dihapus = [e for e in events_ada if e["id"] in set(pk["ids"])]
+                        # Prune menolak daftar tanpa event mendatang (pengaman "hapus SEMUA"): tolak sebelum menulis apa pun.
+                        sisa = [e for e in events_ada
+                                if e["id"] not in set(pk["ids"]) and e["date"] >= hari_ini.isoformat()]
+                        if not sisa:
+                            raise core.InputError(
+                                "Penghapusan ini menyisakan 0 kajian mendatang. Situs tidak boleh kosong "
+                                "(prune dan build menolak daftar kosong). Kurangi Target, atau tambahkan kajian lain dulu.")
+                        periksa_kunci(pk["konfirmasi"], "hapus", len(dihapus), sidik_pratinjau("hapus", dihapus),
+                                      gagal_lama[0].get("pratinjau") if gagal_lama else None,
+                                      lambda cat: pratinjau_hapus(dihapus, cat))
+                        html_baru = koreksi.hapus_baris(html, pk["ids"])
+                        komentar = komentar_hapus(dihapus)
+                        ringkas = f"hapus {len(dihapus)} kajian (id {', '.join(map(str, pk['ids']))})"
+                    else:
+                        hk = koreksi.proses_koreksi(pk, kat, events_ada, hari_ini)
+                        periksa_kunci(pk["konfirmasi"], "koreksi", len(hk["ganti"]),
+                                      sidik_pratinjau("koreksi", [pk["ids"], hk["perbedaan"]]),
+                                      gagal_lama[0].get("pratinjau") if gagal_lama else None,
+                                      lambda cat: pratinjau_koreksi(hk, cat))
+                        html_baru = html
+                        for i_ev, ev in hk["ganti"].items():
+                            html_baru = koreksi.ganti_baris(html_baru, i_ev, ev)
+                        for kunci_kat in ("kota", "masjid", "pemateri"):
+                            kat[kunci_kat] = hk["kat_kerja"][kunci_kat]
+                        komentar = komentar_koreksi(hk)
+                        ringkas = f"koreksi {len(hk['ganti'])} kajian (id {', '.join(map(str, pk['ids']))})"
+                except koreksi.PerluKonfirmasi as e:
+                    kat["gagal"].append({"issue": n, "alasan": ["menunggu konfirmasi"], "isi": sidik, "pratinjau": e.digest})
+                    hasil_semua.append({"issue": n, "status": "gagal", "id": [], "komentar": e.pratinjau})
+                    continue
+                except core.InputError as e:
+                    kat["gagal"].append({"issue": n, "alasan": e.pesan, "isi": sidik})
+                    hasil_semua.append({"issue": n, "status": "gagal", "id": [], "komentar": komentar_gagal(e.pesan)})
+                    continue
+                galat_sim = simulasi_terbit(html_baru, hari_ini)
+                if galat_sim:
+                    raise GalatInternal("uji prune/build gagal: " + galat_sim)
+                html = html_baru
+                kat["diproses"].append({"issue": n, "id": pk["ids"], "aksi": pk["aksi"]})
+                diproses.add(n)
+                hasil_semua.append({"issue": n, "status": "ok", "id": pk["ids"], "komentar": komentar,
+                                    "komentar_tertunda": komentar_tertunda(pk["ids"], pk["aksi"])})
+                pesan_commit.append(f"Issue #{n}: {ringkas}")
+                continue
+            try:
+                paket = adapter.ke_paket(iss.get("body", ""), kat, hari_ini)
+                hasil = core.bangun_event(paket, kat, hari_ini, events_ada)
             except core.InputError as e:
                 kat["gagal"].append({"issue": n, "alasan": e.pesan, "isi": sidik})
-                hasil_semua.append({"issue": n, "status": "gagal", "id": [], "komentar": komentar_gagal(e.pesan)})
+                hasil_semua.append({"issue": n, "status": "gagal", "id": [],
+                                    "komentar": komentar_gagal(e.pesan)})
                 continue
-            html = html_baru
-            kat["diproses"].append({"issue": n, "id": pk["ids"], "aksi": pk["aksi"]})
-            diproses.add(n)
-            hasil_semua.append({"issue": n, "status": "ok", "id": pk["ids"], "komentar": komentar,
-                                "komentar_tertunda": komentar_tertunda(pk["ids"], pk["aksi"])})
-            pesan_commit.append(f"Issue #{n}: {ringkas}")
-            continue
-        try:
-            paket = adapter.ke_paket(iss.get("body", ""), kat, hari_ini)
-            hasil = core.bangun_event(paket, kat, hari_ini, events_ada)
-        except core.InputError as e:
-            kat["gagal"].append({"issue": n, "alasan": e.pesan, "isi": sidik})
-            hasil_semua.append({"issue": n, "status": "gagal", "id": [],
-                                "komentar": komentar_gagal(e.pesan)})
-            continue
 
-        id0 = core.id_berikutnya(html, kat)
-        ids = list(range(id0, id0 + len(hasil["events"])))
-        if hasil["events"]:
-            html = core.sisipkan(html, [core.baris_event(ev, i) for ev, i in zip(hasil["events"], ids)])
-            core.terapkan_kategori(kat, hasil)
-        if ids:
-            kat["id_tertinggi"] = max(int(kat.get("id_tertinggi") or 0), ids[-1])
-        kat["diproses"].append({"issue": n, "id": ids})
-        diproses.add(n)
-        hasil_semua.append({"issue": n, "status": "ok", "id": ids,
-                            "komentar": komentar_ok(n, hasil["events"], ids, hasil, paket.get("info")),
-                            "komentar_tertunda": komentar_tertunda(ids)})
-        if ids:
-            pesan_commit.append(f"Issue #{n}: tambah {len(ids)} kajian (id {ids[0]}-{ids[-1]})")
-        else:
-            pesan_commit.append(f"Issue #{n}: tidak ada event baru")
+            id0 = core.id_berikutnya(html, kat)
+            ids = list(range(id0, id0 + len(hasil["events"])))
+            if hasil["events"]:
+                html_cand = core.sisipkan(html, [core.baris_event(ev, i) for ev, i in zip(hasil["events"], ids)])
+                galat_sim = simulasi_terbit(html_cand, hari_ini)
+                if galat_sim:
+                    raise GalatInternal("uji prune/build gagal: " + galat_sim)
+                html = html_cand
+                core.terapkan_kategori(kat, hasil)
+            if ids:
+                kat["id_tertinggi"] = max(int(kat.get("id_tertinggi") or 0), ids[-1])
+            kat["diproses"].append({"issue": n, "id": ids})
+            diproses.add(n)
+            hasil_semua.append({"issue": n, "status": "ok", "id": ids,
+                                "komentar": komentar_ok(n, hasil["events"], ids, hasil, paket.get("info")),
+                                "komentar_tertunda": komentar_tertunda(ids)})
+            if ids:
+                pesan_commit.append(f"Issue #{n}: tambah {len(ids)} kajian (id {ids[0]}-{ids[-1]})")
+            else:
+                pesan_commit.append(f"Issue #{n}: tidak ada event baru")
+        except Exception as e:  # noqa: BLE001 - satu Issue bermasalah tidak boleh menjatuhkan run atau Issue lain
+            html = snap_html
+            kat.clear()
+            kat.update(snap_kat)
+            diproses = {d["issue"] for d in kat["diproses"]}
+            kat["gagal"] = [g for g in kat["gagal"] if g["issue"] != n]
+            kat["gagal"].append({"issue": n, "alasan": ["kesalahan internal"], "isi": sidik})
+            hasil_semua.append({"issue": n, "status": "gagal", "id": [], "komentar": komentar_internal(e)})
+            print(f"PERINGATAN: Issue #{n} gagal karena kesalahan internal: {type(e).__name__}: {e}", file=sys.stderr)
 
     if html != awal_html:
         f_html.write_text(html, encoding="utf-8")
@@ -339,19 +398,23 @@ def main(argv=None):
         core.simpan_kategori(f_kat, kat)
 
     # templat formulir selalu dibuat ulang dari daftar induk (ditulis hanya bila berubah)
-    folder = root / ".github" / "ISSUE_TEMPLATE"
-    folder.mkdir(parents=True, exist_ok=True)
-    baru = adapter.render_template(core.muat_kategori(f_kat))
-    f_tpl = root / FILE_TEMPLATE
-    if not f_tpl.exists() or f_tpl.read_text(encoding="utf-8") != baru:
-        f_tpl.write_text(baru, encoding="utf-8")
-    f_tpl_k = root / FILE_TEMPLATE_KOREKSI
-    baru_k = adapter_k.render_template(core.muat_kategori(f_kat))
-    if not f_tpl_k.exists() or f_tpl_k.read_text(encoding="utf-8") != baru_k:
-        f_tpl_k.write_text(baru_k, encoding="utf-8")
-    f_cfg = root / FILE_CONFIG
-    if not f_cfg.exists() or f_cfg.read_text(encoding="utf-8") != ISI_CONFIG:
-        f_cfg.write_text(ISI_CONFIG, encoding="utf-8")
+    # Tidak fatal: kegagalan membuat templat tidak boleh menghalangi data kajian terbit.
+    try:
+        folder = root / ".github" / "ISSUE_TEMPLATE"
+        folder.mkdir(parents=True, exist_ok=True)
+        baru = adapter.render_template(core.muat_kategori(f_kat))
+        f_tpl = root / FILE_TEMPLATE
+        if not f_tpl.exists() or f_tpl.read_text(encoding="utf-8") != baru:
+            f_tpl.write_text(baru, encoding="utf-8")
+        f_tpl_k = root / FILE_TEMPLATE_KOREKSI
+        baru_k = adapter_k.render_template(core.muat_kategori(f_kat))
+        if not f_tpl_k.exists() or f_tpl_k.read_text(encoding="utf-8") != baru_k:
+            f_tpl_k.write_text(baru_k, encoding="utf-8")
+        f_cfg = root / FILE_CONFIG
+        if not f_cfg.exists() or f_cfg.read_text(encoding="utf-8") != ISI_CONFIG:
+            f_cfg.write_text(ISI_CONFIG, encoding="utf-8")
+    except Exception as e:  # noqa: BLE001
+        print(f"PERINGATAN: templat formulir tidak diperbarui: {type(e).__name__}: {e}", file=sys.stderr)
 
     Path(a.out).write_text(json.dumps({"hasil": hasil_semua}, ensure_ascii=False), encoding="utf-8")
     Path(a.commit_msg).write_text(
