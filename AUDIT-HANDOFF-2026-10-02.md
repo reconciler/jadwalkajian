@@ -318,9 +318,41 @@ Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor
 3. **Push 3 (`deploy.yml`)**: Q13.
 4. **Push 4 (`deploy.yml`)**: B1 (satu komit bot per run) paling akhir karena menyentuh logika push. Alasan: tiap push `deploy.yml` menjalankan versi BARU alur; kesalahan di B1 paling mahal.
 
-### Push 1 (zero-state + Q3)
+### Push 1 (zero-state + Q3) — komit `3e412ca`, run #29 `success` (deploy dilewati: hanya `scripts/**` dan dokumen)
 - **Penyimpangan dari spesifikasi 7.2 (lebih aman):** spesifikasi Q3 menyebut "bila parser menemukan nol baris sebelum prune, pengaman lama tetap berlaku (exit 1)". Itu membuat daftar yang SUDAH kosong (setelah prune mengosongkannya) gagal di run berikutnya: terbukti di uji idempotensi (`prune.py` exit 1 pada run kedua). PIC membedakan **daftar benar-benar kosong** (struktur array utuh dan badan array hanya spasi) dari **parser rusak** (badan array berisi baris yang tidak dikenali, atau penanda hilang): yang pertama sah dan idempoten, yang kedua tetap exit 1 dengan pesan lama. Tujuan pengaman tetap terjaga.
 - `build.py`: `ARRAY_AWAL`, `ARRAY_AKHIR`, `punya_array_events()`, `array_events_kosong()`; daftar kosong menghasilkan blok statis ("Belum ada kajian mendatang.") dan JSON-LD `ItemList` kosong yang sah. `prune.py`: konstanta penanda yang sama (uji memastikan pola identik), `array_kosong()`, hasil prune boleh nol event hanya bila penanda utuh. `ingest_core.sisipkan()`: pada array kosong menyisipkan tepat setelah `const allEvents=[`. `simulasi_terbit()`: daftar kosong/tanpa kajian mendatang kini sah (`None`), gagal hanya bila baris tak dikenali atau struktur hilang.
 - **Q2 dipertahankan sebagai kebijakan** (bukan lagi karena prune menolak): Hapus lewat formulir yang menyisakan 0 kajian mendatang tetap ditolak (kemungkinan Target keliru); daftar kosong hanya terjadi otomatis saat semua kajian kedaluwarsa. Pesan penolakan diperbarui.
 - Uji: mekanisme `Dilewati` (PyYAML atau node tidak ada = dilewati, bukan gagal; relevan untuk Q13 di runner CI); uji Q3 (semua kedaluwarsa lolos dan idempoten, blok sah, JS valid, Tambah ke daftar kosong, pemulihan prune+build); uji pengaman (format baris berubah, penanda hilang, penutup hilang: tetap exit 1 dan tidak menulis); uji pola penanda prune = build. Suite 61 lulus; 3 uji baru terbukti **gagal pada kode lama**. Situs kosong dimuat di Chromium: "Tidak ada kajian", tanpa galat JS.
+
+### Push 2: B3 + B2/Q4-workflow (`deploy.yml`) — komit `8648281`, run #30 `success`
+- **B3:** `docs` masuk daftar penjaga `_site` dan `docs/formulir-issue.md`, `docs/riwayat-migrasi.md` masuk `INTERNAL` pada uji 404 pasca-terbit. Run #30 menerbitkan ke Pages (karena `deploy.yml` ada di `WATCH`) dan langkah "Uji situs live setelah terbit" `success`, jadi 404 untuk `docs/*` terbukti di situs publik (data log Actions).
+- **B2/Q4-workflow:** langkah "Komentar hasil dan tutup Issue" kini per Issue dengan fungsi `coba()`: sampai 3 kali dengan jeda, 404/410 tidak diulang, gagal permanen = `core.warning` dan lanjut, Issue baru ditutup hanya bila komentar hasilnya terkirim (bila tidak, penyapu run berikutnya yang menutup), penyapu dibungkus `try/catch`. **Penyimpangan lebih aman dari spesifikasi:** percobaan ulang (spesifikasi hanya meminta peringatan dan lanjut), karena catatan `gagal` sudah ter-commit sehingga komentar yang terlewat tidak pernah dikirim ulang.
+- Validasi: YAML, `bash -n` semua blok `run`, `node --check` semua skrip github-script, dan simulasi Node dengan API tiruan (8 skenario: lancar, gagal permanen 500, komentar gagal tidak menutup Issue, 404 tanpa ulang, gangguan sesaat pulih, penyapu gagal, belum terbit, tutup gagal). **Skrip lama terbukti gagal pada simulasi yang sama** (melempar dan menghentikan komentar Issue lain): temuan bagian 16 yang tadinya "dari membaca kode" kini **terbukti**.
+
+### Push 3: Q13 (`deploy.yml`) — komit `bfcdb5f`, run #31 `success`
+- Langkah "Uji logika skrip" sebelum ingest, `if: github.event_name == 'push'`, `timeout-minutes: 10`, `PYTHONDONTWRITEBYTECODE=1`. **Penyimpangan lebih aman:** dilewati bila push tidak mengubah `scripts/` atau `deploy.yml` (push data flyer manual tidak pernah diblokir uji kode); bila pembanding push tidak tersedia (push pertama/force-push) uji dijalankan; berkas repo yang berubah akibat uji dipulihkan dengan peringatan. Uji ber-PyYAML/node **dilewati, bukan gagal** (runner `setup-python` tidak memuat PyYAML; sengaja tidak memasang paket PyPI agar rantai pasok tidak melebar).
+- **Temuan penting sebelum mengaktifkan Q13 (bom waktu pada uji):** (1) beberapa uji menjalankan `prune.py`/`build.py` dengan jam asli lalu mengharapkan event bertanggal Okt 2026 tetap ada: uji "Mingguan uji" akan gagal mulai 4 Okt 2026 dan uji Q1 mulai 11 Okt 2026, lepas dari kode; (2) uji memakai salinan `index.html` dan `kategori.json` live: event live bisa habis (sah sejak Q3) atau master dikoreksi manual. **Perbaikan:** hook `JADWAL_HARI_INI` di `prune.py` dan `build.py` (hanya uji; produksi tidak memakainya), data beku `scripts/fixtures/` (isi `allEvents` dan master per 3 Okt 2026) dipakai `siapkan()`. **Eksperimen:** suite lulus (62) dengan `index.html` live dikosongkan dan master live diubah, dan dengan jam proses dimajukan ke 2027-03-01. Perubahan `prune.py`/`build.py` ini hanya tambahan hook, perilaku produksi tidak berubah.
+- Simulasi langkah (repo git sementara): hanya data berubah = dilewati; kode berubah = uji lulus; tanpa PyYAML = dilewati exit 0; uji merah = langkah gagal; `SEBELUM` nol atau tak dikenal = uji dijalankan; berkas liar = peringatan dan dipulihkan. Klon bersih tanpa PyYAML: 59 lulus, 0 gagal, 3 dilewati. Di CI: langkah berjalan sekitar 10 detik, `success`.
+- **Batas:** 3 uji berbasis YAML (templat dan urutan dropdown, A2) hanya berjalan lokal, tidak di CI.
+
+### Push 4: B1 (`deploy.yml`) — komit `9f39a66`, run #32 `success` (tanpa komit bot karena tidak ada selisih)
+- Satu komit bot per run memuat `index.html`, `data/kategori.json`, dan `.github/ISSUE_TEMPLATE/`; pesan dari `commit-msg.txt` ditambah baris "Templat formulir Issue diperbarui" bila templat berubah. Langkah "Perbarui templat formulir Issue" terpisah dihapus. Pengulangan 4 kali dengan reset ke `origin/main`, logika tag `last-deploy`, pemicu, dan izin **tidak diubah**. Izin token terbukti dari riwayat (komit bot `f338bdf` mem-push `.github/ISSUE_TEMPLATE`).
+- Simulasi dengan remote bare (skrip lama sebagai pembanding, skrip baru): tanpa perubahan = tanpa komit; event manual = 1 komit (master + dua templat); Issue Tambah = 1 komit (HTML + master + templat); push ditolak (origin maju) = reset, ulangi, 1 komit dan komit pihak lain tetap utuh; hanya templat berubah (schedule) = 1 komit; ditolak permanen = tepat 4 percobaan lalu gagal dengan pesan "Gagal memuat data". Skrip lama pada skenario yang sama meninggalkan templat tanpa komit (butuh komit kedua).
+- **Belum terbukti di GitHub:** jalur komit B1 dengan data nyata (run #32 tidak punya perubahan). Menunggu Issue nyata Amal berikutnya atau event manual; tidak ada data uji yang diterbitkan ke situs publik.
+
+### Ringkasan status antrian
+| Butir | Status |
+|---|---|
+| Q3 | selesai (push 1), dengan penyimpangan lebih aman (daftar yang sudah kosong sah dan idempoten) |
+| Q4-workflow, B2 | selesai (push 2), dengan percobaan ulang |
+| B3 | selesai (push 2), terbukti di situs publik lewat uji 404 |
+| Q13 | selesai (push 3), hanya untuk push yang mengubah kode |
+| B1 | selesai (push 4); jalur komit nyata belum teruji di GitHub |
+| Q9, Q1, Q2, Q5-Q8, Q10-Q12, Q14, Q16, A1, A2 | selesai pada bagian 15-17 |
+
+### Temuan terbuka untuk Auditor/Amal
+- **`MAKS_OPSI_DROPDOWN = 150`** (bagian 17) masih menunggu keputusan.
+- **Kebijakan Hapus (Q2):** formulir tetap menolak penghapusan yang menyisakan 0 kajian mendatang walau daftar kosong kini sah; bila Amal ingin mengizinkan, perlu keputusan eksplisit.
+- **Uji YAML tidak di CI:** bila ingin tercakup, perlu keputusan memasang PyYAML (paket PyPI) di runner.
+- Pesan langsung ke sesi Auditor tidak terjangkau dari sesi PIC (`SendMessage`: sesi tidak aktif di mesin ini); git adalah jalur lapor.
 
