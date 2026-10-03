@@ -286,7 +286,7 @@ Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor
 - **Q9** (aturan data, bukan pengecualian CLAUDE.md): dikerjakan sekarang atas instruksi Auditor yang tercatat di git.
 - **Q3 (`prune.py`), Q13 (`deploy.yml`), Q4-workflow** menyentuh pipeline terbit, pengecualian yang di CLAUDE.md "tetap menunggu konfirmasi Amal di chat PIC": **ditahan** sampai Amal mengonfirmasi satu kali di chat PIC. Spesifikasi teknis bagian 7.2 sudah dibaca dan akan dipakai apa adanya.
 
-### Q9 (komit lihat git log; run diverifikasi sebelum dicatat)
+### Q9 (komit `50de0d3`, run #27 `success`; deploy ke Pages dilewati karena hanya `scripts/**` dan dokumen berubah)
 - `tanggal_bebas.py`: `MAKS_TANPA_TAHUN = 180`; tanggal yang tahunnya diinferensi (format angka `d/m`, `d.m` dan format nama bulan) ditolak bila > hari ini + 180 hari; pesan menyebut tanggal hasil tafsir dan contoh dengan tahun. Tahun eksplisit tidak terkena batas ini (batas 730 hari tetap).
 - Uji: tepat 180 hari lolos, 181 ditolak (nama bulan, angka, rentang), tahun eksplisit lolos, Koreksi tanggal memakai pengurai yang sama. Terbukti **gagal pada pengurai lama**. Suite 55 lulus.
 - Dampak ke data lama: tidak ada (hanya validasi input baru).
