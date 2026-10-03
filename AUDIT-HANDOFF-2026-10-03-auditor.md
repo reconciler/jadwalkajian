@@ -151,3 +151,38 @@ Penanda: **[Keputusan Amal]** = disampaikan Amal langsung di chat Auditor. **[Ke
 - Satu kelompok per push; validasi 4 langkah; uji regresi yang terbukti gagal pada kode lama; verifikasi run `success` di Actions; catat di handoff PIC (bagian 16).
 - `deploy.yml` dan `prune.py` termasuk "wajib lapor": catat perubahan dan hasil run.
 - **Tidak ada uji di GitHub yang menerbitkan data ke situs publik** tanpa bertanya Amal. Untuk Q3, uji lewat salinan lokal; jangan mengosongkan situs live.
+
+## 8. Keputusan Amal atas usulan efisiensi dan usability (3 Okt 2026, chat Auditor)
+
+Penanda: **[Keputusan Amal]** = disampaikan Amal di chat Auditor. **[Terverifikasi Auditor]** = diperiksa langsung. **[Keputusan Auditor]** = rincian teknis.
+
+### 8.1 Keputusan
+- **[Keputusan Amal]** Usulan 1, 2, 3, 5 disetujui ("silakan eksekusi"). Usulan 4 (dropdown pemateri jadi teks bebas) **tidak perlu**: dropdown tidak merepotkan **selama terurut abjad menurut nama tanpa gelar**.
+- **[Terverifikasi Auditor]** Dropdown di templat saat ini **sudah terurut abjad** (pemateri 97 opsi + Belum ditentukan + Lainnya; masjid 26 opsi + Online + Lainnya). Tidak ada perubahan kode untuk usulan 4, hanya uji agar urutan itu tidak rusak (8.3 butir A2).
+
+### 8.2 Sudah dikerjakan Auditor
+- **Usulan 3 (pecah `CLAUDE.md`)**: bagian "Input event lewat formulir Issue" (163 baris) dipindah **verbatim** ke `docs/formulir-issue.md`; bagian "Riwayat migrasi" ke `docs/riwayat-migrasi.md`. `CLAUDE.md` memuat ringkasan 25 baris dengan aturan keras (keamanan, label = kunci parser, id tidak dipakai ulang, dropdown terurut abjad, alur flyer). **[Terverifikasi Auditor]** `CLAUDE.md` 533 -> 385 baris, 34,7 KB -> 23,2 KB; tidak ada baris bagian lama yang hilang (dicek per baris terhadap berkas baru).
+  - Berkas `docs/*.md` bukan berkas inti dan bukan daftar tulis Auditor di aturan akses; ditulis Auditor atas keputusan Amal ini. **PIC: tulis rincian fitur baru di `docs/formulir-issue.md`, bukan di `CLAUDE.md`; di `CLAUDE.md` cukup aturan keras.**
+  - Berkas `docs/` tidak ikut tayang (workflow menyalin daftar berkas tetap). Lihat B3 untuk pengamannya.
+- **Usulan 2 (ukur pemakaian)**: Auditor mengukur pada 17 Okt 2026 (dua minggu). Metrik: jumlah event yang masuk lewat komit "Ingest dari Issue" dibanding komit manual penambah event; jumlah Issue nyata (bukan uji); jumlah Issue gagal/ditolak. Tanpa data, tidak ada kesimpulan.
+
+### 8.3 Tugas PIC
+**Kelompok A: hanya `scripts/` dan uji (boleh langsung, tanpa konfirmasi tambahan)**
+- **A1 (usulan 1): sinkronisasi master dari `allEvents`.** Fungsi idempoten `sinkronkan_master(html, kat)` di `ingest_core.py`:
+  - Tiap event yang masjidnya belum ada di master (kunci: `tampil` + kota = `area`) ditambahkan ke `masjid` dengan `nama` = teks masjid tanpa akhiran ` (Kota)`, `kota` = `area`, `alamat` = `address`, `tampil` = teks event. Tiap event yang pematerinya belum cocok dengan `tampil`/`alias`/`nama` master ditambahkan ke `pemateri` (`nama` bersih lewat `nama_bersih()`, `tampil` = teks event). Kota baru dari `area` ditambahkan ke `kota`.
+  - **Jangan menghapus** entri master yang tidak dipakai event (master boleh menyimpan entri untuk kajian mendatang). Entri yang tidak bisa diurai: peringatan di komentar/log, bukan galat.
+  - Jalankan di awal **setiap** run `ingest.py` (semua jenis event). Berkas hanya berubah bila ada selisih; pada cron tanpa selisih tetap tidak ada komit.
+  - Sediakan CLI `python3 scripts/sinkron_master.py` (tanpa jaringan) dan masukkan ke langkah "Validasi wajib" jalur flyer di `CLAUDE.md`/docs, supaya jalur flyer tidak lagi perlu mengedit master manual.
+  - Uji "setiap event punya masjid di master" berubah menjadi "sinkronisasi tidak menghasilkan selisih" dan **hanya peringatan** (konsisten dengan keputusan Q13).
+- **A2 (usulan 4): uji urutan dropdown.** Pemateri terurut abjad menurut `nama` bersih tanpa memperhatikan huruf besar/kecil; masjid dan kota juga terurut (usulan Auditor, konsisten); "Belum ditentukan"/"Online"/"Lainnya" tetap di akhir. Uji gagal bila ada entri baru yang menyisip tidak terurut.
+
+**Kelompok B: pipeline terbit. Satu paket, menunggu satu kalimat "lanjut" Amal di chat PIC**
+(sama dengan Q3, Q13, Q4-workflow yang sudah PIC tahan; satu "lanjut" membuka semuanya)
+- **B1 (usulan 5): satu komit bot per run.** Hasil ingest, prune, build, dan pembaruan templat digabung menjadi **satu** komit (pesan dari `commit-msg.txt`, plus catatan bila ada prune/build). Pertahankan: pengulangan sampai 4 kali dengan reset ke `origin/main`, logika tag `last-deploy`, pemicu, izin. Uji lewat simulasi lokal dengan repo jarak jauh bare (termasuk tolakan push dan pengulangan). **Validasi di GitHub menunggu Issue nyata Amal berikutnya**; jangan menerbitkan data uji ke situs publik.
+- **B2 (temuan PIC bagian 16):** `try/catch` per Issue pada langkah "Komentar hasil dan tutup Issue" (galat API: peringatan, lanjut ke Issue berikutnya). Disetujui Auditor sebagai bagian Q4-workflow.
+- **B3: pengaman berkas internal.** Tambahkan `docs` ke daftar penjaga "berkas internal tidak boleh ikut ke `_site`" dan `docs/formulir-issue.md` ke daftar `INTERNAL` pada uji 404 pasca-terbit.
+- Q3 dan Q13 tetap sesuai bagian 7.2.
+
+### 8.4 Prosedur
+- Satu kelompok per push; validasi 4 langkah; uji regresi yang terbukti gagal pada kode lama; verifikasi run `success`; catat di handoff PIC (bagian 17).
+- A1 memengaruhi `kategori.json` dan templat (internal); tidak ada perubahan tampilan situs. Bila A1 mengubah daftar induk secara besar saat pertama jalan, tuliskan selisihnya di handoff.
