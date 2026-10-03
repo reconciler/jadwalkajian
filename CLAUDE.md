@@ -121,10 +121,31 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   (hanya Jam eksak: `09.30` atau `09.30-11.00`), Judul, Pemateri (dropdown **nama
   bersih tanpa gelar**) + Pemateri baru, Pemateri perempuan (→ `Khusus Akhwat`),
   Masjid (dropdown **`Nama (Kota)`**) + Nama/Alamat masjid baru, Kota masjid baru /
-  Kota lain, Audience (bawaan Terbuka untuk umum), Kajian rutin, Catatan
-  (opsional). Masjid = **Online**: isi penyelenggara di "Nama masjid baru" →
+  Kota lain, Audience (bawaan Terbuka untuk umum), Kajian rutin (dropdown tiga
+  keadaan, lihat di bawah), Catatan (opsional). Masjid = **Online**: isi penyelenggara di "Nama masjid baru" →
   `masjid` = `<penyelenggara> (Online)`, `area` = `Online`. Komentar balasan
   menampilkan tiap tanggal dengan nama hari; cek di sana.
+- **Sintaks Tanggal lengkap** (`scripts/tanggal_bebas.py`, instruksi Auditor 3 Okt 2026):
+  satu tanggal, daftar (`10, 17, 24 Okt 2026`), rentang (`3 Okt - 4 Okt 2026`,
+  `3-31 Okt 2026`), rentang dengan filter hari (`3-31 Okt 2026 setiap Sabtu & Ahad`),
+  pengecualian (`3-31 Okt 2026 setiap Sabtu kecuali 17, 24 Okt`; satu kata `kecuali`
+  per isian, berlaku untuk seluruh isian; pengecualian di luar pola diberi
+  peringatan; bila semua tanggal dikecualikan ditolak). **Batas 60 tanggal per Issue**
+  (dihitung setelah pengecualian; lewat batas ditolak sebelum menulis apa pun, pesan
+  menyebut jumlahnya). **Ditolak dengan saran "tulis daftar tanggal":** `tiap 2 minggu`,
+  `2 minggu sekali`, `pekan/minggu ke-N`, `bulanan`; dan `setiap minggu` (ambigu: tiap
+  pekan atau hari Minggu; tulis `Ahad` untuk Minggu). Satu Issue = satu jam dan satu
+  masjid (waktu/masjid berbeda per hari = Issue terpisah).
+- **Kajian rutin** (dropdown tiga keadaan; kotak centang lama dibaca sebagai "Ya"):
+  `Otomatis (rutin bila berulang tiap minggu)` (bawaan), `Ya (rutin)`, `Tidak`.
+  Otomatis = rutin bila ada **rentang dengan filter hari yang menghasilkan ≥ 2
+  tanggal**, atau tanggal hasil **berjumlah ≥ 3 dengan jarak seragam tepat 7 hari**;
+  selain itu tidak rutin (satu tanggal, daftar acak, rentang tanpa filter hari).
+  Aturan ini usulan Auditor yang disempurnakan PIC (syarat ≥ 2 tanggal pada rentang
+  berfilter; pilihan opsi tanpa koma ASCII). Komentar balasan menyebut pola terbaca,
+  tanggal dikecualikan, jumlah event, dan apakah rutin (beserta alasannya).
+- `diproses` menyimpan `Issue -> daftar id event` (`{"issue": n, "id": [..]}`); dasar
+  untuk formulir koreksi/hapus kelak (belum diminta).
 - **Pemateri** (keputusan Amal 3 Okt 2026): master menyimpan `nama` (bersih, untuk
   dropdown/pencarian/deteksi duplikat) dan `tampil` (lengkap dengan gelar, yang
   muncul di kartu situs), plus `alias`. Memilih dari dropdown → event memakai

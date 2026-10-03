@@ -39,8 +39,17 @@ def kode(s):
     return "`" + str(s).replace("`", "'") + "`"
 
 
-def komentar_ok(issue, events, ids, hasil):
-    b = ["Kajian dari Issue ini sudah masuk data dan **sudah terbit** di situs.", "",
+def komentar_ok(issue, events, ids, hasil, info=None):
+    info = info or {}
+    b = ["Kajian dari Issue ini sudah masuk data dan **sudah terbit** di situs.", ""]
+    if info.get("pola"):
+        b.append(f"- Pola terbaca: {kode(info['pola'])}")
+        if info.get("dikecualikan"):
+            b.append("- Dikecualikan: " + ", ".join(kode(x) for x in info["dikecualikan"]))
+        b.append(f"- Jumlah event ditambahkan: {len(events)}")
+        b.append(f"- Kajian rutin: {'ya' if info.get('rutin_nilai') else 'tidak'} ({info.get('rutin', '-')})")
+        b.append("")
+    b += [
          "| id | tanggal | waktu | judul | pemateri | masjid | kota |", "|---|---|---|---|---|---|---|"]
     for ev, i in zip(events, ids):
         b.append(f"| {i} | {ev['dayShort']} ({ev['date']}) | {kode(ev['timeLabel'])} | {kode(ev['title'])} | "
@@ -58,8 +67,9 @@ def komentar_ok(issue, events, ids, hasil):
             b.append("- masjid: " + ", ".join(kode(core.label_masjid(x)) for x in baru["masjid"]))
         if baru["pemateri"]:
             b.append("- pemateri: " + ", ".join(kode(x["tampil"]) + " (nama bersih " + kode(x["nama"]) + ")" for x in baru["pemateri"]))
-    if hasil["peringatan"]:
-        b += ["", "Peringatan:"] + [f"- {p}" for p in hasil["peringatan"]]
+    peringatan = list(info.get("peringatan", [])) + list(hasil["peringatan"])
+    if peringatan:
+        b += ["", "Peringatan:"] + [f"- {p}" for p in peringatan]
     return "\n".join(b)
 
 
@@ -129,7 +139,7 @@ def main(argv=None):
         kat["diproses"].append({"issue": n, "id": ids})
         diproses.add(n)
         hasil_semua.append({"issue": n, "status": "ok", "id": ids,
-                            "komentar": komentar_ok(n, hasil["events"], ids, hasil),
+                            "komentar": komentar_ok(n, hasil["events"], ids, hasil, paket.get("info")),
                             "komentar_tertunda": komentar_tertunda(ids)})
         if ids:
             pesan_commit.append(f"Issue #{n}: tambah {len(ids)} kajian (id {ids[0]}-{ids[-1]})")

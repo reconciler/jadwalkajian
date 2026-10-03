@@ -85,7 +85,7 @@ def _():
     d = siapkan(); k = kat(d)
     pem = next(p for p in k["pemateri"] if "," in p["tampil"])
     n0 = len(events(d)); id0 = core.id_berikutnya((d / "index.html").read_text(encoding="utf-8"))
-    h = jalankan(d, [iss(1, form(Jenis_waktu="Jam eksak", Jam="19.30", Pemateri=pem["nama"], Kajian_rutin="- [x] Kajian rutin atau berkala", Catatan="Catatan uji"))])
+    h = jalankan(d, [iss(1, form(Jenis_waktu="Jam eksak", Jam="19.30", Pemateri=pem["nama"], Kajian_rutin=ad.RUTIN_YA, Catatan="Catatan uji"))])
     assert h[0]["status"] == "ok", h
     ev = events(d)
     assert len(ev) == n0 + 1
@@ -291,6 +291,10 @@ def _():
     t = yaml.safe_load(ad.render_template(core.muat_kategori(REPO / "data" / "kategori.json")))
     assert t["title"] == ad.JUDUL_ISSUE and len(t["body"]) == 15
     assert next(x for x in t["body"] if x["id"] == "tanggal")["type"] == "input"
+    rt = next(x for x in t["body"] if x["id"] == "rutin")
+    assert rt["type"] == "dropdown" and rt["attributes"]["options"] == ad.OPSI_RUTIN and rt["attributes"]["default"] == 0
+    assert not any("," in s for s in rt["attributes"]["options"])
+    assert "kecuali" in next(x for x in t["body"] if x["id"] == "tanggal")["attributes"]["description"]
     ids = [x["id"] for x in t["body"]]; assert len(ids) == len(set(ids))
     assert [x["attributes"]["label"] for x in t["body"]] == [ad.LABEL[k] for k in ad.LABEL]
     for x in t["body"]:
@@ -329,6 +333,79 @@ def _():
     d = siapkan()
     h = jalankan(d, [iss(70, form(Tanggal="3-31 Okt 2026 setiap Sabtu"))])
     assert h[0]["status"] == "ok" and len(h[0]["id"]) == 5 and "Sab 31 Okt (2026-10-31)" in h[0]["komentar"], h[0]["komentar"]
+
+
+@uji("rutin: otomatis (rentang berfilter, 3 tanggal tiap 7 hari), bukan rutin (satu tanggal, acak), override Ya/Tidak")
+def _():
+    d = siapkan()
+    kasus = [  # (Tanggal, pilihan rutin, harapan)
+        ("3-31 Okt 2026 setiap Sabtu", "", True), ("3-31 Okt 2026 setiap Sabtu", ad.RUTIN_OTOMATIS, True),
+        ("10 Okt 2026", "", False), ("3, 10, 17 Okt 2026", "", True), ("3, 11, 17 Okt 2026", "", False),
+        ("3-5 Okt 2026", "", False), ("3-9 Okt 2026 Sabtu", "", False),
+        ("3-31 Okt 2026 Sabtu kecuali 17 Okt", "", True),
+        ("3-31 Okt 2026 Sabtu", ad.RUTIN_TIDAK, False), ("10 Okt 2026", ad.RUTIN_YA, True), ("3, 11, 17 Okt 2026", ad.RUTIN_YA, True),
+    ]
+    for i, (tg, pil, harap) in enumerate(kasus):
+        h = jalankan(d, [iss(200 + i, form(Judul=f"Rutin {i}", Tanggal=tg, Kajian_rutin=pil))])
+        assert h[0]["status"] == "ok", (tg, h)
+        ev = [e for e in events(d) if e["title"] == f"Rutin {i}"]
+        assert ev and all(e["isRutin"] is harap for e in ev), (tg, pil, harap, [e["isRutin"] for e in ev])
+    assert "otomatis" in jalankan(d, [iss(300, form(Judul="K", Tanggal="3-31 Okt 2026 Sabtu"))])[0]["komentar"]
+
+
+@uji("pola: lintas bulan dan tahun, dua hari, kecuali valid/di luar pola/menghabiskan semua, komentar lengkap")
+def _():
+    d = siapkan()
+    h = jalankan(d, [iss(210, form(Judul="Lintas", Tanggal="28 Des 2026 - 16 Jan 2027 setiap Sabtu & Ahad"))])
+    tg = sorted(e["date"] for e in events(d) if e["title"] == "Lintas")
+    assert tg == ["2027-01-02", "2027-01-03", "2027-01-09", "2027-01-10", "2027-01-16"], tg  # lintas tahun, hanya Sab & Min
+    k = h[0]["komentar"]
+    assert "Pola terbaca" in k and "Jumlah event ditambahkan: 5" in k and "hanya hari Sab & Min" in k, k
+    h = jalankan(d, [iss(211, form(Judul="Kec", Tanggal="3-31 Okt 2026 setiap Sabtu kecuali 17, 24 Okt"))])
+    assert [e["date"] for e in events(d) if e["title"] == "Kec"] == ["2026-10-03", "2026-10-10", "2026-10-31"]
+    assert "Dikecualikan" in h[0]["komentar"] and "Jumlah event ditambahkan: 3" in h[0]["komentar"]
+    h = jalankan(d, [iss(212, form(Judul="Kec2", Tanggal="3-31 Okt 2026 setiap Sabtu kecuali 17 Okt, 20 Okt"))])
+    assert "bukan bagian pola" in h[0]["komentar"] and len([e for e in events(d) if e["title"] == "Kec2"]) == 4
+    h = jalankan(d, [iss(213, form(Judul="Kec3", Tanggal="3-31 Okt 2026 setiap Sabtu kecuali 3, 10, 17, 24, 31 Okt"))])
+    assert h[0]["status"] == "gagal" and "dikecualikan" in h[0]["komentar"]
+    assert not [e for e in events(d) if e["title"] == "Kec3"]
+
+
+@uji("batas 60 event per Issue: tepat 60 lolos, 61 ditolak sebelum menulis apa pun, pesan menyebut jumlah")
+def _():
+    d = siapkan(); n0 = len(events(d))
+    h = jalankan(d, [iss(220, form(Judul="Enam puluh", Tanggal="1 Nov - 30 Des 2026"))])
+    assert h[0]["status"] == "ok" and len(h[0]["id"]) == 60 and len(events(d)) == n0 + 60
+    h = jalankan(d, [iss(221, form(Judul="Enam puluh satu", Tanggal="1 Nov - 31 Des 2026"))])
+    assert h[0]["status"] == "gagal" and "61 tanggal" in h[0]["komentar"] and "Persempit" in h[0]["komentar"], h[0]["komentar"]
+    h = jalankan(d, [iss(222, form(Judul="Setahun", Tanggal="1 Jan - 31 Des 2027"))])
+    assert h[0]["status"] == "gagal" and "365 tanggal" in h[0]["komentar"]
+    assert len(events(d)) == n0 + 60
+
+
+@uji("pola tak didukung ditolak dengan saran daftar tanggal: tiap 2 minggu, pekan ke-N, bulanan, setiap minggu")
+def _():
+    d = siapkan(); n0 = len(events(d))
+    for i, tg in enumerate(["tiap 2 minggu 3-31 Okt 2026", "3-31 Okt 2026 setiap 2 pekan", "minggu ke-2 Okt 2026", "pekan ketiga 2026",
+                            "setiap bulan 10 Okt 2026", "10 Okt 2026 bulanan", "3-31 Okt 2026 setiap minggu"]):
+        h = jalankan(d, [iss(230 + i, form(Judul=f"T{i}", Tanggal=tg))])
+        assert h[0]["status"] == "gagal", tg
+        assert ("daftar tanggal" in h[0]["komentar"]) or ("Sebut hari" in h[0]["komentar"]), (tg, h[0]["komentar"])
+    assert len(events(d)) == n0
+
+
+@uji("diproses menyimpan nomor Issue -> daftar id event; end-to-end pola mingguan lolos prune dan build")
+def _():
+    d = siapkan()
+    h = jalankan(d, [iss(240, form(Judul="Mingguan uji", Tanggal="3-31 Okt 2026 setiap Sabtu kecuali 17 Okt"))])
+    ids = h[0]["id"]
+    assert len(ids) == 4 and {"issue": 240, "id": ids} in kat(d)["diproses"]
+    assert sorted(e["id"] for e in events(d) if e["title"] == "Mingguan uji") == ids
+    env = {"PATH": "/usr/bin:/bin"}
+    for s in ("prune.py", "build.py"):
+        r = subprocess.run([sys.executable, str(d / "scripts" / s)], capture_output=True, text=True, env=env)
+        assert r.returncode == 0, r.stderr
+    assert len([e for e in events(d) if e["title"] == "Mingguan uji"]) == 4
 
 
 @uji("pecah_body: heading, _No response_, centang")

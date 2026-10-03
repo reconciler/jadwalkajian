@@ -9,7 +9,7 @@ body:
     id: tanggal
     attributes:
       label: "Tanggal"
-      description: "Satu isian. Contoh: 10 Okt 2026 | 10, 17, 24 Okt 2026 | 3-31 Okt 2026 Sabtu | 3 Okt - 4 Okt 2026 | 10/10/2026. Banyak tanggal = banyak event dengan isian yang sama. Tahun boleh dihilangkan. Cek hasilnya di komentar balasan."
+      description: "Satu isian. Contoh: 10 Okt 2026 | 10, 17, 24 Okt 2026 | 3-31 Okt 2026 Sabtu | 3-31 Okt 2026 setiap Sabtu kecuali 17 Okt | 3 Okt - 4 Okt 2026 | 10/10/2026. Banyak tanggal = banyak event dengan isian yang sama (maksimum 60 per Issue). Satu Issue = satu jam dan satu masjid: waktu atau masjid berbeda per hari = Issue terpisah. Tidak didukung: tiap 2 minggu, pekan ke-N, bulanan (tulis daftar tanggalnya). Tahun boleh dihilangkan. Cek hasilnya di komentar balasan."
       placeholder: "10 Okt 2026"
     validations:
       required: true
@@ -242,12 +242,18 @@ body:
         - "Khusus Ikhwan"
     validations:
       required: true
-  - type: checkboxes
+  - type: dropdown
     id: rutin
     attributes:
       label: "Kajian rutin"
+      description: "Otomatis: rutin bila tanggal berasal dari rentang dengan filter hari (>= 2 tanggal) atau tiga tanggal atau lebih berjarak tepat 7 hari. Selain itu pilih sendiri."
       options:
-        - label: "Kajian rutin atau berkala"
+        - "Otomatis (rutin bila berulang tiap minggu)"
+        - "Ya (rutin)"
+        - "Tidak"
+      default: 0
+    validations:
+      required: false
   - type: textarea
     id: catatan
     attributes:

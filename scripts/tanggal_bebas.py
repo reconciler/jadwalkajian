@@ -21,12 +21,23 @@ Format yang dikenali (huruf besar/kecil bebas; apostrof diabaikan):
     dengan tanggalnya, isian ditolak.
   - Tahun boleh dihilangkan: dipakai kejadian terdekat yang tidak lebih dari 30 hari
     yang lalu (mis. "5 Jan" ditulis bulan Desember = tahun depan).
+  - Pengecualian: "3-31 Okt 2026 setiap Sabtu kecuali 17 Okt" atau "kecuali 17, 24 Okt"
+    (berlaku untuk seluruh isian; satu kata "kecuali" saja; bulan boleh dihilangkan bila
+    seluruh tanggal utama berada di satu bulan). Pengecualian di luar pola diberi peringatan.
+  - Batas MAKS_TANGGAL (60) tanggal per isian, dihitung setelah pengecualian.
+  - Ditolak dengan pesan alternatif (tidak dibangun): "tiap 2 minggu", "2 minggu sekali",
+    "pekan/minggu ke-N", "bulanan", dan "setiap minggu" (ambigu: tiap pekan atau hari Minggu?).
+  parse_rinci() juga mengembalikan pola yang terbaca dan penilaian "rutin otomatis":
+  rutin bila ada rentang dengan filter hari yang menghasilkan >= 2 tanggal, atau bila
+  tanggal hasil berjumlah >= 3 dengan jarak seragam 7 hari. Selain itu tidak rutin.
 """
 
 import re
 from datetime import date, timedelta
 
-from ingest_core import InputError
+from ingest_core import BULAN as BULAN_SINGKAT
+from ingest_core import HARI as HARI_SINGKAT
+from ingest_core import MAKS_TANGGAL, InputError
 
 BULAN = {
     "januari": 1, "jan": 1, "februari": 2, "pebruari": 2, "feb": 2, "maret": 3, "mar": 3,
@@ -165,18 +176,62 @@ def _konteks_bulan(sisa):
     return None
 
 
-def parse(teks, hari_ini):
-    """-> daftar tanggal ISO unik terurut. Menaikkan InputError bila ada isian yang tidak sah."""
-    t = _normal(teks)
-    if not t:
-        raise InputError("Tanggal: wajib diisi (contoh: 10 Okt 2026).")
+def _fmt(d):
+    return f"{HARI_SINGKAT[d.weekday()]} {d.day} {BULAN_SINGKAT[d.month - 1]} {d.year}"
 
-    # jalur cepat: hanya token ISO (spasi/koma/baris baru)
+
+_ALT = "Tulis daftar tanggalnya, mis. '3, 17, 31 Okt 2026'."
+_TOLAK = [
+    (re.compile(r"\b(?:tiap|setiap)\s+(?:\d+|dua|tiga|empat)\s+(?:minggu|pekan)\b"), "selang lebih dari satu minggu"),
+    (re.compile(r"\b(?:\d+|dua|tiga|empat)\s+(?:minggu|pekan)\s+sekali\b"), "selang lebih dari satu minggu"),
+    (re.compile(r"\b(?:minggu|pekan)\s+ke-?\s*(?:\d+|[ivx]+|satu|dua|tiga|empat|pertama|kedua|ketiga|keempat|terakhir)\b"), "pola 'pekan ke-N'"),
+    (re.compile(r"\b(?:tiap|setiap)\s+bulan\b|\bbulanan\b"), "pola bulanan"),
+]
+_AMBIGU = re.compile(r"\b(?:tiap|setiap)\s+minggu\b")
+
+
+def _tolak_pola_tak_didukung(t):
+    for rx, nama in _TOLAK:
+        m = rx.search(t)
+        if m:
+            raise InputError(f"Tanggal: '{m.group(0)}' tidak didukung ({nama}). {_ALT}")
+    m = _AMBIGU.search(t)
+    if m:
+        raise InputError("Tanggal: 'setiap minggu' ambigu (tiap pekan atau hari Minggu?). "
+                         "Sebut hari yang dimaksud (mis. 'setiap Sabtu') atau tulis 'Ahad' untuk hari Minggu.")
+
+
+def _item_ke_tanggal(sisa, filt, asli, hari_ini):
+    """Satu item (sudah tanpa filter hari di ujungnya) -> (daftar date, deskripsi, rentang_berfilter)."""
+    bagian = _RENTANG.split(sisa)
+    m = re.fullmatch(r"(\d{1,2})\s*-\s*(\d{1,2})( [a-z]+)?( \d{4})?", sisa)
+    if m and m.group(3):
+        bagian = [m.group(1), f"{m.group(2)}{m.group(3)}{m.group(4) or ''}"]
+    if len(bagian) == 1:
+        d, _ = _tanggal_tunggal(bagian[0], hari_ini)
+        if filt and d.weekday() not in filt:
+            raise InputError(f"Tanggal: '{asli}': {d.isoformat()} bukan hari yang disebut.")
+        return [d], f"tanggal {_fmt(d)}", False
+    if len(bagian) == 2:
+        kanan, _ = _tanggal_tunggal(bagian[1], hari_ini)
+        kiri, _ = _tanggal_tunggal(bagian[0], hari_ini, (kanan.month, kanan.year))
+        if kiri.month > kanan.month and kiri.year == kanan.year and not re.search(r"\d{4}", bagian[0]):
+            kiri = date(kiri.year - 1, kiri.month, kiri.day)  # "28 Des - 3 Jan 2027"
+        hasil = _daftar_rentang(kiri, kanan, filt, asli)
+        desk = f"rentang {_fmt(kiri)} s/d {_fmt(kanan)}"
+        if filt:
+            desk += ", hanya hari " + " & ".join(HARI_SINGKAT[h] for h in sorted(filt))
+        return hasil, desk, bool(filt)
+    raise InputError(f"Tanggal: '{asli}' memuat lebih dari satu rentang.")
+
+
+def _parse_item_list(t, hari_ini, ctx_default=None):
+    """Teks tanpa 'kecuali' -> (daftar date, [deskripsi item], ada_rentang_berfilter_ge2)."""
     token = [x for x in re.split(r"[\s,;]+", t) if x]
     if token and all(_ISO.fullmatch(x) for x in token):
-        return sorted({_buat(int(x[:4]), int(x[5:7]), int(x[8:]), x).isoformat() for x in token})
+        ds = [_buat(int(x[:4]), int(x[5:7]), int(x[8:]), x) for x in token]
+        return ds, [f"{len(set(ds))} tanggal ISO"], False
 
-    # 1) kelompokkan item; item "hanya nama hari" menempel ke item sebelumnya sebagai filter
     mentah = [x.strip() for x in re.split(r"[;,\n]", t) if x.strip()]
     galat, item_list = [], []
     for item in mentah:
@@ -191,8 +246,8 @@ def parse(teks, hari_ini):
     if galat:
         raise InputError(galat)
 
-    # 2) "10, 17, 24 Okt 2026": tanggal polos meminjam bulan/tahun dari item berikutnya yang bernama bulan
-    ctx = None
+    # "10, 17, 24 Okt 2026": tanggal polos meminjam bulan/tahun dari item berikutnya yang bernama bulan
+    ctx = ctx_default
     for entri in reversed(item_list):
         sisa = entri[0]
         k = _konteks_bulan(sisa)
@@ -201,28 +256,90 @@ def parse(teks, hari_ini):
         elif ctx and re.fullmatch(r"(?:[a-z]+ )?\d{1,2}", sisa):
             entri[0] = f"{sisa} {ctx[0]}" + (f" {ctx[1]}" if ctx[1] else "")
 
-    hasil = []
+    hasil, deskripsi, rentang_filter = [], [], False
     for sisa, filt, asli in item_list:
         try:
-            bagian = _RENTANG.split(sisa)
-            m = re.fullmatch(r"(\d{1,2})\s*-\s*(\d{1,2})( [a-z]+)?( \d{4})?", sisa)
-            if m and m.group(3):
-                bagian = [m.group(1), f"{m.group(2)}{m.group(3)}{m.group(4) or ''}"]
-            if len(bagian) == 1:
-                d, _ = _tanggal_tunggal(bagian[0], hari_ini)
-                if filt and d.weekday() not in filt:
-                    raise InputError(f"Tanggal: '{asli}': {d.isoformat()} bukan hari yang disebut.")
-                hasil.append(d)
-            elif len(bagian) == 2:
-                kanan, _ = _tanggal_tunggal(bagian[1], hari_ini)
-                kiri, _ = _tanggal_tunggal(bagian[0], hari_ini, (kanan.month, kanan.year))
-                if kiri.month > kanan.month and kiri.year == kanan.year and not re.search(r"\d{4}", bagian[0]):
-                    kiri = date(kiri.year - 1, kiri.month, kiri.day)  # "28 Des - 3 Jan 2027"
-                hasil += _daftar_rentang(kiri, kanan, filt, asli)
-            else:
-                raise InputError(f"Tanggal: '{asli}' memuat lebih dari satu rentang.")
+            ds, desk, berfilter = _item_ke_tanggal(sisa, filt, asli, hari_ini)
         except InputError as e:
             galat.extend(e.pesan)
+            continue
+        hasil += ds
+        deskripsi.append(desk)
+        if berfilter and len(set(ds)) >= 2:
+            rentang_filter = True
     if galat:
         raise InputError(galat)
-    return sorted({d.isoformat() for d in hasil})
+    return hasil, deskripsi, rentang_filter
+
+
+def _seragam_tujuh(ds):
+    ds = sorted(set(ds))
+    return len(ds) >= 3 and all((b - a).days == 7 for a, b in zip(ds, ds[1:]))
+
+
+def parse_rinci(teks, hari_ini):
+    """-> dict: tanggal (ISO unik terurut), pola (teks), dikecualikan (ISO), peringatan (list),
+    rutin_otomatis (bool), rutin_alasan (teks). Menaikkan InputError bila isian tidak sah."""
+    t = _normal(teks)
+    if not t:
+        raise InputError("Tanggal: wajib diisi (contoh: 10 Okt 2026).")
+    _tolak_pola_tak_didukung(t)
+
+    bagian = re.split(r"\bkecuali\b", t)
+    if len(bagian) > 2:
+        raise InputError("Tanggal: kata 'kecuali' hanya boleh sekali; gabungkan tanggal pengecualian dalam satu daftar.")
+    utama = bagian[0].strip(" ,;")
+    if not utama:
+        raise InputError("Tanggal: tulis tanggal atau rentang sebelum 'kecuali'.")
+    if len(bagian) == 2 and not bagian[1].strip(" ,;"):
+        raise InputError("Tanggal: tulis tanggal yang dikecualikan setelah 'kecuali' (mis. 'kecuali 17 Okt').")
+
+    ds, deskripsi, rentang_filter = _parse_item_list(utama, hari_ini)
+    himpunan = sorted(set(ds))
+    peringatan, dikecualikan = [], []
+
+    if len(bagian) == 2:
+        bulan_tahun = {(d.month, d.year) for d in himpunan}
+        ctx = None
+        if len(bulan_tahun) == 1:
+            (b, y), = bulan_tahun
+            nama_bulan = next(k for k, v in BULAN.items() if v == b and len(k) >= 3 and k not in ("sept", "agt", "ags", "nop", "pebruari"))
+            ctx = (nama_bulan, str(y))
+        ex, _, _ = _parse_item_list(bagian[1].strip(" ,;"), hari_ini, ctx)
+        tahun_utama = sorted({d.year for d in himpunan})
+        ada = set(himpunan)
+        for e in sorted(set(ex)):
+            kandidat = [e] + [date(y, e.month, e.day) for y in tahun_utama if e.year != y and not (e.month == 2 and e.day == 29)]
+            cocok_ = next((k for k in kandidat if k in ada), None)
+            if cocok_:
+                dikecualikan.append(cocok_)
+            else:
+                peringatan.append(f"Pengecualian {_fmt(e)} bukan bagian pola; diabaikan.")
+        ada -= set(dikecualikan)
+        himpunan = sorted(ada)
+        if not himpunan:
+            raise InputError("Tanggal: semua tanggal dikecualikan; tidak ada event yang tersisa.")
+
+    if len(himpunan) > MAKS_TANGGAL:
+        raise InputError(f"Tanggal: isian ini menghasilkan {len(himpunan)} tanggal, melebihi batas {MAKS_TANGGAL} per Issue. "
+                         "Persempit rentangnya (mis. tambah filter hari 'setiap Sabtu') atau pecah menjadi beberapa Issue.")
+
+    pola = "; ".join(deskripsi)
+    if len(deskripsi) > 1 and all(x.startswith("tanggal ") for x in deskripsi):
+        pola = f"daftar {len(deskripsi)} tanggal"
+    if dikecualikan:
+        pola += "; kecuali " + ", ".join(_fmt(d) for d in dikecualikan)
+    if rentang_filter and len(himpunan) >= 2:
+        rutin, alasan = True, "rentang dengan filter hari"
+    elif _seragam_tujuh(himpunan):
+        rutin, alasan = True, "tiga tanggal atau lebih berjarak tepat 7 hari"
+    else:
+        rutin, alasan = False, "satu tanggal, daftar tidak seragam, atau rentang tanpa filter hari"
+    return {"tanggal": [d.isoformat() for d in himpunan], "pola": pola,
+            "dikecualikan": [d.isoformat() for d in dikecualikan], "peringatan": peringatan,
+            "rutin_otomatis": rutin, "rutin_alasan": alasan}
+
+
+def parse(teks, hari_ini):
+    """-> daftar tanggal ISO unik terurut (lihat parse_rinci untuk pola/pengecualian/rutin otomatis)."""
+    return parse_rinci(teks, hari_ini)["tanggal"]

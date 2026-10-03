@@ -44,7 +44,10 @@ JUDUL_ISSUE = "Tambah kajian: "
 LAINNYA = "Lainnya (tulis di bawah)"
 KOTA_LAIN = "Kota lain (tulis di bawah)"
 OPSI_PEREMPUAN = "Pemateri perempuan (otomatis Khusus Akhwat)"
-OPSI_RUTIN = "Kajian rutin atau berkala"
+RUTIN_OTOMATIS = "Otomatis (rutin bila berulang tiap minggu)"
+RUTIN_YA = "Ya (rutin)"
+RUTIN_TIDAK = "Tidak"
+OPSI_RUTIN = [RUTIN_OTOMATIS, RUTIN_YA, RUTIN_TIDAK]
 MAKS_OPSI_DROPDOWN = 150  # lebih dari ini, kolom Pemateri/Masjid dibuat isian teks
 RESPON_KOSONG = "_No response_"
 
@@ -65,7 +68,7 @@ def _q(s):
     return json.dumps(s, ensure_ascii=False)
 
 
-def _unsur(tipe, id_, label, deskripsi=None, placeholder=None, wajib=False, opsi=None, kotak=None):
+def _unsur(tipe, id_, label, deskripsi=None, placeholder=None, wajib=False, opsi=None, kotak=None, bawaan=None):
     b = [f"  - type: {tipe}", f"    id: {id_}", "    attributes:", f"      label: {_q(label)}"]
     if deskripsi:
         b.append(f"      description: {_q(deskripsi)}")
@@ -74,6 +77,8 @@ def _unsur(tipe, id_, label, deskripsi=None, placeholder=None, wajib=False, opsi
     if opsi is not None:
         b.append("      options:")
         b += [f"        - {_q(o)}" for o in opsi]
+    if bawaan is not None:
+        b.append(f"      default: {int(bawaan)}")
     if kotak is not None:
         b.append("      options:")
         b += [f"        - label: {_q(kotak)}"]
@@ -109,8 +114,12 @@ def render_template(kat):
 
     unsur = [
         _unsur("input", "tanggal", LABEL["tanggal"],
-               "Satu isian. Contoh: 10 Okt 2026 | 10, 17, 24 Okt 2026 | 3-31 Okt 2026 Sabtu | 3 Okt - 4 Okt 2026 | 10/10/2026. "
-               "Banyak tanggal = banyak event dengan isian yang sama. Tahun boleh dihilangkan. Cek hasilnya di komentar balasan.",
+               "Satu isian. Contoh: 10 Okt 2026 | 10, 17, 24 Okt 2026 | 3-31 Okt 2026 Sabtu | "
+               "3-31 Okt 2026 setiap Sabtu kecuali 17 Okt | 3 Okt - 4 Okt 2026 | 10/10/2026. "
+               "Banyak tanggal = banyak event dengan isian yang sama (maksimum 60 per Issue). "
+               "Satu Issue = satu jam dan satu masjid: waktu atau masjid berbeda per hari = Issue terpisah. "
+               "Tidak didukung: tiap 2 minggu, pekan ke-N, bulanan (tulis daftar tanggalnya). "
+               "Tahun boleh dihilangkan. Cek hasilnya di komentar balasan.",
                "10 Okt 2026", wajib=True),
         _unsur("dropdown", "jenis_waktu", LABEL["jenis_waktu"], wajib=True, opsi=JENIS_WAKTU),
         _unsur("input", "jam", LABEL["jam"],
@@ -128,7 +137,10 @@ def render_template(kat):
         _unsur("dropdown", "kota_baru", LABEL["kota_baru"], "Wajib bila Masjid = Lainnya.", opsi=kota_opsi),
         _unsur("input", "kota_lain", LABEL["kota_lain"], "Wajib bila Kota masjid baru = Kota lain."),
         _unsur("dropdown", "audience", LABEL["audience"], wajib=True, opsi=AUDIENCE),
-        _unsur("checkboxes", "rutin", LABEL["rutin"], kotak=OPSI_RUTIN),
+        _unsur("dropdown", "rutin", LABEL["rutin"],
+               "Otomatis: rutin bila tanggal berasal dari rentang dengan filter hari (>= 2 tanggal) atau "
+               "tiga tanggal atau lebih berjarak tepat 7 hari. Selain itu pilih sendiri.",
+               opsi=OPSI_RUTIN, bawaan=0),
         _unsur("textarea", "catatan", LABEL["catatan"], "Opsional."),
     ]
     kepala = (
@@ -174,10 +186,21 @@ def ke_paket(body, kat, hari_ini=None):
         return f.get(LABEL[k], "")
 
     try:
-        tanggal = tanggal_bebas.parse(v("tanggal"), hari_ini or sekarang_wib())
+        rinci = tanggal_bebas.parse_rinci(v("tanggal"), hari_ini or sekarang_wib())
+        tanggal = rinci["tanggal"]
     except InputError as e:
         galat.extend(e.pesan)
-        tanggal = []
+        rinci, tanggal = None, []
+
+    # kajian rutin: dropdown tiga keadaan (kotak centang lama tetap dibaca sebagai "Ya")
+    pilihan_rutin = v("rutin")
+    if pilihan_rutin == RUTIN_YA or _centang(pilihan_rutin):
+        rutin, mode_rutin = True, "dipilih: Ya"
+    elif pilihan_rutin == RUTIN_TIDAK:
+        rutin, mode_rutin = False, "dipilih: Tidak"
+    else:
+        rutin = bool(rinci and rinci["rutin_otomatis"])
+        mode_rutin = "otomatis: " + (rinci["rutin_alasan"] if rinci else "-")
 
     # pemateri
     pem = v("pemateri")
@@ -242,6 +265,8 @@ def ke_paket(body, kat, hari_ini=None):
         "masjid_kota": masjid_kota,
         "masjid_baru": masjid_baru,
         "audience": v("audience"),
-        "rutin": _centang(v("rutin")),
+        "rutin": rutin,
         "catatan": v("catatan"),
+        "info": {"pola": rinci["pola"], "dikecualikan": rinci["dikecualikan"],
+                 "peringatan": rinci["peringatan"], "rutin": mode_rutin, "rutin_nilai": rutin} if rinci else {},
     }
