@@ -1,0 +1,295 @@
+# DIBUAT OTOMATIS oleh scripts/ingest.py dari data/kategori.json. Jangan edit manual.
+# Label kolom = kunci parser (scripts/adapter_koreksi_form.py); jangan diubah tanpa mengubah parser.
+name: Koreksi atau hapus kajian
+description: Koreksi atau hapus kajian yang sudah terbit (hanya pemilik repo).
+title: "Koreksi kajian: "
+body:
+  - type: dropdown
+    id: aksi
+    attributes:
+      label: "Aksi"
+      description: "Koreksi = ubah kolom yang Anda isi di bawah. Hapus = hilangkan event dari situs."
+      options:
+        - "Koreksi"
+        - "Hapus"
+    validations:
+      required: true
+  - type: input
+    id: target
+    attributes:
+      label: "Target"
+      description: "Event yang dituju: #12 (semua event yang masih ada dari Issue 12), id event (747), atau rentang id (747-750). Boleh digabung dengan koma. Id event ada di komentar Issue 'Tambah kajian'. Semua-atau-tidak-sama-sekali."
+      placeholder: "#12"
+    validations:
+      required: true
+  - type: input
+    id: konfirmasi
+    attributes:
+      label: "Ketik HAPUS untuk konfirmasi"
+      description: "Hanya untuk Aksi = Hapus: ketik HAPUS. Kosongkan untuk Koreksi."
+    validations:
+      required: false
+  - type: input
+    id: judul
+    attributes:
+      label: "Judul (koreksi)"
+      description: "Kosong = tidak diubah."
+    validations:
+      required: false
+  - type: input
+    id: tanggal
+    attributes:
+      label: "Tanggal (koreksi)"
+      description: "Satu tanggal baru, mis. 10 Okt 2026. Hanya bila Target satu event. Kosong = tidak diubah."
+    validations:
+      required: false
+  - type: dropdown
+    id: jenis_waktu
+    attributes:
+      label: "Jenis waktu (koreksi)"
+      description: "Mengubah waktu: pilih jenisnya (dan isi Jam bila Jam eksak)."
+      options:
+        - "(tidak diubah)"
+        - "Jam eksak"
+        - "Dhuha"
+        - "Ba'da Subuh"
+        - "Ba'da Zuhur"
+        - "Ba'da Ashar"
+        - "Ba'da Maghrib"
+      default: 0
+    validations:
+      required: false
+  - type: input
+    id: jam
+    attributes:
+      label: "Jam (koreksi)"
+      description: "09.30 atau 09.30-11.00. Hanya untuk Jam eksak (boleh diisi sendiri bila event sudah memakai jam eksak)."
+    validations:
+      required: false
+  - type: dropdown
+    id: pemateri
+    attributes:
+      label: "Pemateri (koreksi)"
+      description: "Nama tanpa gelar."
+      options:
+        - "(tidak diubah)"
+        - "Abdi Kurnia Djohan"
+        - "Abdul Aziz Al Owainy"
+        - "Abdul Halim Sholeh"
+        - "Abdul Muid Nawawi"
+        - "Abdullah Achmad Zawawi"
+        - "Abdullah Taslim"
+        - "Abdurrahman Bustomi"
+        - "Abu Bakar Al Akhdhory"
+        - "Abu Hurairah"
+        - "Abu Jarir Ari Triono"
+        - "Abu Ya'la Kurnaedi"
+        - "Abu Yazid Novtriadi"
+        - "Agam Bayu Suyanto"
+        - "Ahmad Ba'mualim"
+        - "Ahmad Fathoni"
+        - "Ahmad Sujai"
+        - "Ahmad Sunhaji"
+        - "Akhmad Alim"
+        - "Ali Hasan Bawazier"
+        - "Ali Saman Hasan"
+        - "Amang Syafrudin"
+        - "Amrullah Tekko"
+        - "Arman Amri"
+        - "Asatidz Pengajar Tahsin"
+        - "Assim Al Hakeem"
+        - "Ayub Abu Ayub"
+        - "Azhar Khalid Bin Sheff"
+        - "Badru Salam"
+        - "Budi Utomo"
+        - "Daud Rasyid"
+        - "Derma Permana"
+        - "Dzikrullah Arza"
+        - "Dzulfatah Yasin"
+        - "Ega Abu Fahd"
+        - "Elfa Hendri Mukhlis"
+        - "Emha Ainun Nadjib (Cak Nun) & Komunitas Kenduri Cinta"
+        - "Ending Bahruddin"
+        - "Erfandoni Tarmizi"
+        - "Faisal Qosim"
+        - "Fatahillah Aly"
+        - "Fuad Mubarok"
+        - "Gigih Surya Nugraha"
+        - "Hamka Hasan"
+        - "Harist Abu Naufal"
+        - "Herfi G Faizi"
+        - "Hisyam Mukhlas A."
+        - "Hudzaifah bin Muhammad"
+        - "Idrus Yusuf"
+        - "Imamuddin Mukhtar"
+        - "Irham Maulana"
+        - "Ishom Aini"
+        - "Jamaluddin F. Hasyim"
+        - "Joni Qodariyanto"
+        - "Kang Ghany & Zidny Hikmatiar"
+        - "Khairan Muhammad Arif"
+        - "Khalid Basalamah"
+        - "Luthfi Abdul Jabbar"
+        - "M Ihsan Tandjung"
+        - "Mahkamah Mahdin"
+        - "Mas'ud Halimin"
+        - "Mas'ud Mahmud"
+        - "Masykur Abu Mawaddah"
+        - "Maududi Abdullah"
+        - "Mizan Qudsiyyah"
+        - "Mohamad Nursamsul Qamar"
+        - "Muhammad Ardiansyah"
+        - "Muhammad Barmim"
+        - "Muhammad Halid Syar'ie"
+        - "Muhammad Iqbal ibnu Said"
+        - "Muhammad Nuzul Dzikri"
+        - "Muhammad Setiawan"
+        - "Muhammad Tamrin"
+        - "Muhammad Yahya"
+        - "Mulawarman Hannase"
+        - "Musyaffa' Ad-Dariny"
+        - "Najmi Umar Bakkar"
+        - "Nirwan Syafrin Manurung"
+        - "Nur Fajri Ramadhan"
+        - "Nur Ihsan Jundullah"
+        - "Nurdin Apud Sarbini"
+        - "Poppy Yuditya"
+        - "Rafael Afrianto"
+        - "Rahmat Hidayat Syamsurizal"
+        - "Rizki Nasution"
+        - "Sholeh Asri"
+        - "Sidqi Kamal Zimah"
+        - "Sofyan Chalid bin Idham Ruray"
+        - "Sri Sabbahatun"
+        - "Subhan Bawazier"
+        - "Syafiq Al-Khatieb"
+        - "Syariful Mahya"
+        - "Umar Lathif"
+        - "Ustadzaat Pengajar Tahsin"
+        - "Yovin Abu Hammam"
+        - "Yusuf Utsman Baisa"
+        - "Zakariyal Anshari"
+        - "Zulfikar Harun"
+        - "Belum ditentukan"
+        - "Lainnya (tulis di bawah)"
+      default: 0
+    validations:
+      required: false
+  - type: input
+    id: pemateri_baru
+    attributes:
+      label: "Pemateri baru (koreksi)"
+      description: "Wajib bila Pemateri = Lainnya. Tulis persis seperti di flyer; dicocokkan otomatis dengan yang sudah ada."
+    validations:
+      required: false
+  - type: dropdown
+    id: masjid
+    attributes:
+      label: "Masjid (koreksi)"
+      description: "Format: Nama (Kota)."
+      options:
+        - "(tidak diubah)"
+        - "Baitusyaakiriin Depok"
+        - "Kupinami Cafe (Jakarta)"
+        - "Masjid Al Ukhuwah BSD (Tangerang)"
+        - "Masjid Al-Adhim (Depok)"
+        - "Masjid Al-Barkah Sawah Baru (Tangerang)"
+        - "Masjid Al-Fattah (Jakarta)"
+        - "Masjid Al-Hidayah (Jakarta)"
+        - "Masjid Al-Ikhlas Dukuh Bima (Bekasi)"
+        - "Masjid Alumni IPB Botani Square (Bogor)"
+        - "Masjid Ar-Riyadh (Depok)"
+        - "Masjid As-Sofia (Bogor)"
+        - "Masjid Ash-Shiddiq Cikeas (Bogor)"
+        - "Masjid At-Tiin Asem Baris (Jakarta)"
+        - "Masjid Baiturrahman Pondok Pinang (Jakarta)"
+        - "Masjid Daarussalaam GTA (Depok)"
+        - "Masjid Darussalam Kota Wisata (Bogor)"
+        - "Masjid Istiqlal (Jakarta)"
+        - "Masjid Istiqomah IKEA Sentul City (Bogor)"
+        - "Masjid Jami' Al-Barkah (Bogor)"
+        - "Masjid Jaza (Bandung)"
+        - "Masjid Nurul Iman Blok M Square (Jakarta)"
+        - "Masjid Nurullah Kalibata City (Jakarta)"
+        - "Masjid Puri Cinere (Depok)"
+        - "MTI Rasuna Epicentrum (Live YouTube)"
+        - "Rumah Quran Al-Ihsan (Jakarta)"
+        - "Taman Ismail Marzuki (TIM) (Jakarta)"
+        - "Online"
+        - "Lainnya (tulis di bawah)"
+      default: 0
+    validations:
+      required: false
+  - type: input
+    id: masjid_baru
+    attributes:
+      label: "Nama masjid baru (koreksi)"
+      description: "Wajib bila Masjid = Lainnya (nama saja, tanpa kota); untuk Online isi nama penyelenggara."
+    validations:
+      required: false
+  - type: input
+    id: alamat_baru
+    attributes:
+      label: "Alamat masjid baru (koreksi)"
+      description: "Wajib bila Masjid = Lainnya."
+    validations:
+      required: false
+  - type: dropdown
+    id: kota_baru
+    attributes:
+      label: "Kota masjid baru (koreksi)"
+      description: "Wajib bila Masjid = Lainnya."
+      options:
+        - "Bandung"
+        - "Bekasi"
+        - "Bogor"
+        - "Depok"
+        - "Jakarta"
+        - "Tangerang"
+        - "Kota lain (tulis di bawah)"
+    validations:
+      required: false
+  - type: input
+    id: kota_lain
+    attributes:
+      label: "Kota lain (koreksi)"
+      description: "Wajib bila Kota masjid baru = Kota lain."
+    validations:
+      required: false
+  - type: dropdown
+    id: audience
+    attributes:
+      label: "Audience (koreksi)"
+      options:
+        - "(tidak diubah)"
+        - "Terbuka untuk umum"
+        - "Khusus Akhwat"
+        - "Khusus Ikhwan"
+      default: 0
+    validations:
+      required: false
+  - type: dropdown
+    id: rutin
+    attributes:
+      label: "Kajian rutin (koreksi)"
+      options:
+        - "(tidak diubah)"
+        - "Ya (rutin)"
+        - "Tidak"
+      default: 0
+    validations:
+      required: false
+  - type: checkboxes
+    id: abaikan_mirip
+    attributes:
+      label: "Abaikan kemiripan nama (koreksi)"
+      description: "Hanya bila sistem menolak karena nama baru mirip nama yang sudah ada dan Anda yakin nama itu baru."
+      options:
+        - label: "Abaikan kemiripan nama (saya yakin ini baru)"
+  - type: textarea
+    id: catatan
+    attributes:
+      label: "Catatan (koreksi)"
+      description: "Catatan baru (menggantikan yang lama). Kosong = tidak diubah."
+    validations:
+      required: false

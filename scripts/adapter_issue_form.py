@@ -185,6 +185,75 @@ def adalah_formulir(body):
     return all(k in f for k in PENANDA_FORMULIR)
 
 
+def resolve_pemateri(get, kat, galat):
+    """Nilai kolom pemateri -> nama untuk inti. get(kunci) membaca kolom ('pemateri', 'pemateri_baru')."""
+    pem = get("pemateri")
+    if pem == LAINNYA:
+        pemateri = get("pemateri_baru")
+        if not pemateri:
+            galat.append("Pemateri baru: wajib diisi bila Pemateri = Lainnya.")
+        return pemateri
+    pemateri = peta_tampil([p["nama"] for p in kat["pemateri"]]).get(pem, pem)
+    if get("pemateri_baru"):
+        galat.append(f"Pemateri baru: terisi '{get('pemateri_baru')}' tetapi Pemateri bukan '{LAINNYA}'. "
+                     "Pilih 'Lainnya' atau kosongkan kolom Pemateri baru.")
+    return pemateri
+
+
+def resolve_masjid(get, kat, galat, label=LABEL):
+    """Kolom masjid -> (masjid, masjid_kota, masjid_baru). get(kunci): 'masjid', 'masjid_baru',
+    'alamat_baru', 'kota_baru', 'kota_lain'."""
+    mas = get("masjid")
+    masjid_baru = None
+    masjid_kota = ""
+    if mas == ONLINE:
+        penyelenggara = get("masjid_baru")
+        if get("alamat_baru") or get("kota_lain"):
+            galat.append("Masjid = Online tidak memakai Alamat masjid baru atau Kota lain. Kosongkan keduanya, "
+                         "atau pilih 'Lainnya' bila ini kajian tatap muka.")
+        if not penyelenggara:
+            galat.append("Nama masjid baru: untuk Masjid = Online, isi nama penyelenggara.")
+            masjid = ""
+        else:
+            try:
+                pen = bersihkan(penyelenggara, "Nama masjid baru", 100, True)
+            except InputError as e:
+                galat.extend(e.pesan)
+                pen = ""
+            masjid = f"{pen} (Online)" if pen else ""
+            masjid_baru = {"alamat": f"Online ({pen})", "kota": ONLINE}
+    elif mas == LAINNYA:
+        masjid = get("masjid_baru")
+        kota = get("kota_baru")
+        if kota == KOTA_LAIN:
+            kota = get("kota_lain")
+            if not kota:
+                galat.append("Kota lain: wajib diisi bila Kota masjid baru = Kota lain.")
+        else:
+            kota = peta_tampil(kat["kota"]).get(kota, kota)
+            if get("kota_lain"):
+                galat.append(f"Kota lain: terisi '{get('kota_lain')}' tetapi Kota masjid baru bukan '{KOTA_LAIN}'. "
+                             "Pilih 'Kota lain' atau kosongkan kolom Kota lain.")
+        if not masjid:
+            galat.append("Nama masjid baru: wajib diisi bila Masjid = Lainnya.")
+        if not get("alamat_baru"):
+            galat.append("Alamat masjid baru: wajib diisi bila Masjid = Lainnya.")
+        if not kota and not any("Kota" in g for g in galat):
+            galat.append("Kota masjid baru: wajib dipilih bila Masjid = Lainnya.")
+        masjid_baru = {"alamat": get("alamat_baru"), "kota": kota}
+    else:
+        peta = {tampil(label_masjid(m)): m for m in kat["masjid"]}
+        if mas in peta:
+            masjid, masjid_kota = peta[mas]["nama"], peta[mas]["kota"]
+        else:  # isian bebas / label usang: serahkan ke inti (cocok nama; ambigu ditolak)
+            masjid = mas
+        terisi = [label[k] for k in ("masjid_baru", "alamat_baru", "kota_lain") if get(k)]
+        if terisi:
+            galat.append(f"Masjid '{mas}' dipilih dari daftar, tetapi kolom masjid baru terisi "
+                         f"({', '.join(terisi)}). Pilih 'Lainnya' untuk masjid baru, atau kosongkan kolom tersebut.")
+    return masjid, masjid_kota, masjid_baru
+
+
 def ke_paket(body, kat, hari_ini=None):
     """Isi Issue -> paket baku. Menaikkan InputError bila struktur/kolom bersyarat salah."""
     f = pecah_body(body)
@@ -215,67 +284,8 @@ def ke_paket(body, kat, hari_ini=None):
         rutin = bool(rinci and rinci["rutin_otomatis"])
         mode_rutin = "otomatis: " + (rinci["rutin_alasan"] if rinci else "-")
 
-    # pemateri
-    pem = v("pemateri")
-    if pem == LAINNYA:
-        pemateri = v("pemateri_baru")
-        if not pemateri:
-            galat.append("Pemateri baru: wajib diisi bila Pemateri = Lainnya.")
-    else:
-        pemateri = peta_tampil([p["nama"] for p in kat["pemateri"]]).get(pem, pem)
-        if v("pemateri_baru"):
-            galat.append(f"Pemateri baru: terisi '{v('pemateri_baru')}' tetapi Pemateri bukan '{LAINNYA}'. "
-                         "Pilih 'Lainnya' atau kosongkan kolom Pemateri baru.")
-
-    # masjid
-    mas = v("masjid")
-    masjid_baru = None
-    masjid_kota = ""
-    if mas == ONLINE:
-        penyelenggara = v("masjid_baru")
-        if v("alamat_baru") or v("kota_lain"):
-            galat.append("Masjid = Online tidak memakai Alamat masjid baru atau Kota lain. Kosongkan keduanya, "
-                         "atau pilih 'Lainnya' bila ini kajian tatap muka.")
-        if not penyelenggara:
-            galat.append("Nama masjid baru: untuk Masjid = Online, isi nama penyelenggara.")
-            masjid = ""
-        else:
-            try:
-                pen = bersihkan(penyelenggara, "Nama masjid baru", 100, True)
-            except InputError as e:
-                galat.extend(e.pesan)
-                pen = ""
-            masjid = f"{pen} (Online)" if pen else ""
-            masjid_baru = {"alamat": f"Online ({pen})", "kota": ONLINE}
-    elif mas == LAINNYA:
-        masjid = v("masjid_baru")
-        kota = v("kota_baru")
-        if kota == KOTA_LAIN:
-            kota = v("kota_lain")
-            if not kota:
-                galat.append("Kota lain: wajib diisi bila Kota masjid baru = Kota lain.")
-        else:
-            kota = peta_tampil(kat["kota"]).get(kota, kota)
-            if v("kota_lain"):
-                galat.append(f"Kota lain: terisi '{v('kota_lain')}' tetapi Kota masjid baru bukan '{KOTA_LAIN}'. "
-                             "Pilih 'Kota lain' atau kosongkan kolom Kota lain.")
-        if not masjid:
-            galat.append("Nama masjid baru: wajib diisi bila Masjid = Lainnya.")
-        if not v("alamat_baru"):
-            galat.append("Alamat masjid baru: wajib diisi bila Masjid = Lainnya.")
-        if not kota and not any("Kota" in g for g in galat):
-            galat.append("Kota masjid baru: wajib dipilih bila Masjid = Lainnya.")
-        masjid_baru = {"alamat": v("alamat_baru"), "kota": kota}
-    else:
-        peta = {tampil(label_masjid(m)): m for m in kat["masjid"]}
-        if mas in peta:
-            masjid, masjid_kota = peta[mas]["nama"], peta[mas]["kota"]
-        else:  # isian bebas / label usang: serahkan ke inti (cocok nama; ambigu ditolak)
-            masjid = mas
-        terisi = [LABEL[k] for k in ("masjid_baru", "alamat_baru", "kota_lain") if v(k)]
-        if terisi:
-            galat.append(f"Masjid '{mas}' dipilih dari daftar, tetapi kolom masjid baru terisi ({', '.join(terisi)}). "
-                         "Pilih 'Lainnya' untuk masjid baru, atau kosongkan kolom tersebut.")
+    pemateri = resolve_pemateri(v, kat, galat)
+    masjid, masjid_kota, masjid_baru = resolve_masjid(v, kat, galat)
 
     if galat:
         raise InputError(galat)

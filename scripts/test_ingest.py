@@ -12,6 +12,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 sys.path.insert(0, str(HERE))
 import adapter_issue_form as ad  # noqa: E402
+import adapter_koreksi_form as adk  # noqa: E402
 import build  # noqa: E402
 import ingest  # noqa: E402
 import ingest_core as core  # noqa: E402
@@ -41,6 +42,23 @@ def form(**k):
         val = v.get(lab, "")
         out.append(f"### {lab}\n\n{val if val else '_No response_'}\n")
     return "\n".join(out)
+
+
+def fk(aksi, target, **k):
+    """Isi Issue formulir Koreksi atau hapus (kunci = kunci LABEL adapter_koreksi_form)."""
+    v = {"aksi": aksi, "target": target, "konfirmasi": "", "judul": "", "tanggal": "", "jenis_waktu": adk.TIDAK_DIUBAH,
+         "jam": "", "pemateri": adk.TIDAK_DIUBAH, "pemateri_baru": "", "masjid": adk.TIDAK_DIUBAH, "masjid_baru": "",
+         "alamat_baru": "", "kota_baru": "", "kota_lain": "", "audience": adk.TIDAK_DIUBAH, "rutin": adk.TIDAK_DIUBAH,
+         "abaikan_mirip": "", "catatan": ""}
+    v.update(k)
+    return "\n".join(f"### {adk.LABEL[x]}\n\n{v[x] if v[x] else '_No response_'}\n" for x in adk.LABEL)
+
+
+def seri(d, n=500, judul="Seri uji", **k):
+    """Buat satu seri event lewat Issue Tambah; kembalikan daftar id."""
+    h = jalankan(d, [iss(n, form(Judul=judul, Tanggal="3-31 Okt 2026 setiap Sabtu", **k))])
+    assert h[0]["status"] == "ok", h
+    return h[0]["id"]
 
 
 def jalankan(d, issues, edited=None, today=TODAY):
@@ -491,6 +509,140 @@ def _():
     assert jalankan(d, [iss(472, "Catatan pribadi tanpa formulir.", title="Ingatkan beli kopi")]) == []
     assert jalankan(d, [iss(473, form(Judul="Orang lain"), title="UJI", login="orang-lain")]) == []
     assert ad.adalah_formulir(form()) and not ad.adalah_formulir("### Tanggal\n\nx\n") and not ad.adalah_formulir("")
+
+
+@uji("tahap 2 templat: formulir Koreksi/hapus sah, labelnya tidak bentrok dengan Tambah (tidak saling dikira)")
+def _():
+    import yaml
+    t = yaml.safe_load(adk.render_template(core.muat_kategori(REPO / "data" / "kategori.json")))
+    assert t["title"] == adk.JUDUL_KOREKSI and len(t["body"]) == len(adk.LABEL) == 18
+    assert [x["attributes"]["label"] for x in t["body"]] == [adk.LABEL[k] for k in adk.LABEL]
+    ids = [x["id"] for x in t["body"]]; assert len(ids) == len(set(ids))
+    for x in t["body"]:
+        if x["type"] == "dropdown":
+            o = x["attributes"]["options"]
+            assert len(o) == len(set(o)) and not any("," in s for s in o), x["id"]
+    assert adk.adalah_koreksi(fk("Hapus", "#1")) and not ad.adalah_formulir(fk("Hapus", "#1"))
+    assert ad.adalah_formulir(form()) and not adk.adalah_koreksi(form())
+    assert not set(adk.LABEL.values()) & set(ad.PENANDA_FORMULIR)
+
+
+@uji("hapus: id/rentang/#Issue, wajib ketik HAPUS, semua-atau-tidak-sama-sekali, tercatat di diproses")
+def _():
+    d = siapkan(); ids = seri(d); n0 = len(events(d))
+    h = jalankan(d, [iss(510, fk("Hapus", f"{ids[0]}"), title="Hapus")])
+    assert h[0]["status"] == "gagal" and "ketik HAPUS" in h[0]["komentar"] and len(events(d)) == n0
+    h = jalankan(d, [iss(511, fk("Hapus", f"{ids[0]}, 999999", konfirmasi="HAPUS"))])
+    assert h[0]["status"] == "gagal" and "999999" in h[0]["komentar"] and len(events(d)) == n0, h[0]["komentar"]
+    h = jalankan(d, [iss(512, fk("Hapus", f"{ids[0]}", konfirmasi="HAPUS", judul="Maksudnya koreksi"))])
+    assert h[0]["status"] == "gagal" and "pilih Aksi = Koreksi" in h[0]["komentar"] and len(events(d)) == n0
+    h = jalankan(d, [iss(513, fk("Hapus", f"{ids[0]}-{ids[1]}", konfirmasi="hapus"))])
+    assert h[0]["status"] == "ok" and h[0]["id"] == ids[:2] and "sudah dihapus" in h[0]["komentar"] and len(events(d)) == n0 - 2
+    assert {"issue": 513, "id": ids[:2], "aksi": "hapus"} in kat(d)["diproses"]
+    h = jalankan(d, [iss(514, fk("Hapus", "#500", konfirmasi="HAPUS"))])  # sisa seri
+    assert h[0]["status"] == "ok" and h[0]["id"] == ids[2:] and len(events(d)) == n0 - len(ids)
+    h = jalankan(d, [iss(515, fk("Hapus", "#500", konfirmasi="HAPUS"))])
+    assert h[0]["status"] == "gagal" and "sudah tidak ada" in h[0]["komentar"]
+    env = {"PATH": "/usr/bin:/bin"}
+    for s in ("prune.py", "build.py"):
+        assert subprocess.run([sys.executable, str(d / "scripts" / s)], capture_output=True, text=True, env=env).returncode == 0
+
+
+@uji("koreksi seri: judul diganti untuk seluruh #Issue, kolom lain tidak berubah, id tetap, selisih ada di komentar")
+def _():
+    d = siapkan(); ids = seri(d, judul="Judul salah", Catatan="catatan asli")
+    sebelum = {e["id"]: e for e in events(d)}
+    h = jalankan(d, [iss(520, fk("Koreksi", "#500", judul="Judul benar"))])
+    assert h[0]["status"] == "ok" and h[0]["id"] == ids and "sudah dikoreksi" in h[0]["komentar"], h[0]["komentar"]
+    sesudah = {e["id"]: e for e in events(d)}
+    for i in ids:
+        a, b = sebelum[i], sesudah[i]
+        assert b["title"] == "Judul benar" and {k: v for k, v in a.items() if k != "title"} == {k: v for k, v in b.items() if k != "title"}
+    assert all(sesudah[i] == sebelum[i] for i in sebelum if i not in ids)
+    assert "`Judul salah`" in h[0]["komentar"] and "`Judul benar`" in h[0]["komentar"]
+
+
+@uji("koreksi tanggal: hanya satu event, satu tanggal, tidak boleh lampau; dayShort ikut berubah")
+def _():
+    d = siapkan(); ids = seri(d)
+    h = jalankan(d, [iss(530, fk("Koreksi", f"{ids[0]}", tanggal="11 Okt 2026"))])
+    e = next(x for x in events(d) if x["id"] == ids[0])
+    assert h[0]["status"] == "ok" and e["date"] == "2026-10-11" and e["dayShort"] == "Min 11 Okt", (h[0]["komentar"], e)
+    for i, (tg, harap) in enumerate([("11 Okt 2026", None), ("3-5 Okt 2026", "satu tanggal"), ("2026-10-02", "sudah lewat"), ("besok", "tidak dikenali")]):
+        target = f"{ids[1]}, {ids[2]}" if i == 0 else f"{ids[1]}"
+        h = jalankan(d, [iss(531 + i, fk("Koreksi", target, tanggal=tg))])
+        assert h[0]["status"] == "gagal" and (harap is None and "hanya untuk satu event" in h[0]["komentar"] or harap in h[0]["komentar"]), (tg, h[0]["komentar"])
+
+
+@uji("koreksi waktu: Jam saja hanya untuk event berjam eksak; jenis salat + Jam ditolak; semua-atau-tidak-sama-sekali")
+def _():
+    d = siapkan()
+    a = jalankan(d, [iss(540, form(Judul="Jam A", Tanggal="10 Okt 2026", Jenis_waktu="Jam eksak", Jam="09.00"))])[0]["id"][0]
+    b = jalankan(d, [iss(541, form(Judul="Jam B", Tanggal="11 Okt 2026"))])[0]["id"][0]  # Ba'da Maghrib
+    h = jalankan(d, [iss(542, fk("Koreksi", f"{b}", jam="10.00"))])
+    assert h[0]["status"] == "gagal" and "Jam eksak" in h[0]["komentar"]
+    h = jalankan(d, [iss(543, fk("Koreksi", f"{b}", jenis_waktu="Ba'da Subuh", jam="10.00"))])
+    assert h[0]["status"] == "gagal" and "bukan Jam eksak" in h[0]["komentar"]
+    h = jalankan(d, [iss(544, fk("Koreksi", f"{a}, {b}", jam="10.00"))])  # b gagal -> a juga tidak berubah
+    assert h[0]["status"] == "gagal" and next(x for x in events(d) if x["id"] == a)["timeLabel"] == "09.00 WIB"
+    h = jalankan(d, [iss(545, fk("Koreksi", f"{b}", jenis_waktu="Jam eksak", jam="19.30-21.00"))])
+    e = next(x for x in events(d) if x["id"] == b)
+    assert h[0]["status"] == "ok" and e["timeLabel"] == "19.30 – 21.00 WIB" and e["timeOrder"] == 19.5
+    h = jalankan(d, [iss(546, fk("Koreksi", f"{b}", jam="20.00"))])  # kini berjam eksak
+    assert h[0]["status"] == "ok" and next(x for x in events(d) if x["id"] == b)["timeLabel"] == "20.00 WIB"
+    h = jalankan(d, [iss(547, fk("Koreksi", f"{b}", jenis_waktu="Dhuha"))])
+    e = next(x for x in events(d) if x["id"] == b)
+    assert h[0]["status"] == "ok" and e["timeLabel"] == "Dhuha" and e["timeOrder"] == 9
+
+
+@uji("koreksi pemateri dan masjid: dropdown, Lainnya, pencocokan otomatis, ustadzah -> Akhwat, konflik ditolak")
+def _():
+    d = siapkan(); ids = seri(d)
+    i0 = ids[0]; ev = lambda: next(x for x in events(d) if x["id"] == i0)  # noqa: E731
+    h = jalankan(d, [iss(550, fk("Koreksi", f"{i0}", pemateri="Abu Hurairah"))])
+    assert h[0]["status"] == "ok" and ev()["ustadz"] == "Ustadz Abu Hurairah, MA"
+    h = jalankan(d, [iss(551, fk("Koreksi", f"{i0}", pemateri=ad.LAINNYA, pemateri_baru="Ustadz Dr. Abu Hurairah, M.A."))])
+    assert h[0]["status"] == "gagal" and "tidak ada yang berubah" in h[0]["komentar"]  # cocok otomatis = sama dengan sekarang
+    h = jalankan(d, [iss(552, fk("Koreksi", f"{i0}", pemateri="Poppy Yuditya"))])
+    assert h[0]["status"] == "ok" and ev()["audience"] == "Khusus Akhwat" and ev()["ustadz"] == "Ustadzah Poppy Yuditya"
+    h = jalankan(d, [iss(553, fk("Koreksi", f"{i0}", pemateri_baru="Ustadz X"))])
+    assert h[0]["status"] == "gagal" and "masih '(tidak diubah)'" in h[0]["komentar"]
+    h = jalankan(d, [iss(554, fk("Koreksi", f"{i0}", masjid="Masjid Istiqlal (Jakarta)"))])
+    assert h[0]["status"] == "ok" and ev()["masjid"] == "Masjid Istiqlal" and ev()["area"] == "Jakarta"
+    h = jalankan(d, [iss(558, fk("Koreksi", f"{i0}", masjid="Masjid Istiqlal (Jakarta)"))])  # sama dengan sekarang
+    assert h[0]["status"] == "gagal" and "tidak ada yang berubah" in h[0]["komentar"]
+    h = jalankan(d, [iss(555, fk("Koreksi", f"{i0}", masjid=ad.LAINNYA, masjid_baru="Masjid Koreksi Baru", alamat_baru="Jl K 1", kota_baru="Bogor"))])
+    assert h[0]["status"] == "ok" and ev()["masjid"] == "Masjid Koreksi Baru" and ev()["area"] == "Bogor" and ev()["address"] == "Jl K 1"
+    assert any(m["nama"] == "Masjid Koreksi Baru" for m in kat(d)["masjid"])
+    h = jalankan(d, [iss(556, fk("Koreksi", f"{i0}", alamat_baru="Jl Z"))])
+    assert h[0]["status"] == "gagal" and "kolom masjid baru terisi" in h[0]["komentar"]
+    h = jalankan(d, [iss(557, fk("Koreksi", f"{i0}", masjid="Online", masjid_baru="belum ditentukan"))])
+    assert h[0]["status"] == "gagal" and "bukan nama" in h[0]["komentar"]
+
+
+@uji("koreksi: tanpa isian, sama dengan sekarang, atau jadi duplikat event lain -> ditolak; Tambah+Koreksi dalam satu run berurutan")
+def _():
+    d = siapkan(); ids = seri(d, judul="Judul X")
+    h = jalankan(d, [iss(560, fk("Koreksi", f"{ids[0]}"))])
+    assert h[0]["status"] == "gagal" and "tidak ada kolom koreksi" in h[0]["komentar"]
+    h = jalankan(d, [iss(561, fk("Koreksi", f"{ids[0]}", judul="Judul X"))])
+    assert h[0]["status"] == "gagal" and "tidak ada yang berubah" in h[0]["komentar"]
+    jalankan(d, [iss(562, form(Judul="Judul Y", Tanggal="3 Okt 2026", Jenis_waktu="Ba'da Subuh", Masjid="Masjid Al-Adhim (Depok)"))])
+    h = jalankan(d, [iss(563, fk("Koreksi", f"{ids[0]}", judul="Judul Y", jenis_waktu="Ba'da Subuh", masjid="Masjid Al-Adhim (Depok)"))])
+    assert h[0]["status"] == "gagal" and "duplikat" in h[0]["komentar"]
+    h = jalankan(d, [iss(570, form(Judul="Satu run", Tanggal="12 Okt 2026")), iss(571, fk("Koreksi", "#570", judul="Satu run (dikoreksi)"))])
+    assert [x["status"] for x in h] == ["ok", "ok"] and any(e["title"] == "Satu run (dikoreksi)" for e in events(d))
+
+
+@uji("Issue koreksi/hapus yang diedit setelah diproses mendapat komentar; Issue koreksi tanpa kolom -> gagal berpesan")
+def _():
+    d = siapkan(); ids = seri(d)
+    jalankan(d, [iss(580, fk("Koreksi", f"{ids[0]}", judul="Baru"))])
+    h = jalankan(d, [iss(580, fk("Koreksi", f"{ids[0]}", judul="Baru lagi"))], edited=580)
+    assert h[0]["status"] == "abaikan" and "tidak diterapkan" in h[0]["komentar"]
+    assert next(x for x in events(d) if x["id"] == ids[0])["title"] == "Baru"
+    h = jalankan(d, [iss(581, "### Aksi\n\nHapus\n", title="Koreksi kajian: setengah")])
+    assert h[0]["status"] == "gagal" and "Koreksi atau hapus" in h[0]["komentar"]
 
 
 @uji("pecah_body: heading, _No response_, centang")

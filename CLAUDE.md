@@ -19,6 +19,8 @@ data/kategori.json                   # daftar induk kota/masjid(nama,kota)/pemat
 scripts/ingest.py                    # CLI ingest Issue -> event (dipanggil workflow)
 scripts/ingest_core.py               # logika inti: validasi, pembuatan event, daftar induk (tanpa tahu soal formulir)
 scripts/adapter_issue_form.py        # adapter formulir Issue: templat YAML + parser isi Issue -> paket baku
+scripts/koreksi_core.py              # inti koreksi/hapus event (tahap 2): target, ganti/hapus baris, validasi ulang
+scripts/adapter_koreksi_form.py      # adapter formulir "Koreksi atau hapus kajian": templat YAML + parser
 scripts/tanggal_bebas.py             # pengurai isian Tanggal bebas (10 Okt 2026, 3-31 Okt 2026 Sabtu, ...)
 scripts/test_ingest.py               # uji lokal ingest (python3 scripts/test_ingest.py)
 .github/ISSUE_TEMPLATE/              # DIBUAT OTOMATIS dari data/kategori.json; jangan edit manual
@@ -165,8 +167,31 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   lalu diedit** mendapat komentar "perubahan tidak diterapkan" (bukan diam). Run yang
   gagal sebelum berkomentar menempelkan komentar kegagalan di Issue pemicu.
   Penolakan dilaporkan dalam dua tahap (kolom/kondisi formulir dulu, lalu aturan data).
-  Salah ketik semantik (judul, pemateri keliru) tidak bisa dideteksi mesin; jalur
-  koreksi/hapus (formulir koreksi) belum ada — minta lewat chat.
+  Salah ketik semantik (judul, pemateri keliru) tidak bisa dideteksi mesin; jalurnya
+  formulir **Koreksi atau hapus kajian** (di bawah).
+- **Koreksi atau hapus (tahap 2, 3 Okt 2026)** — formulir kedua di "New issue":
+  `.github/ISSUE_TEMPLATE/koreksi-hapus-kajian.yml` (dibuat otomatis dari
+  `data/kategori.json`, jangan diedit manual). Dikenali dari judul kolom `### Aksi` dan
+  `### Target`; label kolom berakhiran "(koreksi)" agar tidak tertukar dengan formulir
+  Tambah. **Target:** `#12` (semua event yang MASIH ADA dari Issue Tambah 12), id event
+  (`747`), rentang id (`747-750`), boleh digabung dengan koma; id ada di komentar Issue
+  Tambah. **Semua-atau-tidak-sama-sekali:** satu id tak ditemukan atau satu event gagal
+  validasi → tidak ada yang berubah.
+  - **Hapus:** wajib mengetik `HAPUS` di kolom konfirmasi; kolom koreksi harus kosong
+    (kalau terisi ditolak: kemungkinan Aksi salah pilih). Event dihapus dari `index.html`;
+    master (`kategori.json`) tidak dipangkas. Kembalikan lewat formulir Tambah (id baru).
+  - **Koreksi:** isi hanya kolom yang ingin diubah (kosong atau `(tidak diubah)` = tetap).
+    Kolom yang tidak diubah dipertahankan apa adanya. Yang bisa diubah: judul, tanggal
+    (satu tanggal; hanya bila Target satu event), jenis waktu dan jam, pemateri, masjid
+    (dropdown, Lainnya, atau Online), audience, rutin, catatan. Id tetap. Aturan
+    dumb-proof formulir Tambah berlaku sama (nama pengganti, kemiripan nama, jam,
+    ustadzah → Akhwat, konflik isian). Koreksi yang membuat event sama dengan event lain
+    ditolak (duplikat); koreksi yang tidak mengubah apa pun ditolak.
+  - Hasilnya dicatat di `diproses` sebagai `{"issue": M, "id": [...], "aksi": "hapus"|"koreksi"}`
+    (entri beraksi tidak dipakai untuk merujuk `#N`). Komentar balasan memuat tabel hapus
+    atau tabel sebelum/sesudah; Issue ditutup setelah situs terbit seperti formulir Tambah.
+  - Tidak didukung (sengaja): koreksi massal tanggal, koreksi berdasarkan pencarian
+    (tanggal/masjid) tanpa id, pembatalan (undo) otomatis.
 - **Pemateri** (keputusan Amal 3 Okt 2026): master menyimpan `nama` (bersih, untuk
   dropdown/pencarian/deteksi duplikat) dan `tampil` (lengkap dengan gelar, yang
   muncul di kartu situs), plus `alias`. Memilih dari dropdown → event memakai

@@ -317,7 +317,7 @@ jobs:
                 { owner, repo, state: 'open', creator: 'reconciler', per_page: 100 });
               for (const i of terbuka) {
                 if (i.pull_request || dilaporkan.has(i.number) || !diproses.has(i.number)) continue;
-                await komentar(i.number, 'Kajian dari Issue ini sudah terbit di situs. Issue ditutup otomatis.');
+                await komentar(i.number, 'Isi Issue ini sudah tayang di situs. Issue ditutup otomatis.');
                 await tutup(i.number);
               }
             }

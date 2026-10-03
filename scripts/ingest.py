@@ -31,10 +31,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import adapter_issue_form as adapter  # noqa: E402
+import adapter_koreksi_form as adapter_k  # noqa: E402
 import ingest_core as core  # noqa: E402
+import koreksi_core as koreksi  # noqa: E402
 
 PEMILIK = os.environ.get("INGEST_PEMILIK", "reconciler")
 FILE_TEMPLATE = ".github/ISSUE_TEMPLATE/tambah-kajian.yml"
+FILE_TEMPLATE_KOREKSI = ".github/ISSUE_TEMPLATE/koreksi-hapus-kajian.yml"
 FILE_CONFIG = ".github/ISSUE_TEMPLATE/config.yml"
 ISI_CONFIG = "blank_issues_enabled: false\n"
 
@@ -75,12 +78,16 @@ def komentar_ok(issue, events, ids, hasil, info=None):
     peringatan = list(info.get("peringatan", [])) + list(hasil["peringatan"])
     if peringatan:
         b += ["", "Peringatan:"] + [f"- {p}" for p in peringatan]
+    if events:
+        b += ["", f"Salah isi? Pakai formulir **Koreksi atau hapus kajian** dengan Target `#{issue}` "
+                  "(atau id event di tabel di atas)."]
     return "\n".join(b)
 
 
-def komentar_tertunda(ids):
+def komentar_tertunda(ids, aksi=None):
     daftar = ", ".join(str(i) for i in ids) or "-"
-    return (f"Kajian dari Issue ini sudah masuk data (id {daftar}) tetapi **belum terbit**: "
+    isi = {"hapus": "Penghapusan", "koreksi": "Koreksi"}.get(aksi, "Kajian dari Issue ini")
+    return (f"{isi} sudah masuk data (id {daftar}) tetapi **belum tayang**: "
             "deploy atau uji situs live gagal pada run ini. Issue tetap terbuka. "
             "Run berikutnya (cron harian atau push) akan mencoba menerbitkan ulang "
             "dan menutup Issue ini setelah uji lolos.")
@@ -91,6 +98,37 @@ def komentar_abaikan(ids):
     return ("Issue ini **sudah diproses** (id event: " + daftar + ") dan perubahan pada isinya **tidak diterapkan**. "
             "Untuk mengoreksi atau menghapus event tersebut, minta lewat chat atau buat Issue baru "
             "(formulir koreksi atau hapus belum tersedia).")
+
+
+def _baris_event(ev, i):
+    return (f"| {i} | {ev['dayShort']} ({ev['date']}) | {kode(ev['timeLabel'])} | {kode(ev['title'])} | "
+            f"{kode(ev['ustadz'])} | {kode(ev['masjid'])} | {kode(ev['area'])} |")
+
+
+def komentar_hapus(dihapus):
+    b = [f"{len(dihapus)} kajian **sudah dihapus** dan tidak lagi tayang di situs:", "",
+         "| id | tanggal | waktu | judul | pemateri | masjid | kota |", "|---|---|---|---|---|---|---|"]
+    b += [_baris_event(e, e["id"]) for e in dihapus]
+    b += ["", "Bila keliru, tambahkan kembali lewat formulir Tambah kajian (id baru akan dibuat)."]
+    return "\n".join(b)
+
+
+def komentar_koreksi(hasil):
+    b = [f"{len(hasil['ganti'])} kajian **sudah dikoreksi** dan perubahannya sudah tayang di situs:", "",
+         "| id | kolom | sebelum | sesudah |", "|---|---|---|---|"]
+    b += [f"| {i} | {kolom} | {kode(lama)} | {kode(baru)} |" for i, kolom, lama, baru in hasil["perbedaan"]]
+    baru = hasil["baru"]
+    if baru["kota"] or baru["masjid"] or baru["pemateri"]:
+        b += ["", "Ditambahkan ke daftar induk:"]
+        if baru["kota"]:
+            b.append("- kota: " + ", ".join(kode(x) for x in dict.fromkeys(baru["kota"])))
+        if baru["masjid"]:
+            b.append("- masjid: " + ", ".join(kode(core.label_masjid(x)) for x in baru["masjid"]))
+        if baru["pemateri"]:
+            b.append("- pemateri: " + ", ".join(kode(x["tampil"]) for x in baru["pemateri"]))
+    if hasil["peringatan"]:
+        b += ["", "Peringatan:"] + [f"- {p}" for p in hasil["peringatan"]]
+    return "\n".join(b)
 
 
 def komentar_gagal(pesan):
@@ -127,7 +165,17 @@ def main(argv=None):
         if iss.get("login") != PEMILIK:
             continue
         # Penanda formulir = judul kolom di isi Issue; awalan judul tetap dikenali (kolom hilang -> komentar gagal).
-        if not (adapter.adalah_formulir(iss.get("body", "")) or str(iss.get("title", "")).startswith(adapter.JUDUL_ISSUE.strip())):
+        judul_iss, isi_iss = str(iss.get("title", "")), iss.get("body", "")
+        # Isi menentukan lebih dulu (judul bebas diedit); awalan judul hanya dipakai bila isi tidak dikenali.
+        if adapter.adalah_formulir(isi_iss):
+            bentuk = "tambah"
+        elif adapter_k.adalah_koreksi(isi_iss):
+            bentuk = "koreksi"
+        elif judul_iss.startswith(adapter.JUDUL_ISSUE.strip()):
+            bentuk = "tambah"
+        elif judul_iss.startswith(adapter_k.JUDUL_KOREKSI.strip()):
+            bentuk = "koreksi"
+        else:
             continue
         if n in diproses:
             if n == a.edited:  # diedit setelah diproses: beri tahu, jangan diam
@@ -140,6 +188,34 @@ def main(argv=None):
         kat["gagal"] = [g for g in kat["gagal"] if g["issue"] != n]
 
         events_ada = core.events_dari_html(html)
+        if bentuk == "koreksi":
+            try:
+                pk = adapter_k.ke_paket(isi_iss, kat, events_ada, hari_ini)
+                if pk["aksi"] == "hapus":
+                    dihapus = [e for e in events_ada if e["id"] in set(pk["ids"])]
+                    html_baru = koreksi.hapus_baris(html, pk["ids"])
+                    komentar = komentar_hapus(dihapus)
+                    ringkas = f"hapus {len(dihapus)} kajian (id {', '.join(map(str, pk['ids']))})"
+                else:
+                    hk = koreksi.proses_koreksi(pk, kat, events_ada, hari_ini)
+                    html_baru = html
+                    for i_ev, ev in hk["ganti"].items():
+                        html_baru = koreksi.ganti_baris(html_baru, i_ev, ev)
+                    for kunci_kat in ("kota", "masjid", "pemateri"):
+                        kat[kunci_kat] = hk["kat_kerja"][kunci_kat]
+                    komentar = komentar_koreksi(hk)
+                    ringkas = f"koreksi {len(hk['ganti'])} kajian (id {', '.join(map(str, pk['ids']))})"
+            except core.InputError as e:
+                kat["gagal"].append({"issue": n, "alasan": e.pesan})
+                hasil_semua.append({"issue": n, "status": "gagal", "id": [], "komentar": komentar_gagal(e.pesan)})
+                continue
+            html = html_baru
+            kat["diproses"].append({"issue": n, "id": pk["ids"], "aksi": pk["aksi"]})
+            diproses.add(n)
+            hasil_semua.append({"issue": n, "status": "ok", "id": pk["ids"], "komentar": komentar,
+                                "komentar_tertunda": komentar_tertunda(pk["ids"], pk["aksi"])})
+            pesan_commit.append(f"Issue #{n}: {ringkas}")
+            continue
         try:
             paket = adapter.ke_paket(iss.get("body", ""), kat, hari_ini)
             hasil = core.bangun_event(paket, kat, hari_ini, events_ada)
@@ -176,6 +252,10 @@ def main(argv=None):
     f_tpl = root / FILE_TEMPLATE
     if not f_tpl.exists() or f_tpl.read_text(encoding="utf-8") != baru:
         f_tpl.write_text(baru, encoding="utf-8")
+    f_tpl_k = root / FILE_TEMPLATE_KOREKSI
+    baru_k = adapter_k.render_template(core.muat_kategori(f_kat))
+    if not f_tpl_k.exists() or f_tpl_k.read_text(encoding="utf-8") != baru_k:
+        f_tpl_k.write_text(baru_k, encoding="utf-8")
     f_cfg = root / FILE_CONFIG
     if not f_cfg.exists() or f_cfg.read_text(encoding="utf-8") != ISI_CONFIG:
         f_cfg.write_text(ISI_CONFIG, encoding="utf-8")
