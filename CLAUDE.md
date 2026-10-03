@@ -22,7 +22,8 @@ scripts/adapter_issue_form.py        # adapter formulir Issue: templat YAML + pa
 scripts/koreksi_core.py              # inti koreksi/hapus event (tahap 2): target, ganti/hapus baris, validasi ulang
 scripts/adapter_koreksi_form.py      # adapter formulir "Koreksi atau hapus kajian": templat YAML + parser
 scripts/tanggal_bebas.py             # pengurai isian Tanggal bebas (10 Okt 2026, 3-31 Okt 2026 Sabtu, ...)
-scripts/test_ingest.py               # uji lokal ingest (python3 scripts/test_ingest.py)
+scripts/test_ingest.py               # uji lokal ingest (python3 scripts/test_ingest.py); memakai data BEKU di scripts/fixtures/
+scripts/fixtures/                    # events.txt (isi allEvents) + kategori.json beku untuk uji; perbarui bila skema event/master berubah
 .github/ISSUE_TEMPLATE/              # DIBUAT OTOMATIS dari data/kategori.json; jangan edit manual
 docs/formulir-issue.md                # rincian sistem input Issue (internal, tidak tayang; baca sebelum mengubah ingest/adapter/templat)
 docs/riwayat-migrasi.md              # arsip sejarah migrasi Netlify -> Pages (bukan aturan aktif)
@@ -92,6 +93,12 @@ Konsekuensi untuk sesi ini:
   run-nya `success`** (tab Actions atau `actions_list`) sebelum bilang event/
   perbaikan sudah tayang. Kalau run gagal, laporkan terus terang; jangan
   menyebut sudah tayang.
+- **Uji logika di CI (Q13, 3 Okt 2026):** pada event `push` yang mengubah `scripts/**` atau `deploy.yml`, langkah
+  "Uji logika skrip" menjalankan `scripts/test_ingest.py` SEBELUM ingest; **merah = push kode itu tidak diterbitkan**.
+  Tidak berlaku untuk `issues`, `schedule`, `workflow_dispatch`, maupun push yang hanya mengubah data event
+  (`index.html`). Uji memakai data beku `scripts/fixtures/` dan jam terkunci (`JADWAL_HARI_INI`, hanya untuk
+  uji; jangan dipakai di produksi). Uji ber-PyYAML/node dilewati (bukan gagal) bila alatnya tidak ada.
+  Integritas data nyata hanya peringatan. Jalankan lokal sebelum push kode: `python3 scripts/test_ingest.py`.
 - Tidak ada lagi "antrean sampai Jumat" dan tidak ada batas commit mingguan.
 - Push dari bot (hasil prune/build, memakai `GITHUB_TOKEN`) **tidak** memicu run
   baru, jadi tidak ada loop. Konsekuensinya `main` di remote bisa lebih maju

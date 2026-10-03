@@ -9,9 +9,10 @@ Logikanya deterministik — tidak ada penilaian/AI di sini.
 Keluar dengan kode 0 dan tidak menulis apa pun bila tidak ada perubahan.
 """
 
+import os
 import re
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -53,7 +54,8 @@ def main() -> int:
         print(f"ERROR: {FILE} tidak ditemukan", file=sys.stderr)
         return 1
 
-    today = datetime.now(TZ).date()
+    # JADWAL_HARI_INI (YYYY-MM-DD) hanya untuk uji otomatis agar hasil tidak bergantung jam asli; produksi tidak memakainya.
+    today = date.fromisoformat(os.environ["JADWAL_HARI_INI"]) if os.environ.get("JADWAL_HARI_INI") else datetime.now(TZ).date()
     today_iso = today.isoformat()
     stamp = f"{today.day} {BULAN[today.month]} {today.year}"
 

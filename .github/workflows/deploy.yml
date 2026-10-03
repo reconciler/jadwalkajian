@@ -86,6 +86,38 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Uji logika skrip (hanya push yang mengubah kode)
+        # Q13 (3 Okt 2026). HANYA event push, dan hanya bila push mengubah scripts/ atau workflow ini. TIDAK pada issues,
+        # schedule, workflow_dispatch: bila uji ikut memblokir input Issue atau cron, satu uji merah menjatuhkan semua input.
+        # Push yang hanya mengubah data event (index.html dari flyer manual) tidak diblokir uji kode. Uji integritas data
+        # hanya berupa peringatan (di dalam test_ingest.py). Uji memakai data beku (scripts/fixtures) dan jam terkunci.
+        if: github.event_name == 'push'
+        timeout-minutes: 10
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+          SEBELUM: ${{ github.event.before }}
+        run: |
+          set -eu
+          if [ -n "$SEBELUM" ] && git cat-file -e "${SEBELUM}^{commit}" 2>/dev/null; then
+            UBAH=$(git diff --name-only "$SEBELUM" "$GITHUB_SHA" -- scripts .github/workflows/deploy.yml)
+            if [ -z "$UBAH" ]; then
+              echo "Push ini tidak mengubah kode (scripts/ atau deploy.yml); uji logika dilewati."
+              exit 0
+            fi
+            echo "Berkas kode yang berubah:"
+            echo "$UBAH"
+          else
+            echo "Pembanding push tidak tersedia (push pertama/force-push); menjalankan uji logika."
+          fi
+          python scripts/test_ingest.py
+          # Uji bekerja di folder sementara. Bila ada berkas repo yang berubah, pulihkan supaya tidak ikut ter-commit.
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::warning::Uji logika mengubah berkas repo; dipulihkan."
+            git status --porcelain
+            git checkout -- .
+            git clean -fdq
+          fi
+
       - name: Ambil Issue "Tambah kajian" yang terbuka
         uses: actions/github-script@v7
         with:

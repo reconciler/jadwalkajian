@@ -187,3 +187,16 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
 - **Catatan angka rancangan:** `MAKS_OPSI_DROPDOWN = 150` di `adapter_issue_form.py` adalah angka rancangan
   PIC (bukan batas GitHub yang terverifikasi). Bila opsi Pemateri atau Masjid melebihi itu, kolom otomatis
   menjadi isian teks bebas (bukan dropdown). Per 3 Okt 2026: 99 opsi pemateri, 28 masjid.
+
+## Uji otomatis: data beku dan jam terkunci (3 Okt 2026)
+- `scripts/test_ingest.py` TIDAK memakai `index.html`/`data/kategori.json` live untuk isi data: `siapkan()` memakai
+  struktur `index.html` live dengan isi `allEvents` diganti `scripts/fixtures/events.txt`, dan master dari
+  `scripts/fixtures/kategori.json` (keduanya salinan beku 3 Okt 2026). Alasan: event live bisa habis (daftar kosong sah
+  sejak Q3) atau master dikoreksi manual; uji kode tidak boleh gagal karena data. **Perbarui fixture** (salin isi
+  `allEvents` dan master saat itu) bila skema event/master berubah.
+- Jam: subprocess `prune.py`/`build.py` memakai `JADWAL_HARI_INI=2026-10-03` (`ENV_UJI`); tanpa itu uji yang menambah
+  event bertanggal Okt 2026 akan gagal begitu jam asli melewatinya (ditemukan 3 Okt 2026). Eksperimen: suite lulus
+  dengan `index.html` live dikosongkan/master diubah dan dengan jam proses dimajukan ke Maret 2027.
+- Pengecualian yang sengaja membaca berkas live: uji integritas data (peringatan saja), uji `jse()` dan uji ID di kartu
+  (membaca kode JS `index.html` asli).
+

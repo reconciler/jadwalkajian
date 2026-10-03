@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Uji lokal ingest (tanpa jaringan, tanpa menyentuh repo asli): python3 scripts/test_ingest.py"""
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -18,21 +19,35 @@ import ingest  # noqa: E402
 import ingest_core as core  # noqa: E402
 
 TODAY = "2026-10-03"
+TODAY_UJI = TODAY
 LULUS = []
 DILEWATI = []
 
 
+FIX = HERE / "fixtures"  # data uji BEKU (salinan event dan master); uji tidak bergantung pada data live atau jam asli
+ENV_UJI = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "JADWAL_HARI_INI": TODAY_UJI}  # jam prune/build dikunci
+
+
+def _html_beku():
+    """Struktur index.html live (JS/CSS) dengan isi allEvents diganti fixture beku."""
+    html = (REPO / "index.html").read_text(encoding="utf-8")
+    isi = (FIX / "events.txt").read_text(encoding="utf-8")
+    baru, n = re.subn(r"(?ms)^(const allEvents=\[\n).*?^(\];)", lambda m: m.group(1) + isi + m.group(2), html, count=1)
+    assert n == 1, "const allEvents=[ ... ]; tidak ditemukan di index.html"
+    return baru
+
+
 def siapkan():
     d = Path(tempfile.mkdtemp())
-    shutil.copy(REPO / "index.html", d / "index.html")
+    (d / "index.html").write_text(_html_beku(), encoding="utf-8")
     (d / "data").mkdir()
-    shutil.copy(REPO / "data" / "kategori.json", d / "data" / "kategori.json")
+    shutil.copy(FIX / "kategori.json", d / "data" / "kategori.json")
     # Uji tidak boleh bergantung pada riwayat Issue live (nomor Issue/id yang sudah terpakai): kosongkan di salinan.
     f_kat = d / "data" / "kategori.json"
     k = json.loads(f_kat.read_text(encoding="utf-8"))
     k["diproses"], k["gagal"] = [], []
     f_kat.write_text(json.dumps(k, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    shutil.copytree(HERE, d / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copytree(HERE, d / "scripts", ignore=shutil.ignore_patterns("__pycache__", "fixtures"))
     return d
 
 
@@ -257,7 +272,7 @@ def _():
 @uji("integritas data nyata (HANYA PERINGATAN, tidak memblokir): sinkronisasi master tidak menghasilkan selisih; entri master unik")
 def _():
     # Keputusan Auditor/Amal 3 Okt 2026: data dari flyer manual tidak boleh ditahan; jalankan python3 scripts/sinkron_master.py.
-    k = core.muat_kategori(REPO / "data" / "kategori.json")
+    k = core.muat_kategori(FIX / "kategori.json")
     html = (REPO / "index.html").read_text(encoding="utf-8")
     ev = build.parse_events(html)
     selisih = core.sinkronkan_master(html, json.loads(json.dumps(k)))
@@ -312,9 +327,9 @@ def _():
     assert e["title"] == 'Kutip "dua" \\ backslash tab' and "\n" not in e["note"] and "\x00" not in e["note"], e
     baris = [l for l in (d / "index.html").read_text(encoding="utf-8").split("\n") if l.startswith(f"  {{id:{e['id']},")]
     assert len(baris) == 1 and re.match(r'^\s*\{id:\d+,date:"\d{4}-\d{2}-\d{2}"', baris[0]) and "</" not in baris[0]
-    r = subprocess.run([sys.executable, str(d / "scripts" / "prune.py")], capture_output=True, text=True, env={"PATH": "/usr/bin:/bin"})
+    r = subprocess.run([sys.executable, str(d / "scripts" / "prune.py")], capture_output=True, text=True, env=ENV_UJI)
     assert r.returncode == 0, r.stderr
-    r = subprocess.run([sys.executable, str(d / "scripts" / "build.py")], capture_output=True, text=True, env={"PATH": "/usr/bin:/bin"})
+    r = subprocess.run([sys.executable, str(d / "scripts" / "build.py")], capture_output=True, text=True, env=ENV_UJI)
     assert r.returncode == 0, r.stderr
     assert "&quot;dua&quot;" in (d / "index.html").read_text(encoding="utf-8")
 
@@ -354,7 +369,7 @@ def _():
 @uji("templat YAML sah: 16 unsur, id unik, opsi dropdown unik tanpa koma ASCII, label = kunci parser")
 def _():
     yaml = butuh_yaml()
-    t = yaml.safe_load(ad.render_template(core.muat_kategori(REPO / "data" / "kategori.json")))
+    t = yaml.safe_load(ad.render_template(core.muat_kategori(FIX / "kategori.json")))
     assert t["title"] == ad.JUDUL_ISSUE and len(t["body"]) == 16
     assert next(x for x in t["body"] if x["id"] == "tanggal")["type"] == "input"
     rt = next(x for x in t["body"] if x["id"] == "rutin")
@@ -467,7 +482,7 @@ def _():
     ids = h[0]["id"]
     assert len(ids) == 4 and {"issue": 240, "id": ids} in kat(d)["diproses"]
     assert sorted(e["id"] for e in events(d) if e["title"] == "Mingguan uji") == ids
-    env = {"PATH": "/usr/bin:/bin"}
+    env = ENV_UJI
     for s in ("prune.py", "build.py"):
         r = subprocess.run([sys.executable, str(d / "scripts" / s)], capture_output=True, text=True, env=env)
         assert r.returncode == 0, r.stderr
@@ -562,7 +577,7 @@ def _():
 @uji("tahap 2 templat: formulir Koreksi/hapus sah, labelnya tidak bentrok dengan Tambah (tidak saling dikira)")
 def _():
     yaml = butuh_yaml()
-    t = yaml.safe_load(adk.render_template(core.muat_kategori(REPO / "data" / "kategori.json")))
+    t = yaml.safe_load(adk.render_template(core.muat_kategori(FIX / "kategori.json")))
     assert t["title"] == adk.JUDUL_KOREKSI and len(t["body"]) == len(adk.LABEL) == 18
     assert [x["attributes"]["label"] for x in t["body"]] == [adk.LABEL[k] for k in adk.LABEL]
     ids = [x["id"] for x in t["body"]]; assert len(ids) == len(set(ids))
@@ -606,7 +621,7 @@ def _():
     assert h[0]["status"] == "ok" and h[0]["id"] == ids[2:] and len(events(d)) == n0 - len(ids)
     h = dua(d, [iss(515, fk("Hapus", "#500"))])
     assert h[0]["status"] == "gagal" and "sudah tidak ada" in h[0]["komentar"]
-    env = {"PATH": "/usr/bin:/bin"}
+    env = ENV_UJI
     for sc in ("prune.py", "build.py"):
         assert subprocess.run([sys.executable, str(d / "scripts" / sc)], capture_output=True, text=True, env=env).returncode == 0
 
@@ -764,7 +779,7 @@ def _():
         h = jalankan(d, [iss(900 + i, form(**kw))])
         assert h[0]["status"] == "ok", (nilai, h)
         for sc in ("prune.py", "build.py"):
-            r = subprocess.run([sys.executable, str(d / "scripts" / sc)], capture_output=True, text=True, cwd=d)
+            r = subprocess.run([sys.executable, str(d / "scripts" / sc)], capture_output=True, text=True, cwd=d, env=ENV_UJI)
             assert r.returncode == 0, (nilai, sc, r.stderr[-200:])
         html = (d / "index.html").read_text(encoding="utf-8")
         ld = html.split("<!--LD_JSON_START-->")[1].split("<!--LD_JSON_END-->")[0]
@@ -1068,7 +1083,7 @@ def _():
 @uji("A2: dropdown terurut abjad (huruf besar/kecil diabaikan; pemateri menurut nama bersih); Belum ditentukan/Online/Lainnya di akhir")
 def _():
     yaml = butuh_yaml()
-    kat_live = core.muat_kategori(REPO / "data" / "kategori.json")
+    kat_live = core.muat_kategori(FIX / "kategori.json")
     kat_acak = json.loads(json.dumps(kat_live))
     kat_acak["pemateri"] += [{"nama": "abu zaid", "tampil": "Ustadz abu zaid", "alias": []}, {"nama": "Zulkifli", "tampil": "Zulkifli", "alias": []},
                              {"nama": "Éric Baru", "tampil": "Éric Baru", "alias": []}, {"nama": "Aaa Awal", "tampil": "Ustadz Aaa Awal", "alias": []}]
@@ -1091,7 +1106,7 @@ def _():
 
 
 def _jalan_skrip(d, nama):
-    r = subprocess.run([sys.executable, str(d / "scripts" / nama)], capture_output=True, text=True, cwd=d)
+    r = subprocess.run([sys.executable, str(d / "scripts" / nama)], capture_output=True, text=True, cwd=d, env=ENV_UJI)
     return r.returncode, r.stdout + r.stderr
 
 
@@ -1166,6 +1181,23 @@ def _():
             sys.modules.pop("yaml", None)
         else:
             sys.modules["yaml"] = asli
+
+
+@uji("jam uji dikunci: JADWAL_HARI_INI menentukan hasil prune/build (event tanggal T bertahan pada T, terhapus pada T+1)")
+def _():
+    d = siapkan()
+    h = jalankan(d, [iss(1200, form(Judul="Uji kunci jam", Tanggal="10 Okt 2026"))])
+    assert h[0]["status"] == "ok"
+    ada = lambda: any(e["title"] == "Uji kunci jam" for e in events(d))  # noqa: E731
+    for hari, harap in (("2026-10-10", True), ("2026-10-11", False)):
+        d2 = siapkan()
+        (d2 / "index.html").write_text((d / "index.html").read_text(encoding="utf-8"), encoding="utf-8")
+        env = dict(ENV_UJI, JADWAL_HARI_INI=hari)
+        for sc in ("prune.py", "build.py"):
+            r = subprocess.run([sys.executable, str(d2 / "scripts" / sc)], capture_output=True, text=True, cwd=d2, env=env)
+            assert r.returncode == 0, (hari, sc, r.stderr)
+        assert any(e["title"] == "Uji kunci jam" for e in events(d2)) is harap, (hari, harap)
+    assert ENV_UJI["JADWAL_HARI_INI"] == TODAY and ada()
 
 
 @uji("pecah_body: heading, _No response_, centang")

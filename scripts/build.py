@@ -18,9 +18,10 @@ regex prune.py tetap valid.
 """
 
 import json
+import os
 import re
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -81,6 +82,9 @@ def parse_events(html):
 
 
 def today_iso():
+    # JADWAL_HARI_INI hanya untuk uji otomatis (hasil tidak bergantung jam asli); produksi tidak memakainya.
+    if os.environ.get("JADWAL_HARI_INI"):
+        return date.fromisoformat(os.environ["JADWAL_HARI_INI"]).isoformat()
     return datetime.now(TZ).date().isoformat()
 
 
