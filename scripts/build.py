@@ -142,7 +142,9 @@ def replace_between(html, start_marker, end_marker, new_inner):
     if not pattern.search(html):
         print(f"ERROR: marker {start_marker} tidak ditemukan.", file=sys.stderr)
         sys.exit(1)
-    return pattern.sub(start_marker + new_inner + end_marker, html, count=1)
+    # Fungsi sebagai pengganti: new_inner memuat teks pengguna; string pengganti akan menafsirkan backslash
+    # (\\s, \\1, \\n) dan merusak build.
+    return pattern.sub(lambda _m: start_marker + new_inner + end_marker, html, count=1)
 
 
 def main():

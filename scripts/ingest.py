@@ -236,6 +236,13 @@ def main(argv=None):
                 pk = adapter_k.ke_paket(isi_iss, kat, events_ada, hari_ini)
                 if pk["aksi"] == "hapus":
                     dihapus = [e for e in events_ada if e["id"] in set(pk["ids"])]
+                    # Prune menolak daftar tanpa event mendatang (pengaman "hapus SEMUA"): tolak sebelum menulis apa pun.
+                    sisa = [e for e in events_ada
+                            if e["id"] not in set(pk["ids"]) and e["date"] >= hari_ini.isoformat()]
+                    if not sisa:
+                        raise core.InputError(
+                            "Penghapusan ini menyisakan 0 kajian mendatang. Situs tidak boleh kosong "
+                            "(prune dan build menolak daftar kosong). Kurangi Target, atau tambahkan kajian lain dulu.")
                     cocok, cat = koreksi.periksa_konfirmasi(pk["konfirmasi"], "hapus", len(dihapus))
                     if not cocok:
                         raise koreksi.PerluKonfirmasi(pratinjau_hapus(dihapus, cat))

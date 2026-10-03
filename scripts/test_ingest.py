@@ -26,6 +26,11 @@ def siapkan():
     shutil.copy(REPO / "index.html", d / "index.html")
     (d / "data").mkdir()
     shutil.copy(REPO / "data" / "kategori.json", d / "data" / "kategori.json")
+    # Uji tidak boleh bergantung pada riwayat Issue live (nomor Issue/id yang sudah terpakai): kosongkan di salinan.
+    f_kat = d / "data" / "kategori.json"
+    k = json.loads(f_kat.read_text(encoding="utf-8"))
+    k["diproses"], k["gagal"] = [], []
+    f_kat.write_text(json.dumps(k, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     shutil.copytree(HERE, d / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
     return d
 
@@ -713,6 +718,44 @@ def _():
     assert next(x for x in events(d) if x["id"] == ids[0])["title"] == "Baru"
     h = dua(d, [iss(581, "### Aksi\n\nHapus\n", title="Koreksi kajian: setengah")])
     assert h[0]["status"] == "gagal" and "Koreksi atau hapus" in h[0]["komentar"]
+
+
+@uji("Q1: backslash di teks event tidak merusak build.py; teks tersimpan apa adanya di blok statis dan JSON-LD")
+def _():
+    for i, (kolom, nilai) in enumerate([("Judul", "Kajian \\sunnah"), ("Judul", "C:\\Users\\x"), ("Catatan", "baris\\nbaru"),
+                                       ("Pemateri baru", "Ustadz A\\1"), ("Judul", "akhir\\")]):
+        d = siapkan()
+        kw = {kolom.replace(" ", "_"): nilai}
+        if kolom == "Pemateri baru":
+            kw["Pemateri"] = ad.LAINNYA
+        h = jalankan(d, [iss(900 + i, form(**kw))])
+        assert h[0]["status"] == "ok", (nilai, h)
+        for sc in ("prune.py", "build.py"):
+            r = subprocess.run([sys.executable, str(d / "scripts" / sc)], capture_output=True, text=True, cwd=d)
+            assert r.returncode == 0, (nilai, sc, r.stderr[-200:])
+        html = (d / "index.html").read_text(encoding="utf-8")
+        ld = html.split("<!--LD_JSON_START-->")[1].split("<!--LD_JSON_END-->")[0]
+        data = json.loads(re.search(r"<script[^>]*>(.*)</script>", ld, re.S).group(1))
+        teks = nilai
+        assert teks in html.split("<!--STATIC_EVENTS_START-->")[1].split("<!--STATIC_EVENTS_END-->")[0], nilai  # tidak diubah jadi karakter lain
+        assert teks in json.dumps(data, ensure_ascii=False).replace("\\\\", "\\"), nilai
+
+
+@uji("Q2: Hapus yang menyisakan 0 kajian mendatang ditolak sebelum pratinjau; hapus sebagian tetap jalan")
+def _():
+    d = siapkan(); semua = [e["id"] for e in events(d)]
+    n0 = len(semua)
+    tg = ", ".join(f"id {i}" for i in semua[:60])
+    h = jalankan(d, [iss(910, fk("Hapus", tg))])
+    assert h[0]["status"] == "gagal" and "menyisakan 0 kajian mendatang" in h[0]["komentar"], h[0]["komentar"]
+    h = jalankan(d, [iss(911, fk("Hapus", tg, konfirmasi=f"HAPUS {len(semua[:60])}"))])
+    assert h[0]["status"] == "gagal" and "menyisakan 0 kajian mendatang" in h[0]["komentar"] and len(events(d)) == n0
+    # sisa hanya event yang sudah lewat (tanggal uji maju): tetap ditolak
+    h = jalankan(d, [iss(912, fk("Hapus", f"id {semua[0]}"))], today="2030-01-01")
+    assert h[0]["status"] == "gagal" and len(events(d)) == n0
+    # sebagian saja: pratinjau normal
+    h = jalankan(d, [iss(913, fk("Hapus", f"id {semua[0]}"))])
+    assert h[0]["status"] == "gagal" and "Belum ada yang dihapus" in h[0]["komentar"]
 
 
 @uji("pecah_body: heading, _No response_, centang")
