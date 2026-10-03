@@ -356,3 +356,10 @@ Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor
 - **Uji YAML tidak di CI:** bila ingin tercakup, perlu keputusan memasang PyYAML (paket PyPI) di runner.
 - Pesan langsung ke sesi Auditor tidak terjangkau dari sesi PIC (`SendMessage`: sesi tidak aktif di mesin ini); git adalah jalur lapor.
 
+## 19. Keputusan Amal di chat PIC atas temuan terbuka bagian 18 — 3 Okt 2026
+**Dasar (langsung di chat PIC):** "Kalo 150 bukan batasan dari github, maka tak perlu dibatasi." dan "Tidak masalah jika kajian jadi 0."
+- **Batas dropdown dihapus:** `MAKS_OPSI_DROPDOWN` dan cabang isian teks dihapus dari `adapter_issue_form.py`; Pemateri dan Masjid selalu dropdown. Uji baru: render dengan 400 pemateri dan 300 masjid tetap dropdown (terbukti **gagal pada kode lama**). **Risiko yang diketahui (kesimpulan PIC):** batas GitHub tidak diketahui; bila terlampaui, gejalanya formulir tidak tampil lengkap dan tidak bisa dideteksi dari CI. Pengamatan yang ada: sekitar 104 opsi berfungsi (uji Amal). Cara pulih dicatat di `docs/formulir-issue.md`.
+- **Hapus boleh mengosongkan daftar:** penolakan "menyisakan 0 kajian mendatang" (Q2) dicabut. Pratinjau dan konfirmasi `HAPUS n` tetap wajib. Uji: Hapus seluruh 46 event data beku -> prune/build lolos dan idempoten -> Tambah sesudahnya berhasil dengan id yang tidak dipakai ulang (terbukti **gagal pada kode lama**).
+- Pertanyaan Amal "No 3 itu buat apa?" (uji YAML di CI) dijawab di chat PIC; keputusan memasang PyYAML belum diambil (tidak dilakukan).
+- Suite 63 lulus. Dokumen: `docs/formulir-issue.md` dan satu baris di CLAUDE.md.
+

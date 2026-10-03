@@ -789,21 +789,35 @@ def _():
         assert teks in json.dumps(data, ensure_ascii=False).replace("\\\\", "\\"), nilai
 
 
-@uji("Q2: Hapus yang menyisakan 0 kajian mendatang ditolak sebelum pratinjau; hapus sebagian tetap jalan")
+@uji("Hapus boleh mengosongkan daftar (keputusan Amal 3 Okt 2026): pratinjau+konfirmasi tetap; prune/build sah; Tambah sesudahnya berhasil")
 def _():
-    d = siapkan(); semua = [e["id"] for e in events(d)]
-    n0 = len(semua)
-    tg = ", ".join(f"id {i}" for i in semua[:60])
+    d = siapkan(); semua = [e["id"] for e in events(d)][:60]
+    assert len(semua) == len(events(d)) < 60  # uji ini mengosongkan seluruh daftar
+    n = len(semua)
+    tg = ", ".join(f"id {i}" for i in semua)
     h = jalankan(d, [iss(910, fk("Hapus", tg))])
-    assert h[0]["status"] == "gagal" and "menyisakan 0 kajian mendatang" in h[0]["komentar"], h[0]["komentar"]
-    h = jalankan(d, [iss(911, fk("Hapus", tg, konfirmasi=f"HAPUS {len(semua[:60])}"))])
-    assert h[0]["status"] == "gagal" and "menyisakan 0 kajian mendatang" in h[0]["komentar"] and len(events(d)) == n0
-    # sisa hanya event yang sudah lewat (tanggal uji maju): tetap ditolak
-    h = jalankan(d, [iss(912, fk("Hapus", f"id {semua[0]}"))], today="2030-01-01")
-    assert h[0]["status"] == "gagal" and len(events(d)) == n0
-    # sebagian saja: pratinjau normal
-    h = jalankan(d, [iss(913, fk("Hapus", f"id {semua[0]}"))])
-    assert h[0]["status"] == "gagal" and "Belum ada yang dihapus" in h[0]["komentar"]
+    assert h[0]["status"] == "gagal" and "Belum ada yang dihapus" in h[0]["komentar"] and f"`HAPUS {n}`" in h[0]["komentar"], h[0]["komentar"]
+    assert len(events(d)) >= n  # pratinjau tidak menghapus apa pun
+    h = jalankan(d, [iss(910, fk("Hapus", tg, konfirmasi=f"HAPUS {n}"))], edited=910)
+    assert h[0]["status"] == "ok" and "sudah dihapus" in h[0]["komentar"], h[0]["komentar"]
+    assert events(d) == []  # data uji beku memuat 46 event (< 60): semuanya terhapus
+    assert all(_jalan_skrip(d, sc)[0] == 0 for sc in ("prune.py", "build.py"))  # daftar kosong sah dan idempoten
+    h = jalankan(d, [iss(911, form(Judul="Muncul lagi sesudah kosong", Tanggal="10 Okt 2026"))])
+    assert h[0]["status"] == "ok" and [e["title"] for e in events(d)] == ["Muncul lagi sesudah kosong"]
+    assert min(e["id"] for e in events(d)) > max(semua)  # id tidak dipakai ulang
+
+
+@uji("tidak ada batas jumlah opsi dropdown buatan sendiri: Pemateri dan Masjid selalu dropdown (keputusan Amal 3 Okt 2026)")
+def _():
+    assert not hasattr(ad, "MAKS_OPSI_DROPDOWN")
+    k = core.muat_kategori(FIX / "kategori.json")
+    for i in range(400):
+        k["pemateri"].append({"nama": f"Pemateri Uji {i:04d}", "tampil": f"Pemateri Uji {i:04d}", "alias": []})
+    for i in range(300):
+        k["masjid"].append({"nama": f"Masjid Uji {i:04d}", "kota": "Depok", "alamat": "x", "tampil": f"Masjid Uji {i:04d}"})
+    t = ad.render_template(k)
+    assert "  - type: dropdown\n    id: pemateri\n" in t and "  - type: dropdown\n    id: masjid\n" in t
+    assert t.count('- "Pemateri Uji ') == 400 and t.count('- "Masjid Uji ') == 300
 
 
 @uji("Q5: Issue gagal diproses ulang bila isinya berubah walau sinyal edit hilang; isi sama -> tetap dilewati tanpa komentar")

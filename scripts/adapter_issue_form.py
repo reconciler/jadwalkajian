@@ -52,7 +52,6 @@ OPSI_RUTIN = [RUTIN_OTOMATIS, RUTIN_YA, RUTIN_TIDAK]
 OPSI_ABAIKAN = "Abaikan kemiripan nama (saya yakin ini baru)"
 # Judul kolom yang menandai Issue sebagai isian formulir "Tambah kajian" (judul Issue tidak lagi menentukan)
 PENANDA_FORMULIR = ("Tanggal", "Jenis waktu", "Masjid")
-MAKS_OPSI_DROPDOWN = 150  # lebih dari ini, kolom Pemateri/Masjid dibuat isian teks
 RESPON_KOSONG = "_No response_"
 
 
@@ -101,20 +100,14 @@ def render_template(kat):
     mas_opsi = [tampil(m) for m in masjid] + [ONLINE, LAINNYA]
     kota_opsi = [tampil(k) for k in kota] + [KOTA_LAIN]
 
-    if len(pem_opsi) > MAKS_OPSI_DROPDOWN:
-        pem = _unsur("input", "pemateri", LABEL["pemateri"],
-                     "Nama pemateri (boleh dengan gelar, dicocokkan otomatis), atau Belum ditentukan.", wajib=True)
-    else:
-        pem = _unsur("dropdown", "pemateri", LABEL["pemateri"],
-                     "Nama tanpa gelar. Tidak ada di daftar: pilih Lainnya dan tulis di kolom berikutnya.",
-                     wajib=True, opsi=pem_opsi)
-    if len(mas_opsi) > MAKS_OPSI_DROPDOWN:
-        mas = _unsur("input", "masjid", LABEL["masjid"],
-                     "Nama masjid dan kota, persis seperti yang sudah ada, atau Online.", wajib=True)
-    else:
-        mas = _unsur("dropdown", "masjid", LABEL["masjid"],
-                     "Format: Nama (Kota). Tidak ada di daftar: pilih Lainnya dan isi kolom masjid baru.",
-                     wajib=True, opsi=mas_opsi)
+    # Keputusan Amal 3 Okt 2026: tidak ada batas jumlah opsi buatan sendiri (batas GitHub tidak diketahui; angka 150 lama
+    # hanyalah rancangan PIC). Pemateri dan Masjid selalu dropdown terurut abjad.
+    pem = _unsur("dropdown", "pemateri", LABEL["pemateri"],
+                 "Nama tanpa gelar. Tidak ada di daftar: pilih Lainnya dan tulis di kolom berikutnya.",
+                 wajib=True, opsi=pem_opsi)
+    mas = _unsur("dropdown", "masjid", LABEL["masjid"],
+                 "Format: Nama (Kota). Tidak ada di daftar: pilih Lainnya dan isi kolom masjid baru.",
+                 wajib=True, opsi=mas_opsi)
 
     unsur = [
         _unsur("input", "tanggal", LABEL["tanggal"],

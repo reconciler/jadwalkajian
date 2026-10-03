@@ -142,7 +142,8 @@ sintaks Tanggal, rutin otomatis, aturan dumb-proof, Koreksi/hapus, pemateri, mas
   dengan `tampil` di `data/kategori.json`. Kota/masjid/pemateri **baru tidak perlu lagi diketik ke master**:
   jalankan `python3 scripts/sinkron_master.py` (idempoten, hanya menambah, tanpa jaringan); setiap run `ingest.py`
   juga menyinkronkan master dari event yang ada. Uji: `python3 scripts/test_ingest.py`.
-- Dropdown formulir **harus terurut abjad** menurut nama bersih (keputusan Amal 3 Okt 2026), "Lainnya" di akhir.
+- Dropdown formulir **harus terurut abjad** menurut nama bersih (keputusan Amal 3 Okt 2026), "Lainnya" di akhir;
+  tanpa batas jumlah opsi buatan sendiri (keputusan Amal 3 Okt 2026). Daftar kajian boleh kosong (0 event sah).
 
 ## Berkas yang tayang di situs (folder `_site`)
 

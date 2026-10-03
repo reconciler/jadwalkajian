@@ -312,14 +312,6 @@ def main(argv=None):
                     pk = adapter_k.ke_paket(isi_iss, kat, events_ada, hari_ini)
                     if pk["aksi"] == "hapus":
                         dihapus = [e for e in events_ada if e["id"] in set(pk["ids"])]
-                        # Prune menolak daftar tanpa event mendatang (pengaman "hapus SEMUA"): tolak sebelum menulis apa pun.
-                        sisa = [e for e in events_ada
-                                if e["id"] not in set(pk["ids"]) and e["date"] >= hari_ini.isoformat()]
-                        if not sisa:
-                            raise core.InputError(
-                                "Penghapusan ini menyisakan 0 kajian mendatang. Situs tidak boleh dikosongkan lewat formulir "
-                                "(kebijakan: kemungkinan Target keliru; daftar kosong hanya terjadi otomatis saat semua kajian "
-                                "kedaluwarsa). Kurangi Target, atau tambahkan kajian lain dulu.")
                         periksa_kunci(pk["konfirmasi"], "hapus", len(dihapus), sidik_pratinjau("hapus", dihapus),
                                       gagal_lama[0].get("pratinjau") if gagal_lama else None,
                                       lambda cat: pratinjau_hapus(dihapus, cat))

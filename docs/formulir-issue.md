@@ -99,8 +99,9 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
     **sama** dengan keadaan sekarang. Target diubah atau data berubah sesudah pratinjau → pratinjau baru
     muncul ("Data berubah sejak pratinjau"), konfirmasi harus diisi ulang. Konfirmasi tanpa pratinjau
     ditolak dengan pesan serupa.
-  - **Hapus:** konfirmasi `HAPUS <jumlah>` (lihat di atas); ditolak bila penghapusan menyisakan **0
-    kajian mendatang** (prune dan build menolak daftar kosong); kolom koreksi harus kosong
+  - **Hapus:** konfirmasi `HAPUS <jumlah>` (lihat di atas); penghapusan **boleh mengosongkan seluruh daftar**
+    (keputusan Amal 3 Okt 2026: "tidak masalah jika kajian jadi 0"; daftar kosong sah bagi prune/build dan
+    Tambah sesudahnya tetap berjalan); kolom koreksi harus kosong
     (kalau terisi ditolak: kemungkinan Aksi salah pilih). Event dihapus dari `index.html`;
     master (`kategori.json`) tidak dipangkas. Kembalikan lewat formulir Tambah (id baru).
   - **Koreksi:** isi hanya kolom yang ingin diubah (kosong atau `(tidak diubah)` = tetap).
@@ -184,9 +185,13 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   diabaikan, `str.casefold`), masjid menurut label `Nama (Kota)`, kota menurut nama; "Belum ditentukan" /
   "Online" / "Lainnya" / "Kota lain" tetap di akhir. Uji `A2` gagal bila entri baru menyisip tidak terurut
   (diuji dengan data nyata dan data acak berhuruf campur/aksen; mutasi urutan di adapter ditangkap).
-- **Catatan angka rancangan:** `MAKS_OPSI_DROPDOWN = 150` di `adapter_issue_form.py` adalah angka rancangan
-  PIC (bukan batas GitHub yang terverifikasi). Bila opsi Pemateri atau Masjid melebihi itu, kolom otomatis
-  menjadi isian teks bebas (bukan dropdown). Per 3 Okt 2026: 99 opsi pemateri, 28 masjid.
+- **Tanpa batas jumlah opsi dropdown (keputusan Amal 3 Okt 2026):** konstanta `MAKS_OPSI_DROPDOWN = 150` dihapus
+  (angka itu hanya rancangan PIC, bukan batas GitHub). Pemateri dan Masjid selalu dropdown terurut abjad. Batas
+  jumlah opsi yang sebenarnya di GitHub **tidak diketahui**; yang teramati: formulir dengan sekitar 104 opsi
+  tampil dan berfungsi pada uji Amal 3 Okt 2026 (belum ada pengamatan untuk jumlah lebih besar). Bila suatu saat
+  "New issue" gagal menampilkan formulir setelah master membesar, kembalikan lewat riwayat git (templat dibuat
+  ulang tiap run dari master) dan putuskan batas berdasarkan angka yang teramati. Per 3 Okt 2026: 99 opsi
+  pemateri, 28 masjid.
 
 ## Uji otomatis: data beku dan jam terkunci (3 Okt 2026)
 - `scripts/test_ingest.py` TIDAK memakai `index.html`/`data/kategori.json` live untuk isi data: `siapkan()` memakai
