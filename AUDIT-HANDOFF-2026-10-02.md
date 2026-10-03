@@ -364,3 +364,43 @@ Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor
 - Suite 63 lulus. Dokumen: `docs/formulir-issue.md` dan satu baris di CLAUDE.md.
 - **Keputusan Amal (chat PIC, 3 Okt 2026): opsi A untuk uji YAML di CI**: dibiarkan seperti sekarang. Tiga uji berbasis PyYAML (keabsahan templat Tambah, templat Koreksi/hapus, urutan dropdown) tetap berjalan hanya di mesin PIC dan tercatat "dilewati" di CI (bukan gagal). Tidak ada paket PyPI yang ditambahkan ke workflow. Opsi B (`pip install pyyaml`) dan C (pemeriksa struktur tanpa PyYAML) ditunda; dapat dibuka lagi bila Amal ingin cakupan di CI. Celah yang diketahui: push kode yang merusak templat tidak tertangkap CI; mitigasinya PIC menjalankan suite lokal sebelum setiap push.
 
+## 20. Instruksi Auditor bagian 11 (komit `2d9fa73`): butir A ekstraksi aturan, butir C axe-core; butir B ditahan — 3 Okt 2026
+**Dasar dan batas:** relai lewat pemicu terjadwal, diverifikasi di git (komit `2d9fa73` hanya mengubah `CLAUDE.md` dan berkas Auditor). Aturan lintas-repo (13 butir) dibaca dan dipatuhi. **Butir B (menyentuh `deploy.yml`) ditahan** sampai Amal mengonfirmasi di chat PIC (lintas-repo butir 2: kutipan lewat sesi lain tidak cukup). Tidak ada kode yang diubah untuk butir A.
+
+### Butir C: axe-core 4.13.0 (hasil)
+- **Alat:** `axe-core` 4.13.0 dipasang di folder sementara sesi (bukan di repo; integritas registry `sha512-UzGt8zg7Ny8djbYMhxl2zuEevVa7r2gJjYY5Lwr1xM7+XU2nd6CkIWFTVcCIbAP63vSz71NaVyyuSk9lHKcy0A==`), dijalankan di Chromium terhadap `index.html` (data nyata, 46 event). Lebar 320 dan 430, tiga keadaan (awal, satu kartu terbuka, panel "Tentang" terbuka), terang dan "gelap" (situs **tidak punya tema gelap**: tidak ada `prefers-color-scheme`, sehingga hasilnya identik; total 12 keadaan).
+- **Garis dasar (sebelum):** 4 jenis pelanggaran.
+
+| Aturan axe | Dampak | Node maks | Status |
+|---|---|---|---|
+| `landmark-one-main` | moderate | 1 | **diperbaiki** (atribut saja) |
+| `region` | moderate | 48 | **diperbaiki** (atribut saja) |
+| `color-contrast` | serious | 32 | **menunggu Amal** (mengubah warna) |
+| `link-in-text-block` | serious | 2 | **menunggu Amal** (mengubah tampilan tautan) |
+
+- **Perbaikan yang diterapkan (komit `4768063`, run #34 `success`, deploy dan uji situs live `success`):** empat atribut tanpa mengubah struktur DOM: `role="banner"` pada `.header`, `role="region" aria-label="Filter kajian"` pada `.filters`, `role="main"` pada `#cards-container`, `role="contentinfo"` pada `.page-footer`. **Sesudah: tersisa hanya `color-contrast` dan `link-in-text-block`** (12 keadaan). **Bukti tanpa efek visual:** tangkapan layar halaman penuh Chromium sebelum dan sesudah identik byte-per-byte (lebar 320 dan 430, keadaan awal dan kartu terbuka). **Belum dilihat di perangkat nyata** (lintas-repo butir 11).
+- **Temuan yang menunggu keputusan Amal (usulan PIC):**
+  - `color-contrast` pada badge kota (`.area-tag`, teks 11px): warna dihitung dari hash nama kota (`hsl(h,58%,62%)` di atas `hsl(h,36%,25%)`). **4 dari 7 kota gagal 4,5:1**: Bandung 3,73; Bogor 3,60; Jakarta 3,81; Tangerang 3,04 (Bekasi 4,61, Depok 4,71, Online 4,69 lolos). Dari 360 hue, 216 gagal; kontras minimum 2,87. **Usulan:** teks `L=70%` di atas latar `L=20%` (kontras minimum se-360 hue 4,76; `L=72%/20%` = 5,22). Wajib diubah serentak di `cc()` (`index.html`) dan `city_color()` (`scripts/build.py`) karena algoritma harus sama. Mengubah tampilan: butuh konfirmasi Amal.
+  - `link-in-text-block`: tautan di dalam blok teks (kotak "Ingin menambahkan info kajian?") hanya dibedakan lewat warna (kontras 1,57:1 terhadap teks sekitar), tanpa garis bawah. **Usulan:** `text-decoration: underline` pada tautan di blok itu. Mengubah tampilan: butuh konfirmasi Amal.
+  - `color-contrast` berstatus "perlu diperiksa manual" (71 sampai 81 node: latar gradien/tumpang tindih): tidak diputuskan otomatis oleh axe.
+
+### Butir A: ekstraksi aturan dan keputusan dari chat PIC dengan Amal
+**Sumber:** riwayat chat PIC dengan Amal (termasuk ringkasan sebelum pemadatan konteks), pesan komit, handoff. Hanya aturan yang **berlaku ke depan** dan belum ada di `CLAUDE.md`/`docs/`. Tidak ada data pribadi disalin.
+
+| # | Aturan | Sumber | Cakupan | Status | Usulan teks |
+|---|---|---|---|---|---|
+| A1 | Bila konteks kurang, cek riwayat percakapan/handoff/git dulu sebelum sumber eksternal. | Preferensi Amal (setelan pribadi), praktik | lintas-repo | belum tertulis | "Bila konteks kurang, baca riwayat chat, handoff, dan git dulu; baru sumber eksternal." |
+| A2 | Bila Amal meminta penjelasan "bahasa awam": analogi sehari-hari, tabel kecil, tanpa jargon; tetap menandai yang tervalidasi dan yang kesimpulan sendiri. | Amal 3 Okt: "Wait. Coba jelaskan dengan bahasa awam apa yang sedang terjadi terkait poin 3 ini?" | lintas-repo | belum tertulis | "Permintaan penjelasan awam: analogi, tabel kecil, tanpa jargon; pertahankan penanda tervalidasi/kesimpulan." |
+| A3 | Pekerjaan besar diakhiri ringkasan "yang perlu Anda ketahui": yang belum terbukti, perubahan perilaku, yang akan terjadi sendiri, keputusan yang menunggu. | Amal 3 Okt: "Ada yang perlu saya tau lagi?" (praktik, bukan keputusan eksplisit) | lintas-repo | belum tertulis | "Akhiri pekerjaan besar dengan ringkasan: belum terbukti, perubahan perilaku, kejadian otomatis, keputusan menunggu." |
+| A4 | Pertahankan penomoran asli saat merujuk usulan; jawaban "semua" berarti seluruh butir daftar asli, termasuk yang butuh uji nyata. | Amal 3 Okt: "Maksudnya 7 usulan" (koreksi atas hitungan PIC) | lintas-repo | belum tertulis | "Jangan mengubah penomoran/hitungan usulan saat melapor; 'semua' = seluruh butir asli." |
+| A5 | Tiap butir keputusan memuat satu kalimat tujuannya, akibat bila ditunda, dan rekomendasi dengan default konservatif (tanpa perubahan). | Amal 3 Okt: "No 3 itu buat apa?" lalu "Oke. Lakukan A dulu" | lintas-repo | belum tertulis | "Butir keputusan: tujuan satu kalimat, akibat bila ditunda, rekomendasi; default konservatif." |
+| A6 | Pertanyaan Amal tentang sistem ("apakah dumb proof?", "dari mana user tahu id?") dijawab dengan analisis dan usulan bernomor; ubah sistem hanya setelah persetujuan. | Amal 3 Okt: pertanyaan tersebut, lalu "Lanjutkan dengan semua 6 usulan itu" | lintas-repo | sebagian (lintas-repo butir 1-2) | "Pertanyaan = analisis + usulan bernomor; mengubah menunggu persetujuan." |
+| A7 | Jangan membuat batas/pembatasan buatan sendiri yang tidak berdasar pada batas platform yang terverifikasi, kecuali untuk keamanan. | Amal 3 Okt: "Kalo 150 bukan batasan dari github, maka tak perlu dibatasi." | lintas-repo (prinsip) | khusus dropdown sudah tertulis; prinsip umum belum | "Batas buatan tanpa dasar platform terverifikasi tidak dipasang (kecuali keamanan); catat risikonya." |
+| A8 | Uji otomatis harus deterministik: data beku dan jam terkunci, tidak memakai data live atau jam asli. | Praktik PIC (ditemukan 3 Okt: bom waktu), bukan keputusan Amal | lintas-repo bila repo punya uji | tertulis di `CLAUDE.md`/`docs` jadwalkajian saja | "Uji memakai fixture beku dan jam terkunci; jangan membaca data live." |
+
+**Sudah tertulis (tidak perlu aksi):** daftar penolakan dumb-proof; Hapus boleh mengosongkan daftar dan 0 event sah; dropdown tanpa batas buatan dan risikonya; audience bawaan "Terbuka untuk umum"; data baru ditambahkan bukan ditahan; kajian di luar Jabodetabek dimasukkan; pemateri tampil lengkap dengan gelar; jadwal mingguan dihapus; prune saat push selama event lewat tak terlihat; konfirmasi Amal di chat repo untuk pipeline (lintas-repo 2); penyimpangan yang lebih aman (lintas-repo 3); preferensi laporan (bahasa Indonesia, tabel, penanda tervalidasi). 
+**Ditambahkan ke `CLAUDE.md` sekarang (keputusan eksplisit Amal, khusus repo ini):** opsi A uji YAML: tiga uji ber-PyYAML tetap lokal, tanpa paket PyPI di workflow (sebelumnya hanya di handoff bagian 19). Butir lain lintas-repo atau praktik: hanya didaftar di atas untuk Auditor.
+
+### Butir B (ditahan)
+Menyamakan uji 404 pasca-terbit (semua `AUDIT-HANDOFF-*.md` dan `COORDINATION-NOTE-*.md` bila ada, bukan satu nama tetap) menyentuh `deploy.yml`. Menunggu "lanjut" Amal di chat PIC. Rencana PIC bila disetujui (usulan, lebih aman dari spesifikasi): daftar `INTERNAL` dihitung dari berkas yang ada di repo saat itu (`git ls-files`) untuk pola `AUDIT-HANDOFF-*.md` dan `COORDINATION-NOTE-*.md`, dengan uji simulasi lokal dulu; batasan: berkas baru yang belum ter-commit tidak diuji; tidak ada pelonggaran uji lain.
+

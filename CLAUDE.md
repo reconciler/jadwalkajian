@@ -99,6 +99,8 @@ Konsekuensi untuk sesi ini:
   (`index.html`). Uji memakai data beku `scripts/fixtures/` dan jam terkunci (`JADWAL_HARI_INI`, hanya untuk
   uji; jangan dipakai di produksi). Uji ber-PyYAML/node dilewati (bukan gagal) bila alatnya tidak ada.
   Integritas data nyata hanya peringatan. Jalankan lokal sebelum push kode: `python3 scripts/test_ingest.py`.
+  **Keputusan Amal 3 Okt 2026 (opsi A):** tiga uji ber-PyYAML (templat Tambah, templat Koreksi/hapus, urutan dropdown)
+  sengaja hanya berjalan lokal; **jangan** menambah paket PyPI ke workflow untuk itu kecuali Amal memutuskan.
 - **Satu komit bot per run (B1, 3 Okt 2026):** hasil ingest, prune, build, dan templat formulir Issue
   (`.github/ISSUE_TEMPLATE/`, ditulis `ingest.py`) masuk satu komit; push ditolak = reset ke `origin/main` dan ulangi
   ingest (sampai 4 kali). Langkah "Perbarui templat" terpisah dihapus. Alur ini diuji lokal dengan remote bare
