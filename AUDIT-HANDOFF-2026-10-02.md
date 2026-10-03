@@ -126,3 +126,8 @@ Dasar: instruksi tercatat di git, bersumber dari permintaan Amal; tidak menyentu
 ### Belum terverifikasi / menunggu Amal
 - Issue uji sungguhan dengan pola mingguan (butir 4 handoff Auditor): menunggu Amal; setelah itu event ujinya dihapus. Belum ada yang diuji di GitHub untuk dropdown rutin tiga opsi dengan `default: 0` (dugaan: diterima; sama jenisnya dengan dropdown lain yang sudah tampil).
 - Pengerasan push tag `last-deploy`: menunggu "lanjut" Amal.
+
+### Hasil run (3 Okt 2026)
+- Run #10 (`37091255095`, komit `c8dbf01`, push): **success** (±10 detik). Perubahan hanya di `scripts/`, templat, dan dokumen, bukan berkas situs, jadi langkah "Cek apakah ada yang perlu diterbitkan" menilai tidak ada yang perlu diterbitkan (deploy dilewati); templat dikomit PIC langsung, jadi langkah "Perbarui templat" mendapati sudah mutakhir.
+- **Temuan: cron `schedule` pertama kali berjalan dan berhasil.** Run #9 (`37079159704`, event `schedule`, komit `a377f5d`) mulai 2026-10-02 23:46:41 UTC (06:46 WIB), **success**; jadwal 20:17 UTC jadi **telat ±3 jam 29 menit** (konsisten dengan catatan keandalan cron: telat berjam-jam, tetap berjalan). Tidak ada perubahan data, tidak ada commit/deploy (jalur "cron tanpa Issue baru keluar cepat" terbukti di GitHub).
+- Tetap belum teruji di GitHub: Issue sungguhan (komentar, penutupan), `issues: opened/edited`, push templat oleh token.
