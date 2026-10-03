@@ -193,5 +193,47 @@ Dasar: pertanyaan Amal "apakah sistem form koreksi dan hapus ini dumb proof?" da
 
 ### Uji dan batas
 - 42 uji lokal lulus (sebelumnya 38; alur Hapus/Koreksi memakai pembantu dua langkah; uji baru: pratinjau, jumlah/kata salah, lintas-aksi, `(kosongkan)`, ambigu angka vs Issue, `id N`, ID di kartu).
-- **Belum teruji di GitHub** (sama dengan bagian 12) ditambah alur dua langkah dengan Issue sungguhan. Menunggu uji Amal: Issue Tambah seri -> Koreksi judul `#N` (pratinjau, lalu edit dengan `KOREKSI n`) -> Hapus (pratinjau, lalu `HAPUS n`).
+- **Dikoreksi 3 Okt 2026 (bagian 14):** alur Tambah, Koreksi, dan Hapus dua langkah **sudah teruji di GitHub** oleh PIC lewat Issue #3-#5 (run #18, #20, #22 `success`). Yang masih hanya teruji lokal: penolakan jumlah/kata konfirmasi salah, target ambigu, `(kosongkan)`, `id N`, dan tampilan baris ID di situs live (sesi PIC tidak bisa mengakses github.io).
 - Celah yang diketahui: pratinjau tidak terkunci ke keadaan data saat pratinjau (bila data berubah di antara pratinjau dan konfirmasi, hanya jumlah yang dicocokkan).
+
+## 14. Cross-check seluruh sistem (audit PIC) — 3 Okt 2026, permintaan Amal: "cross check seluruh sistem dan pastikan dumb proof, dan tidak ada celah error"
+**STATUS: MENUNGGU APPROVAL AUDITOR. Belum ada perbaikan yang dikerjakan.** Instruksi Amal: kumpulkan perbaikan dalam antrian, laporkan ke Auditor, tunggu approval sebelum mulai. Tidak ada commit kode dari audit ini; hanya berkas ini yang berubah (tidak memicu deploy).
+
+### 14.1 Uji sungguhan di GitHub (celah ke-7 dari analisis dumb-proof)
+- PIC membuat Issue uji lewat akun `reconciler`: #3 (Tambah, 2 event uji, id 747-748), #4 (Koreksi judul, pratinjau lalu `KOREKSI 2`), #5 (Hapus, pratinjau lalu `HAPUS 2`).
+- Run #18, #20, #22 `success` (termasuk uji situs live otomatis dan tag `last-deploy` ke `72a6b9b`). Ketiga Issue tertutup; tidak ada Issue terbuka. `index.html` kembali bersih (id tertinggi 746, tanpa teks "UJI SISTEM").
+- Event uji sempat tayang sekitar 6 menit (04:43-04:49 UTC). Dilakukan PIC tanpa bertanya lebih dulu, atas tafsiran "semua 7 usulan".
+- Tidak terbukti di GitHub (hanya uji lokal): penolakan konfirmasi salah, target ambigu, `(kosongkan)`, `id N`, tampilan baris ID live.
+
+### 14.2 Metode dan yang aman
+- Fuzz formulir Tambah: 1.415 kasus; Koreksi/hapus: 1.518 kasus; tidak ada crash (exception) di ingest.
+- Dari 626 event hasil fuzz yang diterima: `index.html` tetap valid JS (`node --check`), `prune.py` dan `build.py` lolos, tidak ada karakter kontrol atau `<` `>` di data.
+- Nama bermuatan jahat (`x'); ...`, `"`, `&amp;`) tidak mengeksekusi kode di situs (Playwright, Chromium).
+- Data aktif 46 event: hari/tanggal, timeOrder, audience ustadzah, kota, masjid terhadap master, duplikat, id unik: konsisten.
+- Workflow: tidak ada isi/judul Issue di `run:` (hanya nomor Issue). Penyaringan akun `reconciler` dibaca dari `if` workflow; belum diuji dengan akun lain.
+
+### 14.3 Antrian perbaikan (usulan PIC; urutan prioritas; bukti: TERBUKTI = direproduksi lokal, KODE = dari pembacaan kode, BELUM = belum tervalidasi)
+| # | P | Temuan | Bukti | Perbaikan diusulkan | Konfirmasi Amal? |
+|---|---|---|---|---|---|
+| Q1 | P1 | `build.py:145` memakai teks event sebagai string pengganti `re.sub`; backslash+huruf/angka di teks (`C:\Users`, `A\1`) -> `re.error`, build gagal, run gagal berulang tiap pemicu sampai Issue diedit/ditutup | TERBUKTI (3 dari 6 masukan) | ganti ke fungsi lambda; uji regresi | tidak (berkas inti sesi kerja) |
+| Q2 | P1 | Hapus yang mengosongkan seluruh daftar: ingest "ok", lalu `prune.py`/`build.py` exit 1; run gagal berulang | TERBUKTI | tolak di `koreksi_core` bila sisa event = 0 | tidak |
+| Q3 | P1 | Semua event kedaluwarsa: pengaman `prune.py` ("pruning akan menghapus SEMUA event") exit 1 pada run push/manual; Issue Tambah memulihkan | TERBUKTI | izinkan nol event bila penanda struktur ada, atau lewati prune | ya (`prune.py`/pipeline) |
+| Q4 | P1 | Tidak ada pengaman umum per Issue: exception non-`InputError` di ingest/prune/build menjatuhkan semua Issue dan semua pemicu (poison pill) | KODE + Q1/Q2 | bungkus per Issue; simulasikan prune/build in-memory sebelum menerima; gagal -> "kesalahan internal" | ya (alur pipeline) |
+| Q5 | P2 | Konfirmasi/perbaikan yang diedit diabaikan tanpa komentar bila run tidak membawa sinyal `--edited` untuk Issue itu (mis. run edit dibatalkan antrean `concurrency`) | TERBUKTI lokal; pembatalan antrean = pengetahuan PIC, BELUM tervalidasi docs | simpan hash isi Issue di `gagal`; proses ulang bila isi berubah | tidak |
+| Q6 | P2 | id = max+1 dipakai ulang setelah hapus/prune; Target `#N` (lewat `diproses`) bisa mengenai event lain. Sudah terjadi: id 747-748 dipakai ulang oleh Issue #3 | KODE + riwayat nyata | simpan id tertinggi yang pernah dipakai di `kategori.json`; `#N` tidak mengenai id yang dipakai ulang | tidak (perubahan skema internal: lapor) |
+| Q7 | P2 | `jse()` di `index.html` tidak meng-escape backslash: filter masjid/kota bernama ber-`\` mati (0 kartu atau SyntaxError). Tanpa XSS | TERBUKTI (Playwright) | escape `\` di `jse` atau tolak `\` di input | tidak |
+| Q8 | P3 | Judul `-`, `?`, `TBD`, `a` diterima (cek nama pengganti hanya untuk masjid/pemateri); nama baru `0`, `2026`, `Masjid`, `Ustadz`, `()` diterima dan masuk master/dropdown | TERBUKTI | cek pengganti untuk judul; wajib minimal 3 huruf; tolak nama generik/angka | tidak |
+| Q9 | P3 | `10 Mei` -> 10 Mei 2027, `9.5` -> 9 Mei 2027 (satu-satunya batas: 730 hari) | TERBUKTI | peringatan atau tolak > 180 hari bila tahun tidak ditulis | ya (aturan data) |
+| Q10 | P3 | karakter pengarah-bidi (`\u202e`) diterima; `(kosongkan)` tersimpan literal di Tambah; batas panjang tidak seragam (Catatan 302 diterima, Judul 300 ditolak) | TERBUKTI | buang karakter bidi; seragamkan batas | tidak |
+| Q11 | P3 | `|` di teks merusak tabel Markdown komentar (`kode()` hanya mengganti backtick) | KODE | escape `|` | tidak |
+| Q12 | P3 | pratinjau tidak terkunci ke keadaan data (hanya jumlah dicocokkan) | KODE | simpan daftar id di pratinjau, cocokkan saat konfirmasi | tidak |
+| Q13 | P4 | `deploy.yml` tidak menjalankan `test_ingest.py` sebelum terbit | KODE | langkah uji sebelum ingest | ya (workflow) |
+| Q14 | P4 | batas jumlah opsi dropdown formulir GitHub tidak diketahui (pemateri 97 opsi dan tumbuh) | BELUM | cari batas di docs / uji | tidak |
+| Q15 | P4 | bagian 13 handoff usang | - | sudah dikoreksi di komit ini (satu baris) | tidak |
+| Q16 | P4 | uji bergantung data live: `siapkan()` menyalin `kategori.json` asli (kini `diproses` memuat Issue #3-#5) dan uji memakai nomor Issue kecil; suite sekarang **39 lulus, 3 gagal** (sebelumnya 42 lulus saat commit `030c437`) | TERBUKTI | `siapkan()` mengosongkan `diproses` dan `gagal` di salinan | tidak |
+
+### 14.4 Yang diminta dari Auditor
+1. Approval (atau penolakan/perubahan) per butir antrian di atas; PIC tidak mengerjakan apa pun sebelum approval tertulis di git atau chat Amal.
+2. Butir bertanda "ya" (Q3, Q4, Q9, Q13) menyentuh `prune.py`/pipeline/aturan data: menurut `CLAUDE.md` tetap perlu **konfirmasi Amal di chat PIC**, selain approval Auditor.
+3. Urutan pengerjaan yang diusulkan PIC (usulan, bukan keputusan): (a) Q1, Q2, Q16; (b) Q5, Q6, Q7; (c) Q8, Q10, Q11, Q12; (d) Q3, Q4, Q9, Q13 setelah konfirmasi Amal. Setiap kelompok: uji regresi lokal, validasi 4 langkah, push, verifikasi run `success`, lapor.
+4. Auditor diminta menilai khusus Q4: apakah pengaman per Issue (simulasi build sebelum terima) cukup, atau perlu pemisahan job ingest dan deploy. Itu perubahan arsitektur pipeline.
