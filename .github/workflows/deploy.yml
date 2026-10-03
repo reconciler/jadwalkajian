@@ -26,7 +26,8 @@ name: Prune & deploy
 #   edit Issue untuk memproses ulang.
 #   Push oleh bot (GITHUB_TOKEN) tidak memicu run lain, maka ingest dan deploy harus
 #   satu run. Bila push ke main ditolak (ada push lain), run mereset ke origin/main
-#   dan mengulang ingest (id dihitung ulang), sampai 4 kali.
+#   dan mengulang ingest (id dihitung ulang), sampai 4 kali. Satu run = SATU komit bot (data, hasil prune/build,
+#   dan templat formulir Issue; B1, 3 Okt 2026).
 #
 # PRUNE
 #   prune.py + build.py jalan di tiap run (kecuali cron tanpa Issue baru), jadi event
@@ -153,16 +154,26 @@ jobs:
               python scripts/prune.py
               python scripts/build.py
             fi
-            if [ -z "$(git status --porcelain index.html data/kategori.json)" ]; then
+            # B1 (3 Okt 2026): SATU komit per run memuat data, hasil prune/build, dan templat formulir Issue
+            # (templat ditulis ingest.py dari data/kategori.json). Token pernah terbukti boleh mem-push
+            # .github/ISSUE_TEMPLATE (komit f338bdf).
+            CHANGED_ALL=$(git status --porcelain index.html data/kategori.json .github/ISSUE_TEMPLATE)
+            if [ -z "$CHANGED_ALL" ]; then
               echo "Tidak ada perubahan data."
               OK=1; break
             fi
-            git add index.html data/kategori.json
+            CHANGED_TPL=$(git status --porcelain .github/ISSUE_TEMPLATE)
+            git add index.html data/kategori.json .github/ISSUE_TEMPLATE
+            PESAN="$RUNNER_TEMP/pesan-komit.txt"
             if [ -n "$CHANGED_INGEST" ] && [ -s "$RUNNER_TEMP/commit-msg.txt" ]; then
-              git commit -F "$RUNNER_TEMP/commit-msg.txt"
+              cp "$RUNNER_TEMP/commit-msg.txt" "$PESAN"
             else
-              git commit -m "Prune + build otomatis ($(TZ=Asia/Jakarta date +%Y-%m-%d))"
+              echo "Prune + build otomatis ($(TZ=Asia/Jakarta date +%Y-%m-%d))" > "$PESAN"
             fi
+            if [ -n "$CHANGED_TPL" ]; then
+              printf '\nTemplat formulir Issue diperbarui dari data/kategori.json.\n' >> "$PESAN"
+            fi
+            git commit -F "$PESAN"
             if git push origin HEAD:main; then
               echo "Perubahan di-commit."
               OK=1; break
@@ -173,26 +184,6 @@ jobs:
           done
           if [ "$OK" != 1 ]; then
             echo "::error::Gagal memuat data ke main setelah 4 percobaan."
-            exit 1
-          fi
-
-      - name: Perbarui templat formulir Issue
-        # Belum terverifikasi: apakah GITHUB_TOKEN boleh mengubah .github/ISSUE_TEMPLATE.
-        # Gagal di sini TIDAK boleh menghalangi publikasi data (continue-on-error).
-        continue-on-error: true
-        run: |
-          set -eu
-          if [ -z "$(git status --porcelain .github/ISSUE_TEMPLATE)" ]; then
-            echo "Templat formulir sudah mutakhir."
-            exit 0
-          fi
-          git add .github/ISSUE_TEMPLATE
-          git commit -m "Perbarui templat formulir Issue dari data/kategori.json"
-          if ! { git pull --rebase origin main && git push origin HEAD:main; }; then
-            echo "::warning::Templat formulir Issue tidak bisa di-commit (token tidak berhak atau main berubah). Dropdown dipelihara manual; data kajian tetap terbit."
-            git rebase --abort 2>/dev/null || true
-            git fetch origin main
-            git reset --hard origin/main   # jangan biarkan komit lokal ikut ditandai sebagai last-deploy
             exit 1
           fi
 

@@ -99,6 +99,11 @@ Konsekuensi untuk sesi ini:
   (`index.html`). Uji memakai data beku `scripts/fixtures/` dan jam terkunci (`JADWAL_HARI_INI`, hanya untuk
   uji; jangan dipakai di produksi). Uji ber-PyYAML/node dilewati (bukan gagal) bila alatnya tidak ada.
   Integritas data nyata hanya peringatan. Jalankan lokal sebelum push kode: `python3 scripts/test_ingest.py`.
+- **Satu komit bot per run (B1, 3 Okt 2026):** hasil ingest, prune, build, dan templat formulir Issue
+  (`.github/ISSUE_TEMPLATE/`, ditulis `ingest.py`) masuk satu komit; push ditolak = reset ke `origin/main` dan ulangi
+  ingest (sampai 4 kali). Langkah "Perbarui templat" terpisah dihapus. Alur ini diuji lokal dengan remote bare
+  (tanpa perubahan, event manual, Issue, push ditolak, templat saja, penolakan permanen); **belum** teruji dengan
+  Issue nyata di GitHub (tunggu Issue nyata Amal berikutnya; jangan menerbitkan data uji ke situs publik).
 - Tidak ada lagi "antrean sampai Jumat" dan tidak ada batas commit mingguan.
 - Push dari bot (hasil prune/build, memakai `GITHUB_TOKEN`) **tidak** memicu run
   baru, jadi tidak ada loop. Konsekuensinya `main` di remote bisa lebih maju
