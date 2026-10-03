@@ -186,3 +186,13 @@ Penanda: **[Keputusan Amal]** = disampaikan Amal di chat Auditor. **[Terverifika
 ### 8.4 Prosedur
 - Satu kelompok per push; validasi 4 langkah; uji regresi yang terbukti gagal pada kode lama; verifikasi run `success`; catat di handoff PIC (bagian 17).
 - A1 memengaruhi `kategori.json` dan templat (internal); tidak ada perubahan tampilan situs. Bila A1 mengubah daftar induk secara besar saat pertama jalan, tuliskan selisihnya di handoff.
+
+## 9. Verifikasi Auditor atas hasil PIC (bagian 15-19 handoff PIC), 3 Okt 2026 sore
+
+Penanda: **[Terverifikasi Auditor]** = dijalankan atau dibaca langsung. **[Dari handoff PIC]** = tidak saya reproduksi.
+
+- **[Terverifikasi Auditor]** Suite 63 lulus, 0 gagal (mesin Auditor). Run Actions #28-#33 `success`; tidak ada Issue terbuka. `deploy.yml`: blok `on:` (push, issues, satu cron `17 20 * * *`, dispatch) dan action (hanya `actions/*`) tidak berubah dibanding sebelum paket pipeline.
+- **[Terverifikasi Auditor]** Q3: salinan sementara dengan `JADWAL_HARI_INI=2030-01-01`: prune menghasilkan 0 event, build sah ("Belum ada kajian mendatang"), prune kedua tetap exit 0 (idempoten), JS valid. Hook `JADWAL_HARI_INI` tidak di-set di `deploy.yml` (0 kemunculan), jadi produksi memakai jam asli.
+- **[Dari handoff PIC]** B1 (satu komit bot per run) hanya teruji lokal dengan remote bare; **belum teruji di GitHub dengan data nyata**. Pembuktian pertama: Issue nyata Amal berikutnya, atau cron 03:17 WIB.
+- **Pencarian dokumentasi GitHub (hasil pencarian web, bukan halaman penuh):** sintaks dropdown hanya menyebut `options` tidak boleh kosong dan harus unik; tidak ada batas maksimum jumlah opsi yang tertulis. Itu konsisten dengan keputusan Amal menghapus batas 150, tetapi **tidak membuktikan** ketiadaan batas. Pengamatan empiris: sekitar 104 opsi berfungsi.
+- Keputusan Amal di chat PIC (bagian 18-19) menggantikan penahanan PIC: paket pipeline dilanjutkan; batas dropdown dihapus; Hapus boleh mengosongkan daftar; uji YAML tidak dipasang di CI (opsi A).
