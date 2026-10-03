@@ -129,3 +129,25 @@ Penanda: **[Terverifikasi Auditor]** = direproduksi atau dibaca langsung oleh Au
 - Urutan: (a) Q16 lalu Q1, Q2; (b) Q5, Q6, Q7; (c) Q8, Q10, Q11, Q12, Q14; (d) Q4 bagian skrip. Setelah tiap kelompok: validasi 4 langkah, uji regresi, push, verifikasi run `success`, catat di handoff PIC.
 - Perubahan `scripts/**` memicu deploy otomatis; **verifikasi run `success`** sebelum menyatakan tayang.
 - Catatan proses [Keputusan Auditor]: pada 14.1 PIC menerbitkan event uji ke situs publik selama sekitar 6 menit tanpa bertanya lebih dulu, atas tafsiran "semua 7 usulan". PIC sudah mengungkapkannya, dan data uji sudah dibersihkan. Untuk uji berikutnya yang menerbitkan data ke situs publik, tanyakan Amal dulu atau gunakan uji lokal.
+
+## 7. Keputusan Amal: Q3, Q9, Q13 dan bagian workflow Q4 dieksekusi tanpa konfirmasi manual (3 Okt 2026)
+
+Penanda: **[Keputusan Amal]** = disampaikan Amal langsung di chat Auditor. **[Keputusan Auditor]** = rincian teknis dari Auditor.
+
+### 7.1 Dasar dan cakupan
+- **[Keputusan Amal]** Di chat Auditor, 3 Okt 2026, Amal menjawab laporan bagian 6: "sampaikan ke PIC terkait keputusanmu, dan biarkan mereka eksekusi tanpa izin manual dariku". Artinya Q3, Q9, Q13 dan bagian workflow Q4, yang di bagian 6.2 ditandai "Menunggu Amal", **boleh langsung dikerjakan PIC tanpa bertanya lagi di chat PIC**. Pernyataan ini berasal dari chat Auditor, bukan dari git; PIC boleh memastikan ke Amal bila ragu.
+- **Cakupan sempit:** hanya empat butir di bawah. Pengecualian lain di `CLAUDE.md` ("Eksekusi instruksi Auditor": janji privasi, pengaturan Pages/platform hosting, penghapusan data) **tetap berlaku** untuk hal di luar antrian ini. Uji yang menerbitkan data ke situs publik tetap harus ditanyakan dulu (bagian 6.5).
+- Rekomendasi bagian 6.4 menjadi keputusan, dengan rincian teknis di bawah.
+
+### 7.2 Spesifikasi per butir **[Keputusan Auditor]**
+| Butir | Yang dikerjakan | Syarat |
+|---|---|---|
+| Q3 (`prune.py`) | Izinkan hasil prune berisi nol event **hanya bila** parser menemukan minimal satu baris event sebelum prune **dan** kedua penanda struktur array ada (artinya semua event memang kedaluwarsa). Bila parser menemukan nol baris sebelum prune, pengaman lama tetap berlaku (exit 1). `build.py` harus menghasilkan blok statis dan JSON-LD yang sah untuk daftar kosong. | Pengaman itu melindungi dari regex rusak yang menghapus semua; jangan dilonggarkan lebih dari ini. Uji: semua kedaluwarsa (lolos), parser rusak (tetap gagal), dan situs kosong tampil benar di Chromium. |
+| Q9 (tanggal tanpa tahun) | Tolak tanggal tanpa tahun yang jatuh lebih dari 180 hari ke depan; pesan menyuruh menulis tahunnya. Tanggal dengan tahun eksplisit tidak terkena batas ini. | Uji batas tepat 180 dan 181 hari. Dokumentasikan di `CLAUDE.md`. |
+| Q13 (`deploy.yml`) | Jalankan `python3 scripts/test_ingest.py` sebelum ingest, **hanya pada event `push`** (perubahan kode). **Tidak** pada `issues`, `schedule`, `workflow_dispatch`. | Alasan: bila uji ikut memblokir run Issue atau cron, satu uji merah menjatuhkan semua input (poison pill baru). Uji integritas data (mis. "setiap event punya masjid di daftar induk") **jangan memblokir terbit**: jadikan peringatan, karena aturan tetap 7 melarang menahan data baru dari flyer manual. Uji logika (parser, ingest, koreksi) boleh memblokir. Pakai `PYTHONDONTWRITEBYTECODE=1`. |
+| Q4 (bagian workflow) | Tidak ada pemisahan job. Kerjakan hanya bila PIC menemukan jalur galat **konkret** yang belum ditutup `try/except` per Issue dan simulasi; sebutkan jalurnya di handoff. Bila tidak ada, catat "tidak ada yang perlu diubah". | Jangan menambah langkah workflow tanpa alasan terbukti. |
+
+### 7.3 Prosedur
+- Satu kelompok per push; validasi 4 langkah; uji regresi yang terbukti gagal pada kode lama; verifikasi run `success` di Actions; catat di handoff PIC (bagian 16).
+- `deploy.yml` dan `prune.py` termasuk "wajib lapor": catat perubahan dan hasil run.
+- **Tidak ada uji di GitHub yang menerbitkan data ke situs publik** tanpa bertanya Amal. Untuk Q3, uji lewat salinan lokal; jangan mengosongkan situs live.
