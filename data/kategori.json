@@ -682,14 +682,15 @@
         748
       ],
       "aksi": "koreksi"
-    }
-  ],
-  "gagal": [
+    },
     {
       "issue": 5,
-      "alasan": [
-        "menunggu konfirmasi"
-      ]
+      "id": [
+        747,
+        748
+      ],
+      "aksi": "hapus"
     }
-  ]
+  ],
+  "gagal": []
 }
