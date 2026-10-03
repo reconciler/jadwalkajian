@@ -684,5 +684,12 @@
       "aksi": "koreksi"
     }
   ],
-  "gagal": []
+  "gagal": [
+    {
+      "issue": 5,
+      "alasan": [
+        "menunggu konfirmasi"
+      ]
+    }
+  ]
 }
