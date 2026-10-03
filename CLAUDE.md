@@ -127,8 +127,9 @@ sintaks Tanggal, rutin otomatis, aturan dumb-proof, Koreksi/hapus, pemateri, mas
   `index.html` saja). `data/kategori.json` (internal, tidak tayang) menyimpan daftar induk kota/masjid/pemateri,
   `diproses`, `gagal`, `id_tertinggi`; jangan diedit manual kecuali memperbaiki data.
 - **Alur flyer ke Claude** tetap memakai langkah manual (edit `index.html`). Samakan ejaan kota/masjid/pemateri
-  dengan `tampil` di `data/kategori.json`; bila ada yang baru, tambahkan juga ke `data/kategori.json`
-  (event manual tidak otomatis masuk daftar induk). Uji: `python3 scripts/test_ingest.py`.
+  dengan `tampil` di `data/kategori.json`. Kota/masjid/pemateri **baru tidak perlu lagi diketik ke master**:
+  jalankan `python3 scripts/sinkron_master.py` (idempoten, hanya menambah, tanpa jaringan); setiap run `ingest.py`
+  juga menyinkronkan master dari event yang ada. Uji: `python3 scripts/test_ingest.py`.
 - Dropdown formulir **harus terurut abjad** menurut nama bersih (keputusan Amal 3 Okt 2026), "Lainnya" di akhir.
 
 ## Berkas yang tayang di situs (folder `_site`)
@@ -244,6 +245,9 @@ python3 scripts/prune.py
 
 # 4. regenerate HTML statis + JSON-LD (SEO) supaya konsisten dengan data terbaru
 python3 scripts/build.py
+
+# 5. (jalur flyer manual) samakan master kota/masjid/pemateri dengan event; commit kategori.json bila berubah
+python3 scripts/sinkron_master.py
 ```
 
 Catatan: perintah ke-3 dan ke-4 akan **mengubah** index.html (event

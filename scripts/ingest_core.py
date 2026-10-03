@@ -537,5 +537,62 @@ def events_dari_html(html):
     return build.parse_events(html)
 
 
+def sinkronkan_master(html, kat):
+    """Samakan master (kategori.json) dengan event di index.html. Idempoten dan hanya MENAMBAH: entri master yang
+    tidak dipakai event tidak pernah dihapus. kat diubah di tempat.
+    -> {"kota": [...], "masjid": [...], "pemateri": [...], "peringatan": [...]}  (yang baru ditambahkan)
+    Event yang tidak bisa diurai menghasilkan peringatan, bukan galat."""
+    baru = {"kota": [], "masjid": [], "pemateri": [], "peringatan": []}
+    try:
+        events = events_dari_html(html)
+    except Exception as e:  # noqa: BLE001
+        baru["peringatan"].append(f"index.html tidak bisa dibaca untuk sinkronisasi master ({type(e).__name__}: {e})")
+        return baru
+    for e in events:
+        try:
+            eid = e.get("id")
+            area = bersihkan(e.get("area"), "area")
+            tampil = bersihkan(e.get("masjid"), "masjid")
+            if not area or not tampil:
+                baru["peringatan"].append(f"event id {eid}: masjid atau kota kosong; dilewati.")
+                continue
+            ada_kota = {kunci(k) for k in kat["kota"]} | {kunci(k) for k in kat.get("kota_khusus", [ONLINE])}
+            if kunci(area) not in ada_kota:
+                kat["kota"].append(area)
+                baru["kota"].append(area)
+            if not any(kunci(m["tampil"]) == kunci(tampil) and kunci(m["kota"]) == kunci(area) for m in kat["masjid"]):
+                nama = tampil
+                akhiran = f" ({area})"
+                if kunci(nama).endswith(kunci(akhiran)):
+                    nama = nama[:-len(akhiran)].rstrip()
+                if any(kunci(m["nama"]) == kunci(nama) and kunci(m["kota"]) == kunci(area) for m in kat["masjid"]):
+                    baru["peringatan"].append(
+                        f"event id {eid}: masjid '{tampil}' ({area}) mirip entri master yang ada (nama+kota sama, tampil berbeda); tidak ditambahkan.")
+                else:
+                    ent = {"nama": nama, "kota": area, "alamat": bersihkan(e.get("address"), "alamat"), "tampil": tampil}
+                    kat["masjid"].append(ent)
+                    baru["masjid"].append(ent)
+            ustadz = bersihkan(e.get("ustadz"), "pemateri")
+            if ustadz and kunci(ustadz) != kunci(BELUM_DITENTUKAN) and not cari_pemateri(kat, ustadz):
+                nama = nama_bersih(ustadz)
+                if not nama:
+                    baru["peringatan"].append(f"event id {eid}: pemateri '{ustadz}' tidak punya nama bersih; dilewati.")
+                else:
+                    ent = {"nama": nama, "tampil": ustadz, "alias": []}
+                    if pemateri_perempuan(ustadz):
+                        ent["perempuan"] = True
+                    kat["pemateri"].append(ent)
+                    baru["pemateri"].append(ent)
+        except Exception as ex:  # noqa: BLE001
+            baru["peringatan"].append(f"event id {e.get('id')}: tidak bisa disinkronkan ({type(ex).__name__}: {ex}).")
+    return baru
+
+
+def ringkas_sinkron(baru):
+    """Teks satu baris untuk log/pesan komit; kosong bila tidak ada tambahan."""
+    bagian = [f"+{len(baru[k])} {k}" for k in ("kota", "masjid", "pemateri") if baru[k]]
+    return ", ".join(bagian)
+
+
 def sekarang_wib():
     return datetime.now(TZ).date()

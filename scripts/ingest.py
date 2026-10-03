@@ -270,6 +270,14 @@ def main(argv=None):
     issues.sort(key=lambda i: i["number"])
     diproses = {d["issue"] for d in kat["diproses"]}
     hasil_semua, pesan_commit = [], []
+    # A1: samakan master dengan event yang sudah ada (jalur flyer manual tidak mengisi master). Hanya menambah.
+    try:
+        sinkron = core.sinkronkan_master(html, kat)
+    except Exception as e:  # noqa: BLE001 - tidak boleh menjatuhkan run
+        sinkron = {"kota": [], "masjid": [], "pemateri": [], "peringatan": [f"sinkronisasi master gagal ({type(e).__name__}: {e})"]}
+    for w in sinkron["peringatan"]:
+        print(f"PERINGATAN: {w}", file=sys.stderr)
+    ringkas_sinkron = core.ringkas_sinkron(sinkron)
 
     for iss in issues:
         n = iss["number"]
@@ -417,8 +425,11 @@ def main(argv=None):
         print(f"PERINGATAN: templat formulir tidak diperbarui: {type(e).__name__}: {e}", file=sys.stderr)
 
     Path(a.out).write_text(json.dumps({"hasil": hasil_semua}, ensure_ascii=False), encoding="utf-8")
+    if ringkas_sinkron:
+        pesan_commit.append(f"Sinkron master dari index.html: {ringkas_sinkron}")
+    judul_komit = "Ingest dari Issue GitHub" if hasil_semua else "Sinkron master dari index.html"
     Path(a.commit_msg).write_text(
-        ("Ingest dari Issue GitHub\n\n" + "\n".join(pesan_commit) + "\n") if pesan_commit else "",
+        (judul_komit + "\n\n" + "\n".join(pesan_commit) + "\n") if pesan_commit else "",
         encoding="utf-8")
     print(f"Issue diperiksa: {len(issues)}; hasil: "
           + (", ".join(f"#{h['issue']}={h['status']}" for h in hasil_semua) or "tidak ada yang diproses"))

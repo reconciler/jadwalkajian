@@ -236,17 +236,26 @@ def _():
     assert core.bersihkan_nama_masjid("Masjid Jaza", "Bandung") == "Masjid Jaza"
 
 
-@uji("integritas data nyata: setiap event punya masjid di daftar induk; Ar-Riyadh sudah diganti nama")
+@uji("integritas data nyata (HANYA PERINGATAN, tidak memblokir): sinkronisasi master tidak menghasilkan selisih; entri master unik")
 def _():
+    # Keputusan Auditor/Amal 3 Okt 2026: data dari flyer manual tidak boleh ditahan; jalankan python3 scripts/sinkron_master.py.
     k = core.muat_kategori(REPO / "data" / "kategori.json")
-    tampil = {m["tampil"] for m in k["masjid"]}
-    ev = build.parse_events((REPO / "index.html").read_text(encoding="utf-8"))
-    hilang = sorted({e["masjid"] for e in ev if e["masjid"] not in tampil})
-    assert not hilang, hilang
-    assert not any(e["masjid"] == "Masjid Ar-Riyadh Depok" for e in ev)
-    assert len({(m["nama"].casefold(), m["kota"].casefold()) for m in k["masjid"]}) == len(k["masjid"])
-    assert len({m["tampil"].casefold() for m in k["masjid"]}) == len(k["masjid"])
-    assert len({p["nama"].casefold() for p in k["pemateri"]}) == len(k["pemateri"])
+    html = (REPO / "index.html").read_text(encoding="utf-8")
+    ev = build.parse_events(html)
+    selisih = core.sinkronkan_master(html, json.loads(json.dumps(k)))
+    peringatan = [f"master belum sinkron dengan index.html ({core.ringkas_sinkron(selisih)}); jalankan python3 scripts/sinkron_master.py"
+                  ] if core.ringkas_sinkron(selisih) else []
+    peringatan += [f"peringatan sinkronisasi: {w}" for w in selisih["peringatan"]]
+    if any(e["masjid"] == "Masjid Ar-Riyadh Depok" for e in ev):
+        peringatan.append("ada event bernama lama 'Masjid Ar-Riyadh Depok' (seharusnya 'Masjid Ar-Riyadh')")
+    if len({(m["nama"].casefold(), m["kota"].casefold()) for m in k["masjid"]}) != len(k["masjid"]):
+        peringatan.append("master masjid memuat pasangan (nama, kota) ganda")
+    if len({m["tampil"].casefold() for m in k["masjid"]}) != len(k["masjid"]):
+        peringatan.append("master masjid memuat teks tampil ganda")
+    if len({p["nama"].casefold() for p in k["pemateri"]}) != len(k["pemateri"]):
+        peringatan.append("master pemateri memuat nama bersih ganda")
+    for w in peringatan:
+        print(f"PERINGATAN (integritas data): {w}")
 
 
 @uji("perempuan => Khusus Akhwat; konflik dengan Ikhwan ditolak")
@@ -968,6 +977,97 @@ def _():
     ids = seri(d, n=1065, judul="Seri koreksi tanggal")
     h = jalankan(d, [iss(1066, fk("Koreksi", f"{ids[0]}", tanggal=f"{lewat.day} {bln[lewat.month - 1]}"))])
     assert h[0]["status"] == "gagal" and "tanpa tahun" in h[0]["komentar"], h[0]["komentar"]
+
+
+def _event_manual(d, **k):
+    """Tambah satu baris event langsung ke index.html (meniru jalur flyer manual; tidak lewat Issue)."""
+    html = (d / "index.html").read_text(encoding="utf-8")
+    ev = {"date": "2026-10-20", "dayShort": "Sel 20 Okt", "timeLabel": "Ba'da Maghrib", "timeOrder": 18, "title": "Kajian manual",
+          "ustadz": "Belum ditentukan", "masjid": "Masjid Al-Adhim", "area": "Depok", "address": "Jl. Manual 1",
+          "audience": "Terbuka untuk umum", "note": "", "isRutin": False}
+    ev.update(k)
+    i = core.id_berikutnya(html, core.muat_kategori(d / "data" / "kategori.json"))
+    (d / "index.html").write_text(core.sisipkan(html, [core.baris_event(ev, i)]), encoding="utf-8")
+    return i
+
+
+@uji("A1: sinkronkan_master menambah kota/masjid/pemateri dari event manual; idempoten; tidak menghapus; peringatan bukan galat")
+def _():
+    d = siapkan(); f = d / "data" / "kategori.json"
+    kat0 = core.muat_kategori(f)
+    html = (d / "index.html").read_text(encoding="utf-8")
+    sebelum = json.loads(json.dumps(kat0))
+    assert core.ringkas_sinkron(core.sinkronkan_master(html, kat0)) == "" and kat0 == sebelum  # data nyata sudah sinkron
+    kat0["masjid"].append({"nama": "Masjid Tak Terpakai", "kota": "Depok", "alamat": "x", "tampil": "Masjid Tak Terpakai"})
+    core.simpan_kategori(f, kat0)
+    _event_manual(d, title="Baru satu", masjid="Masjid Sinkron (Bogor)", area="Bogor", address="Jl. Sinkron 2", ustadz="Ustadz Sinkron Baru, Lc.")
+    _event_manual(d, title="Baru dua", masjid="Penyelenggara Daring (Online)", area="Online", address="Online (Penyelenggara Daring)", ustadz="Ustadzah Sinkron Putri", date="2026-10-21", dayShort="Rab 21 Okt")
+    _event_manual(d, title="Baru tiga", masjid="Masjid Di Kota Baru", area="Kota Sinkron", address="Jl. Kota 3", ustadz="Ustadz Fatahillah Aly, S.Ag.", date="2026-10-22", dayShort="Kam 22 Okt")
+    html = (d / "index.html").read_text(encoding="utf-8")
+    k = core.muat_kategori(f)
+    b = core.sinkronkan_master(html, k)
+    assert [m["tampil"] for m in b["masjid"]] == ["Masjid Sinkron (Bogor)", "Penyelenggara Daring (Online)", "Masjid Di Kota Baru"]
+    ent = {m["tampil"]: m for m in b["masjid"]}
+    assert ent["Masjid Sinkron (Bogor)"]["nama"] == "Masjid Sinkron" and ent["Masjid Sinkron (Bogor)"]["alamat"] == "Jl. Sinkron 2"
+    assert ent["Penyelenggara Daring (Online)"]["nama"] == "Penyelenggara Daring" and ent["Penyelenggara Daring (Online)"]["kota"] == "Online"
+    assert b["kota"] == ["Kota Sinkron"] and "Online" not in k["kota"]
+    assert [p["tampil"] for p in b["pemateri"]] == ["Ustadz Sinkron Baru, Lc.", "Ustadzah Sinkron Putri"]  # Fatahillah dicocokkan lewat nama bersih/alias
+    assert next(p for p in b["pemateri"] if p["tampil"] == "Ustadzah Sinkron Putri").get("perempuan") is True
+    assert any(m["nama"] == "Masjid Tak Terpakai" for m in k["masjid"])  # tidak menghapus
+    assert core.ringkas_sinkron(core.sinkronkan_master(html, k)) == ""  # idempoten
+    # event tak bisa diurai: peringatan, bukan galat
+    k2 = core.muat_kategori(f)
+    html2 = html.replace('area:"Bogor"', 'area:""', 1)
+    b2 = core.sinkronkan_master(html2, k2)
+    assert any("kosong" in w for w in b2["peringatan"])
+    assert core.ringkas_sinkron(core.sinkronkan_master("<html></html>", core.muat_kategori(f))) == ""  # tanpa event: tidak melempar, tidak menambah
+
+
+@uji("A1: setiap run ingest menyinkronkan master; komit hanya bila ada selisih; CLI sinkron_master.py (--cek tidak menulis)")
+def _():
+    d = siapkan()
+    assert jalankan(d, []) == [] and (d / "msg.txt").read_text(encoding="utf-8") == ""  # tidak ada selisih: tidak ada pesan komit
+    _event_manual(d, masjid="Masjid Run Sinkron", area="Depok", address="Jl. Run 1", ustadz="Ustadz Run Sinkron")
+    sebelum = kat(d)
+    r = subprocess.run([sys.executable, str(d / "scripts" / "sinkron_master.py"), "--root", str(d), "--cek"], capture_output=True, text=True)
+    assert r.returncode == 0 and "Masjid Run Sinkron" in r.stdout and kat(d) == sebelum  # --cek tidak menulis
+    jalankan(d, [])
+    assert any(m["tampil"] == "Masjid Run Sinkron" for m in kat(d)["masjid"]) and any(p["tampil"] == "Ustadz Run Sinkron" for p in kat(d)["pemateri"])
+    pesan = (d / "msg.txt").read_text(encoding="utf-8")
+    assert pesan.startswith("Sinkron master dari index.html") and "+1 masjid" in pesan and "+1 pemateri" in pesan, pesan
+    sesudah = kat(d)
+    jalankan(d, [])
+    assert kat(d) == sesudah and (d / "msg.txt").read_text(encoding="utf-8") == ""  # run berikutnya: tanpa selisih
+    r = subprocess.run([sys.executable, str(d / "scripts" / "sinkron_master.py"), "--root", str(d)], capture_output=True, text=True)
+    assert r.returncode == 0 and "Tidak ada perubahan" in r.stdout
+    # master hasil sinkron memengaruhi dropdown templat
+    yaml_t = (d / ".github" / "ISSUE_TEMPLATE" / "tambah-kajian.yml").read_text(encoding="utf-8")
+    assert "Masjid Run Sinkron" in yaml_t and "Run Sinkron" in yaml_t.split("Masjid Run Sinkron")[0]  # pemateri: nama bersih tanpa gelar
+
+
+@uji("A2: dropdown terurut abjad (huruf besar/kecil diabaikan; pemateri menurut nama bersih); Belum ditentukan/Online/Lainnya di akhir")
+def _():
+    import yaml
+    kat_live = core.muat_kategori(REPO / "data" / "kategori.json")
+    kat_acak = json.loads(json.dumps(kat_live))
+    kat_acak["pemateri"] += [{"nama": "abu zaid", "tampil": "Ustadz abu zaid", "alias": []}, {"nama": "Zulkifli", "tampil": "Zulkifli", "alias": []},
+                             {"nama": "Éric Baru", "tampil": "Éric Baru", "alias": []}, {"nama": "Aaa Awal", "tampil": "Ustadz Aaa Awal", "alias": []}]
+    kat_acak["masjid"] += [{"nama": "masjid alfa", "kota": "Depok", "alamat": "x", "tampil": "masjid alfa"},
+                           {"nama": "Zzz Akhir", "kota": "Bogor", "alamat": "x", "tampil": "Zzz Akhir"}]
+    kat_acak["kota"] += ["bogor selatan", "Aceh"]
+    for nama_k, kat_x in (("data nyata", kat_live), ("entri acak", kat_acak)):
+        t = yaml.safe_load(ad.render_template(kat_x))
+        opsi = {x["id"]: x["attributes"]["options"] for x in t["body"] if x.get("type") == "dropdown"}
+        for kunci_id, akhir in (("pemateri", ["Belum ditentukan", ad.LAINNYA]), ("masjid", ["Online", ad.LAINNYA]), ("kota_baru", [ad.KOTA_LAIN])):
+            o = [x.replace("\uff0c", ",") for x in opsi[kunci_id]]
+            assert o[-len(akhir):] == akhir, (nama_k, kunci_id, o[-3:])
+            badan = o[:-len(akhir)]
+            assert badan == sorted(badan, key=str.casefold), (nama_k, kunci_id, [b for b, c in zip(badan, sorted(badan, key=str.casefold)) if b != c][:3])
+            assert len(badan) == len(set(badan))
+    # pemateri diurutkan menurut NAMA BERSIH, bukan teks tampil dengan gelar
+    t = yaml.safe_load(ad.render_template(kat_acak))
+    o = next(x for x in t["body"] if x.get("id") == "pemateri")["attributes"]["options"]
+    assert o.index("Aaa Awal") < o.index("abu zaid") < o.index("Zulkifli") and "Ustadz Aaa Awal" not in o
 
 
 @uji("pecah_body: heading, _No response_, centang")

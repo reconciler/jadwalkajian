@@ -295,3 +295,17 @@ Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor
 - **Langkah "Komentar hasil dan tutup Issue" (`deploy.yml`, github-script) berhenti di Issue pertama yang memicu galat API** (komentar/penutupan gagal; mis. Issue dikunci atau dihapus, atau batas laju). Entri `gagal` dan `diproses` sudah tercatat di commit sebelumnya, sehingga komentar kegagalan Issue sesudahnya **tidak pernah terkirim** (Issue gagal dilewati run berikutnya). Bukti: **dari pembacaan kode** (`for (const h of hasil)` tanpa try/catch), belum direproduksi. Usulan: try/catch per Issue (peringatan, lanjut ke Issue berikutnya). Menunggu konfirmasi Amal.
 - Tidak ditemukan jalur lain yang belum tertutup oleh `try/except` per Issue dan simulasi: kegagalan memuat `kategori.json`/`issues.json` (rusak) sengaja tetap keras karena tidak aman diteruskan.
 
+## 17. Usulan efisiensi: kelompok A dikerjakan, kelompok B ditahan (instruksi Auditor `AUDIT-HANDOFF-2026-10-03-auditor.md` bagian 8, komit `bea5aff`) — 3 Okt 2026
+**Batas yang diambil PIC (sama dengan bagian 16):** kelompok A (hanya `scripts/` dan uji) dikerjakan atas instruksi Auditor yang tercatat di git. **Kelompok B (B1 satu komit bot per run, B2 `try/catch` komentar per Issue, B3 `docs` di penjaga dan uji 404) beserta Q3, Q13, Q4-workflow ditahan** sampai Amal mengetik "lanjut" di chat PIC (pipeline terbit adalah pengecualian CLAUDE.md; keputusan Amal di chat Auditor tidak bisa dilihat PIC). Rincian fitur ditulis di `docs/formulir-issue.md`, sesuai arahan.
+
+### Kelompok A (komit lihat git log; run diverifikasi sebelum dicatat)
+- **A1:** `core.sinkronkan_master(html, kat)` + `ringkas_sinkron()` di `ingest_core.py`; CLI `scripts/sinkron_master.py [--cek] [--root]` (tanpa jaringan); dipanggil di awal **setiap** run `ingest.py` dalam `try/except` (peringatan, tidak menjatuhkan run). Idempoten, hanya menambah, tidak menghapus entri master. Komit sinkron-saja berjudul "Sinkron master dari index.html"; tanpa selisih tidak ada pesan komit. CLAUDE.md: langkah 5 "Validasi wajib" dan bullet alur flyer.
+  - **Selisih pada data nyata saat pertama jalan: tidak ada** (`sinkron_master.py --cek` pada `main`: "Master sudah sama dengan event di index.html"; 46 event, 28 masjid, 99 pemateri-opsi).
+  - Uji integritas data nyata diubah menjadi **peringatan** (tidak pernah gagal), sesuai bagian 8.3.
+- **A2:** uji urutan dropdown (pemateri menurut nama bersih, masjid, kota; entri khusus di akhir), dengan data nyata dan data acak. Uji mutasi: urutan sengaja dirusak di adapter -> uji gagal; adapter dikembalikan.
+- Uji: 58 lulus (3 uji baru ditambah uji integritas yang diubah). Uji A1 diuji terhadap kode yang belum memiliki fungsinya (otomatis gagal) dan A2 lewat mutasi.
+- **Temuan tambahan (PIC, dari membaca kode):** `MAKS_OPSI_DROPDOWN = 150` (angka rancangan PIC lama, **bukan** batas GitHub terverifikasi) membuat kolom Pemateri/Masjid otomatis menjadi isian teks bebas bila opsi melebihi 150. Per 3 Okt: pemateri 99 opsi. Dengan A1 master bisa tumbuh lebih cepat; bila mendekati 150, keputusan Amal bahwa "dropdown terurut" cukup akan berhenti berlaku diam-diam. Perlu keputusan: naikkan batas (butuh validasi batas GitHub, tidak diketahui) atau pertahankan. Tidak diubah.
+
+### Belum dikerjakan (menunggu "lanjut" Amal di chat PIC)
+- B1, B2, B3, Q3, Q13, Q4-workflow: satu "lanjut" membuka semuanya (bagian 8.3). Spesifikasi teknis di bagian 7.2 dan 8.3 sudah dibaca.
+

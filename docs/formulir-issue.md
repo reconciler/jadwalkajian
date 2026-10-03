@@ -165,7 +165,25 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   Jangan edit manual kecuali memperbaiki data; ia tidak tayang di situs.
 - Alur flyer ke Claude tetap memakai langkah manual (edit `index.html`). Pakai
   `tampil` dari `data/kategori.json` untuk pemateri dan masjid yang sudah ada
-  (ejaan konsisten); bila ada kota/masjid/pemateri baru, tambahkan juga ke
-  `data/kategori.json` agar dropdown mengikutinya (event manual tidak otomatis
-  masuk daftar induk). Uji konsistensi: `python3 scripts/test_ingest.py`
-  (setiap event harus punya masjid di daftar induk).
+  (ejaan konsisten).
+- **Sinkronisasi master dari event (A1, 3 Okt 2026):** `core.sinkronkan_master(html, kat)` menyamakan
+  `data/kategori.json` dengan `index.html`. Event manual yang kota/masjid/pemateri-nya belum ada di master
+  menambahkannya: masjid dikenali dari `tampil` + kota (`area`); `nama` = teks tanpa akhiran ` (Kota)`;
+  pemateri yang cocok lewat `nama`/`tampil`/`alias` (termasuk nama bersih tanpa gelar) tidak ditambah; "Belum
+  ditentukan" dilewati; pemateri berawalan Ustadzah/Ustadzaat ditandai `perempuan`. **Idempoten dan hanya
+  menambah** (entri master yang tidak dipakai event tidak pernah dihapus). Event yang tidak bisa diurai
+  (kota/masjid kosong, dsb.) menghasilkan **peringatan** (stderr), bukan galat. Dijalankan di awal **setiap** run
+  `ingest.py` (semua pemicu); `kategori.json` hanya berubah bila ada selisih, jadi cron tanpa selisih tidak
+  menghasilkan komit. Komit sinkron-saja berjudul "Sinkron master dari index.html". CLI tanpa jaringan:
+  `python3 scripts/sinkron_master.py [--cek]` (`--cek` hanya menampilkan selisih). Pada data per 3 Okt 2026
+  sinkronisasi pertama **tidak menghasilkan selisih**.
+- **Uji integritas data hanya peringatan** (keputusan Auditor/Amal 3 Okt 2026; aturan tetap 7: data dari flyer
+  tidak boleh ditahan): uji "integritas data nyata" di `test_ingest.py` mencetak `PERINGATAN (integritas data)`
+  dan tidak pernah gagal. Uji logika (parser, ingest, koreksi, urutan dropdown) boleh gagal.
+- **Urutan dropdown (A2):** pemateri terurut abjad menurut **nama bersih** tanpa gelar (huruf besar/kecil
+  diabaikan, `str.casefold`), masjid menurut label `Nama (Kota)`, kota menurut nama; "Belum ditentukan" /
+  "Online" / "Lainnya" / "Kota lain" tetap di akhir. Uji `A2` gagal bila entri baru menyisip tidak terurut
+  (diuji dengan data nyata dan data acak berhuruf campur/aksen; mutasi urutan di adapter ditangkap).
+- **Catatan angka rancangan:** `MAKS_OPSI_DROPDOWN = 150` di `adapter_issue_form.py` adalah angka rancangan
+  PIC (bukan batas GitHub yang terverifikasi). Bila opsi Pemateri atau Masjid melebihi itu, kolom otomatis
+  menjadi isian teks bebas (bukan dropdown). Per 3 Okt 2026: 99 opsi pemateri, 28 masjid.
