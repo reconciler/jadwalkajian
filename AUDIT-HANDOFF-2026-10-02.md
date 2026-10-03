@@ -258,7 +258,7 @@ Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor
 - **Q12:** konfirmasi Hapus/Koreksi hanya berlaku bila Issue itu sudah menampilkan pratinjau dan sidik isi pratinjau (`pratinjau` di entri `gagal`) sama dengan keadaan sekarang. **Perubahan perilaku:** konfirmasi di pengiriman pertama (tanpa pratinjau) tidak lagi langsung menerapkan; Target diubah sesudah pratinjau juga memicu pratinjau baru.
 - **Q14:** batas jumlah opsi dropdown formulir GitHub: **tidak diketahui**. Halaman docs tidak terjangkau dari sesi PIC (`EGRESS_BLOCKED`); cuplikan hasil pencarian hanya menyebut opsi tidak boleh kosong dan harus unik, tanpa batas maksimum (belum divalidasi dari halaman aslinya). Secara empiris formulir dengan sekitar 97 opsi pemateri berjalan di GitHub pada uji Amal sebelumnya.
 
-### Kelompok D (Q4 bagian skrip; tanpa mengubah `deploy.yml`)
+### Kelompok D (Q4 bagian skrip; tanpa mengubah `deploy.yml`) — komit `449a524`, run #26 `success`
 - Pemrosesan tiap Issue di `ingest.py` dibungkus `try/except Exception`: snapshot `index.html` dan master sebelum Issue; bila ada exception, keduanya dipulihkan, Issue dicatat di `gagal` ("kesalahan internal", dengan sidik isi), diberi komentar berisi jenis galat, dan Issue lain tetap diproses. Tidak diulang tiap run (diproses lagi bila isi berubah).
 - `simulasi_terbit(html, hari_ini)`: uji kering prune + build di memori (regex prune mengenali baris, ada kajian mendatang, `build.parse_events`, blok statis dan JSON-LD bisa dibangun dan JSON-LD terbaca). Dipanggil untuk Tambah, Koreksi, dan Hapus sebelum perubahan diterima; gagal -> "kesalahan internal" dan tidak ada yang ditulis. `build.py` dan `prune.py` **tidak diubah** (hanya diimpor).
 - Pembuatan templat formulir tidak lagi fatal (peringatan ke stderr).
@@ -268,3 +268,15 @@ Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor
 ### Belum dikerjakan
 - **Menunggu Amal di chat PIC:** Q3 (`prune.py`), Q9 (aturan tanggal tanpa tahun), Q13 (`deploy.yml`), dan bagian Q4 yang mengubah workflow (pemisahan job tidak disarankan Auditor, bagian 6.3).
 - Uji GitHub nyata untuk perubahan baru (Q8/Q12/Q4 dengan Issue sungguhan) **belum dilakukan**: Auditor meminta bertanya ke Amal dulu bila uji menerbitkan data ke situs publik; PIC hanya menguji lokal.
+
+### Verifikasi run (data log Actions, dibaca PIC)
+| Kelompok | Komit | Run | Hasil | Deploy ke Pages |
+|---|---|---|---|---|
+| A | `b2fedd2` | #23 | success | tidak ada berkas situs berubah (hanya `scripts/**`) |
+| B | `6fa6eec` | #24 | success | ya (`index.html` berubah: `jse`) |
+| C | `1d1d515` | #25 | success | tidak (hanya `scripts/**`, docs) |
+| D | `449a524` | #26 | success | dilewati (langkah deploy dan uji live `skipped`; ingest, prune, build, templat `success` dengan kode baru) |
+- Hanya kelompok B yang menerbitkan ulang situs; tampilan live baris ID dan filter ber-backslash tetap **tidak** diverifikasi dari sesi PIC (github.io tidak terjangkau).
+- Kekeliruan PIC yang dikoreksi di bagian ini: Q10 "batas panjang tidak seragam" salah baca (batas memang per kolom).
+- Suite lokal akhir: 54 lulus, 0 gagal. Uji GitHub nyata untuk Q8/Q12/Q4 belum dilakukan (menunggu arahan Amal, bagian 6.5 Auditor).
+
