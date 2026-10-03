@@ -71,6 +71,22 @@ def jalankan(d, issues, edited=None, today=TODAY):
     return json.loads((d / "out.json").read_text(encoding="utf-8"))["hasil"]
 
 
+def dua(d, issues, edited=None, today=TODAY):
+    """Alur dua langkah formulir Koreksi/hapus: kirim dengan Konfirmasi kosong -> pratinjau (status gagal);
+    lalu edit Issue dengan konfirmasi dari pratinjau. Hasil yang bukan pratinjau dikembalikan apa adanya."""
+    h = jalankan(d, issues, edited=edited, today=today)
+    akhir = []
+    for x, i in zip(h, issues):
+        m = re.search(r"tulis `((?:HAPUS|KOREKSI) \d+)`", x["komentar"])
+        if x["status"] == "gagal" and "Belum ada yang" in x["komentar"] and m:
+            lab = "### " + adk.LABEL["konfirmasi"] + "\n\n_No response_"
+            assert lab in i["body"]
+            baru = dict(i, body=i["body"].replace(lab, "### " + adk.LABEL["konfirmasi"] + "\n\n" + m.group(1)))
+            x = jalankan(d, [baru], edited=i["number"], today=today)[0]
+        akhir.append(x)
+    return akhir
+
+
 def iss(n, body, login="reconciler", title="Tambah kajian: uji"):
     return {"number": n, "title": title, "body": body, "login": login}
 
@@ -527,32 +543,86 @@ def _():
     assert not set(adk.LABEL.values()) & set(ad.PENANDA_FORMULIR)
 
 
-@uji("hapus: id/rentang/#Issue, wajib ketik HAPUS, semua-atau-tidak-sama-sekali, tercatat di diproses")
+@uji("hapus: pratinjau dulu, lalu HAPUS <jumlah>; semua-atau-tidak-sama-sekali; tercatat di diproses; komentar lengkap")
 def _():
-    d = siapkan(); ids = seri(d); n0 = len(events(d))
+    d = siapkan(); ids = seri(d, Catatan="catatan penting"); n0 = len(events(d))
+    # tanpa konfirmasi: pratinjau, tidak ada yang berubah
     h = jalankan(d, [iss(510, fk("Hapus", f"{ids[0]}"), title="Hapus")])
-    assert h[0]["status"] == "gagal" and "ketik HAPUS" in h[0]["komentar"] and len(events(d)) == n0
-    h = jalankan(d, [iss(511, fk("Hapus", f"{ids[0]}, 999999", konfirmasi="HAPUS"))])
+    assert h[0]["status"] == "gagal" and "Belum ada yang dihapus" in h[0]["komentar"] and "`HAPUS 1`" in h[0]["komentar"]
+    assert "catatan penting" in h[0]["komentar"] and len(events(d)) == n0
+    assert {"issue": 510, "alasan": ["menunggu konfirmasi"]} in kat(d)["gagal"]
+    # konfirmasi salah: kata lain, tanpa jumlah, jumlah keliru, lintas-aksi
+    for i, (konf, harap) in enumerate([("HAPUS", "belum memuat jumlah"), ("HAPUS 5", "berbeda dengan jumlah"),
+                                       ("KOREKSI 1", "untuk Koreksi. Pilih Aksi = Koreksi"), ("ya", "tidak dikenali")]):
+        h = jalankan(d, [iss(516 + i, fk("Hapus", f"{ids[0]}", konfirmasi=konf))])
+        assert h[0]["status"] == "gagal" and harap in h[0]["komentar"] and len(events(d)) == n0, (konf, h[0]["komentar"])
+    h = jalankan(d, [iss(511, fk("Hapus", f"{ids[0]}, 999999", konfirmasi="HAPUS 1"))])
     assert h[0]["status"] == "gagal" and "999999" in h[0]["komentar"] and len(events(d)) == n0, h[0]["komentar"]
-    h = jalankan(d, [iss(512, fk("Hapus", f"{ids[0]}", konfirmasi="HAPUS", judul="Maksudnya koreksi"))])
+    h = jalankan(d, [iss(512, fk("Hapus", f"{ids[0]}", konfirmasi="HAPUS 1", judul="Maksudnya koreksi"))])
     assert h[0]["status"] == "gagal" and "pilih Aksi = Koreksi" in h[0]["komentar"] and len(events(d)) == n0
-    h = jalankan(d, [iss(513, fk("Hapus", f"{ids[0]}-{ids[1]}", konfirmasi="hapus"))])
+    # konfirmasi benar (edit Issue yang sama sesudah pratinjau)
+    h = jalankan(d, [iss(510, fk("Hapus", f"{ids[0]}-{ids[1]}", konfirmasi="hapus 2"))], edited=510)
     assert h[0]["status"] == "ok" and h[0]["id"] == ids[:2] and "sudah dihapus" in h[0]["komentar"] and len(events(d)) == n0 - 2
-    assert {"issue": 513, "id": ids[:2], "aksi": "hapus"} in kat(d)["diproses"]
-    h = jalankan(d, [iss(514, fk("Hapus", "#500", konfirmasi="HAPUS"))])  # sisa seri
+    assert "alamat" in h[0]["komentar"] and "catatan penting" in h[0]["komentar"] and "<details>" in h[0]["komentar"]
+    assert "{id:%d,date:" % ids[0] in h[0]["komentar"]
+    assert {"issue": 510, "id": ids[:2], "aksi": "hapus"} in kat(d)["diproses"]
+    assert not any(g["issue"] == 510 for g in kat(d)["gagal"])
+    h = dua(d, [iss(514, fk("Hapus", "#500"))])  # sisa seri, lewat dua langkah
     assert h[0]["status"] == "ok" and h[0]["id"] == ids[2:] and len(events(d)) == n0 - len(ids)
-    h = jalankan(d, [iss(515, fk("Hapus", "#500", konfirmasi="HAPUS"))])
+    h = dua(d, [iss(515, fk("Hapus", "#500"))])
     assert h[0]["status"] == "gagal" and "sudah tidak ada" in h[0]["komentar"]
     env = {"PATH": "/usr/bin:/bin"}
-    for s in ("prune.py", "build.py"):
-        assert subprocess.run([sys.executable, str(d / "scripts" / s)], capture_output=True, text=True, env=env).returncode == 0
+    for sc in ("prune.py", "build.py"):
+        assert subprocess.run([sys.executable, str(d / "scripts" / sc)], capture_output=True, text=True, env=env).returncode == 0
+
+
+@uji("koreksi: pratinjau selisih dulu, KOREKSI <jumlah> menerapkan; jumlah salah atau konfirmasi Hapus ditolak")
+def _():
+    d = siapkan(); ids = seri(d, judul="Judul lama"); sebelum = events(d)
+    h = jalankan(d, [iss(590, fk("Koreksi", "#500", judul="Judul baru"))])
+    assert h[0]["status"] == "gagal" and "Belum ada yang diubah" in h[0]["komentar"] and f"`KOREKSI {len(ids)}`" in h[0]["komentar"]
+    assert "`Judul lama`" in h[0]["komentar"] and "`Judul baru`" in h[0]["komentar"] and events(d) == sebelum
+    for i, (konf, harap) in enumerate([(f"KOREKSI {len(ids) + 1}", "berbeda dengan jumlah"), ("HAPUS 1", "untuk Hapus. Pilih Aksi = Hapus"),
+                                       ("KOREKSI", "belum memuat jumlah")]):
+        h = jalankan(d, [iss(591 + i, fk("Koreksi", "#500", judul="Judul baru", konfirmasi=konf))])
+        assert h[0]["status"] == "gagal" and harap in h[0]["komentar"] and events(d) == sebelum, (konf, h[0]["komentar"])
+    h = jalankan(d, [iss(590, fk("Koreksi", "#500", judul="Judul baru", konfirmasi=f"koreksi {len(ids)}"))], edited=590)
+    assert h[0]["status"] == "ok" and all(e["title"] == "Judul baru" for e in events(d) if e["id"] in ids)
+
+
+@uji("koreksi catatan: (kosongkan) menghapus catatan; kolom kosong tetap mempertahankan")
+def _():
+    d = siapkan(); ids = seri(d, Catatan="catatan lama")
+    h = dua(d, [iss(595, fk("Koreksi", f"{ids[0]}", judul="Judul lain"))])
+    assert h[0]["status"] == "ok" and next(e for e in events(d) if e["id"] == ids[0])["note"] == "catatan lama"
+    h = dua(d, [iss(596, fk("Koreksi", f"{ids[0]}", catatan="(kosongkan)"))])
+    assert h[0]["status"] == "ok" and next(e for e in events(d) if e["id"] == ids[0])["note"] == ""
+
+
+@uji("target: 'id N' eksplisit; angka telanjang yang ambigu dengan nomor Issue terproses ditolak; #N tetap Issue")
+def _():
+    d = siapkan(); ids = seri(d, n=500)
+    # buat Issue terproses bernomor sama dengan id event (nomor Issue = ids[0])
+    kk = kat(d); kk["diproses"].append({"issue": ids[0], "id": []}); core.simpan_kategori(d / "data" / "kategori.json", kk)
+    h = jalankan(d, [iss(597, fk("Hapus", f"{ids[0]}"))])
+    assert h[0]["status"] == "gagal" and "ambigu" in h[0]["komentar"] and f"id {ids[0]}" in h[0]["komentar"]
+    h = jalankan(d, [iss(598, fk("Hapus", f"id {ids[0]}"))])
+    assert h[0]["status"] == "gagal" and "Belum ada yang dihapus" in h[0]["komentar"] and "`HAPUS 1`" in h[0]["komentar"]
+    h = jalankan(d, [iss(599, fk("Hapus", f"id {ids[0]}", konfirmasi="HAPUS 1"))])
+    assert h[0]["status"] == "ok" and h[0]["id"] == [ids[0]]
+
+
+@uji("kartu situs menampilkan ID di rincian; HTML statis tidak berubah")
+def _():
+    html = (REPO / "index.html").read_text(encoding="utf-8")
+    assert '<div class="dt">ID</div><div class="dd">${e.id}</div>' in html
 
 
 @uji("koreksi seri: judul diganti untuk seluruh #Issue, kolom lain tidak berubah, id tetap, selisih ada di komentar")
 def _():
     d = siapkan(); ids = seri(d, judul="Judul salah", Catatan="catatan asli")
     sebelum = {e["id"]: e for e in events(d)}
-    h = jalankan(d, [iss(520, fk("Koreksi", "#500", judul="Judul benar"))])
+    h = dua(d, [iss(520, fk("Koreksi", "#500", judul="Judul benar"))])
     assert h[0]["status"] == "ok" and h[0]["id"] == ids and "sudah dikoreksi" in h[0]["komentar"], h[0]["komentar"]
     sesudah = {e["id"]: e for e in events(d)}
     for i in ids:
@@ -565,12 +635,12 @@ def _():
 @uji("koreksi tanggal: hanya satu event, satu tanggal, tidak boleh lampau; dayShort ikut berubah")
 def _():
     d = siapkan(); ids = seri(d)
-    h = jalankan(d, [iss(530, fk("Koreksi", f"{ids[0]}", tanggal="11 Okt 2026"))])
+    h = dua(d, [iss(530, fk("Koreksi", f"{ids[0]}", tanggal="11 Okt 2026"))])
     e = next(x for x in events(d) if x["id"] == ids[0])
     assert h[0]["status"] == "ok" and e["date"] == "2026-10-11" and e["dayShort"] == "Min 11 Okt", (h[0]["komentar"], e)
     for i, (tg, harap) in enumerate([("11 Okt 2026", None), ("3-5 Okt 2026", "satu tanggal"), ("2026-10-02", "sudah lewat"), ("besok", "tidak dikenali")]):
         target = f"{ids[1]}, {ids[2]}" if i == 0 else f"{ids[1]}"
-        h = jalankan(d, [iss(531 + i, fk("Koreksi", target, tanggal=tg))])
+        h = dua(d, [iss(531 + i, fk("Koreksi", target, tanggal=tg))])
         assert h[0]["status"] == "gagal" and (harap is None and "hanya untuk satu event" in h[0]["komentar"] or harap in h[0]["komentar"]), (tg, h[0]["komentar"])
 
 
@@ -579,18 +649,18 @@ def _():
     d = siapkan()
     a = jalankan(d, [iss(540, form(Judul="Jam A", Tanggal="10 Okt 2026", Jenis_waktu="Jam eksak", Jam="09.00"))])[0]["id"][0]
     b = jalankan(d, [iss(541, form(Judul="Jam B", Tanggal="11 Okt 2026"))])[0]["id"][0]  # Ba'da Maghrib
-    h = jalankan(d, [iss(542, fk("Koreksi", f"{b}", jam="10.00"))])
+    h = dua(d, [iss(542, fk("Koreksi", f"{b}", jam="10.00"))])
     assert h[0]["status"] == "gagal" and "Jam eksak" in h[0]["komentar"]
-    h = jalankan(d, [iss(543, fk("Koreksi", f"{b}", jenis_waktu="Ba'da Subuh", jam="10.00"))])
+    h = dua(d, [iss(543, fk("Koreksi", f"{b}", jenis_waktu="Ba'da Subuh", jam="10.00"))])
     assert h[0]["status"] == "gagal" and "bukan Jam eksak" in h[0]["komentar"]
-    h = jalankan(d, [iss(544, fk("Koreksi", f"{a}, {b}", jam="10.00"))])  # b gagal -> a juga tidak berubah
+    h = dua(d, [iss(544, fk("Koreksi", f"{a}, {b}", jam="10.00"))])  # b gagal -> a juga tidak berubah
     assert h[0]["status"] == "gagal" and next(x for x in events(d) if x["id"] == a)["timeLabel"] == "09.00 WIB"
-    h = jalankan(d, [iss(545, fk("Koreksi", f"{b}", jenis_waktu="Jam eksak", jam="19.30-21.00"))])
+    h = dua(d, [iss(545, fk("Koreksi", f"{b}", jenis_waktu="Jam eksak", jam="19.30-21.00"))])
     e = next(x for x in events(d) if x["id"] == b)
     assert h[0]["status"] == "ok" and e["timeLabel"] == "19.30 – 21.00 WIB" and e["timeOrder"] == 19.5
-    h = jalankan(d, [iss(546, fk("Koreksi", f"{b}", jam="20.00"))])  # kini berjam eksak
+    h = dua(d, [iss(546, fk("Koreksi", f"{b}", jam="20.00"))])  # kini berjam eksak
     assert h[0]["status"] == "ok" and next(x for x in events(d) if x["id"] == b)["timeLabel"] == "20.00 WIB"
-    h = jalankan(d, [iss(547, fk("Koreksi", f"{b}", jenis_waktu="Dhuha"))])
+    h = dua(d, [iss(547, fk("Koreksi", f"{b}", jenis_waktu="Dhuha"))])
     e = next(x for x in events(d) if x["id"] == b)
     assert h[0]["status"] == "ok" and e["timeLabel"] == "Dhuha" and e["timeOrder"] == 9
 
@@ -599,49 +669,49 @@ def _():
 def _():
     d = siapkan(); ids = seri(d)
     i0 = ids[0]; ev = lambda: next(x for x in events(d) if x["id"] == i0)  # noqa: E731
-    h = jalankan(d, [iss(550, fk("Koreksi", f"{i0}", pemateri="Abu Hurairah"))])
+    h = dua(d, [iss(550, fk("Koreksi", f"{i0}", pemateri="Abu Hurairah"))])
     assert h[0]["status"] == "ok" and ev()["ustadz"] == "Ustadz Abu Hurairah, MA"
-    h = jalankan(d, [iss(551, fk("Koreksi", f"{i0}", pemateri=ad.LAINNYA, pemateri_baru="Ustadz Dr. Abu Hurairah, M.A."))])
+    h = dua(d, [iss(551, fk("Koreksi", f"{i0}", pemateri=ad.LAINNYA, pemateri_baru="Ustadz Dr. Abu Hurairah, M.A."))])
     assert h[0]["status"] == "gagal" and "tidak ada yang berubah" in h[0]["komentar"]  # cocok otomatis = sama dengan sekarang
-    h = jalankan(d, [iss(552, fk("Koreksi", f"{i0}", pemateri="Poppy Yuditya"))])
+    h = dua(d, [iss(552, fk("Koreksi", f"{i0}", pemateri="Poppy Yuditya"))])
     assert h[0]["status"] == "ok" and ev()["audience"] == "Khusus Akhwat" and ev()["ustadz"] == "Ustadzah Poppy Yuditya"
-    h = jalankan(d, [iss(553, fk("Koreksi", f"{i0}", pemateri_baru="Ustadz X"))])
+    h = dua(d, [iss(553, fk("Koreksi", f"{i0}", pemateri_baru="Ustadz X"))])
     assert h[0]["status"] == "gagal" and "masih '(tidak diubah)'" in h[0]["komentar"]
-    h = jalankan(d, [iss(554, fk("Koreksi", f"{i0}", masjid="Masjid Istiqlal (Jakarta)"))])
+    h = dua(d, [iss(554, fk("Koreksi", f"{i0}", masjid="Masjid Istiqlal (Jakarta)"))])
     assert h[0]["status"] == "ok" and ev()["masjid"] == "Masjid Istiqlal" and ev()["area"] == "Jakarta"
-    h = jalankan(d, [iss(558, fk("Koreksi", f"{i0}", masjid="Masjid Istiqlal (Jakarta)"))])  # sama dengan sekarang
+    h = dua(d, [iss(558, fk("Koreksi", f"{i0}", masjid="Masjid Istiqlal (Jakarta)"))])  # sama dengan sekarang
     assert h[0]["status"] == "gagal" and "tidak ada yang berubah" in h[0]["komentar"]
-    h = jalankan(d, [iss(555, fk("Koreksi", f"{i0}", masjid=ad.LAINNYA, masjid_baru="Masjid Koreksi Baru", alamat_baru="Jl K 1", kota_baru="Bogor"))])
+    h = dua(d, [iss(555, fk("Koreksi", f"{i0}", masjid=ad.LAINNYA, masjid_baru="Masjid Koreksi Baru", alamat_baru="Jl K 1", kota_baru="Bogor"))])
     assert h[0]["status"] == "ok" and ev()["masjid"] == "Masjid Koreksi Baru" and ev()["area"] == "Bogor" and ev()["address"] == "Jl K 1"
     assert any(m["nama"] == "Masjid Koreksi Baru" for m in kat(d)["masjid"])
-    h = jalankan(d, [iss(556, fk("Koreksi", f"{i0}", alamat_baru="Jl Z"))])
+    h = dua(d, [iss(556, fk("Koreksi", f"{i0}", alamat_baru="Jl Z"))])
     assert h[0]["status"] == "gagal" and "kolom masjid baru terisi" in h[0]["komentar"]
-    h = jalankan(d, [iss(557, fk("Koreksi", f"{i0}", masjid="Online", masjid_baru="belum ditentukan"))])
+    h = dua(d, [iss(557, fk("Koreksi", f"{i0}", masjid="Online", masjid_baru="belum ditentukan"))])
     assert h[0]["status"] == "gagal" and "bukan nama" in h[0]["komentar"]
 
 
 @uji("koreksi: tanpa isian, sama dengan sekarang, atau jadi duplikat event lain -> ditolak; Tambah+Koreksi dalam satu run berurutan")
 def _():
     d = siapkan(); ids = seri(d, judul="Judul X")
-    h = jalankan(d, [iss(560, fk("Koreksi", f"{ids[0]}"))])
+    h = dua(d, [iss(560, fk("Koreksi", f"{ids[0]}"))])
     assert h[0]["status"] == "gagal" and "tidak ada kolom koreksi" in h[0]["komentar"]
-    h = jalankan(d, [iss(561, fk("Koreksi", f"{ids[0]}", judul="Judul X"))])
+    h = dua(d, [iss(561, fk("Koreksi", f"{ids[0]}", judul="Judul X"))])
     assert h[0]["status"] == "gagal" and "tidak ada yang berubah" in h[0]["komentar"]
     jalankan(d, [iss(562, form(Judul="Judul Y", Tanggal="3 Okt 2026", Jenis_waktu="Ba'da Subuh", Masjid="Masjid Al-Adhim (Depok)"))])
-    h = jalankan(d, [iss(563, fk("Koreksi", f"{ids[0]}", judul="Judul Y", jenis_waktu="Ba'da Subuh", masjid="Masjid Al-Adhim (Depok)"))])
+    h = dua(d, [iss(563, fk("Koreksi", f"{ids[0]}", judul="Judul Y", jenis_waktu="Ba'da Subuh", masjid="Masjid Al-Adhim (Depok)"))])
     assert h[0]["status"] == "gagal" and "duplikat" in h[0]["komentar"]
-    h = jalankan(d, [iss(570, form(Judul="Satu run", Tanggal="12 Okt 2026")), iss(571, fk("Koreksi", "#570", judul="Satu run (dikoreksi)"))])
-    assert [x["status"] for x in h] == ["ok", "ok"] and any(e["title"] == "Satu run (dikoreksi)" for e in events(d))
+    h = jalankan(d, [iss(570, form(Judul="Satu run", Tanggal="12 Okt 2026"))]); h = dua(d, [iss(571, fk("Koreksi", "#570", judul="Satu run (dikoreksi)"))])
+    assert [x["status"] for x in h] == ["ok"] and any(e["title"] == "Satu run (dikoreksi)" for e in events(d))
 
 
 @uji("Issue koreksi/hapus yang diedit setelah diproses mendapat komentar; Issue koreksi tanpa kolom -> gagal berpesan")
 def _():
     d = siapkan(); ids = seri(d)
-    jalankan(d, [iss(580, fk("Koreksi", f"{ids[0]}", judul="Baru"))])
+    dua(d, [iss(580, fk("Koreksi", f"{ids[0]}", judul="Baru"))])
     h = jalankan(d, [iss(580, fk("Koreksi", f"{ids[0]}", judul="Baru lagi"))], edited=580)
     assert h[0]["status"] == "abaikan" and "tidak diterapkan" in h[0]["komentar"]
     assert next(x for x in events(d) if x["id"] == ids[0])["title"] == "Baru"
-    h = jalankan(d, [iss(581, "### Aksi\n\nHapus\n", title="Koreksi kajian: setengah")])
+    h = dua(d, [iss(581, "### Aksi\n\nHapus\n", title="Koreksi kajian: setengah")])
     assert h[0]["status"] == "gagal" and "Koreksi atau hapus" in h[0]["komentar"]
 
 

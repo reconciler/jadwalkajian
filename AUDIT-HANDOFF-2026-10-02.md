@@ -179,3 +179,19 @@ Dasar: permintaan langsung Amal di chat PIC (termasuk penghapusan data lewat for
 - 38 uji lokal lulus (sebelumnya 30): templat sah dan penanda tidak bentrok; hapus (id, rentang, #Issue, konfirmasi, semua-atau-tidak, prune+build sesudahnya); koreksi seri (kolom lain tidak berubah); tanggal; waktu (termasuk semua-atau-tidak-sama-sekali); pemateri dan masjid; ditolak (tanpa isian, sama dengan sekarang, duplikat); Tambah+Koreksi berurutan dalam satu run; edit setelah diproses.
 - **Tidak didukung (sengaja, belum diminta)**: koreksi tanggal massal; menemukan event lewat pencarian (tanggal/masjid) tanpa id; undo otomatis; pemulihan event yang sudah dihapus (kirim ulang lewat Tambah, id baru). Dua tahap penolakan (struktur formulir dulu, aturan data kemudian) tetap berlaku.
 - **Belum teruji di GitHub**: formulir Koreksi/hapus dengan Issue sungguhan (formulir tampil, dropdown 100 pemateri dan 29 masjid, penghapusan, koreksi), dan klasifikasi Issue berdasarkan isi. Perlu Issue uji dari Amal: sebaiknya (1) koreksi judul seri dari satu Issue Tambah uji, (2) hapus seri itu, keduanya dengan penutupan Issue.
+
+## 13. Penutupan celah dumb-proof Koreksi/hapus — diminta Amal 3 Okt 2026 ("Lanjutkan dengan semua 6 usulan itu")
+Dasar: pertanyaan Amal "apakah sistem form koreksi dan hapus ini dumb proof?" dan "dari mana user tahu id event?". Enam usulan di bawah adalah **usulan PIC**, disetujui Amal di chat; rancangan teknisnya keputusan PIC.
+
+### Perubahan
+- **Pratinjau + konfirmasi (Hapus dan Koreksi).** Kolom Konfirmasi kini berlabel "Konfirmasi (diisi setelah pratinjau)" (label = kunci parser; templat dibuat ulang). Kirim dengan kolom kosong -> balasan pratinjau, Issue tetap terbuka, status internal `gagal` dengan alasan "menunggu konfirmasi" (agar workflow tidak menutup Issue). Konfirmasi `HAPUS n` / `KOREKSI n` (n = jumlah event terdampak) pada edit Issue menerapkan perubahan. Kata/jumlah salah atau lintas-aksi ditolak. Perubahan format: konfirmasi lama `HAPUS` tanpa jumlah **tidak lagi diterima**.
+- **Komentar hapus lengkap**: semua kolom event + blok `<details>` berisi baris asli `index.html`, supaya bisa dikembalikan lewat Tambah.
+- **ID di kartu situs**: baris "ID" di panel rincian kartu (`index.html`, render JS). Blok HTML statis (`build.py`) tidak diubah. Ini **perubahan tampilan situs**; dicek di Chromium 360 px tanpa galat JS (baris ID muncul sebagai baris terakhir; header tidak disentuh).
+- **`(kosongkan)`** pada kolom Catatan koreksi menghapus catatan (kosong tetap = tidak diubah).
+- **Target**: `id N` didukung; angka telanjang ditolak bila ambigu dengan nomor Issue terproses.
+- Tidak ada perubahan `deploy.yml`, pemicu, atau skema `index.html` selain baris ID.
+
+### Uji dan batas
+- 42 uji lokal lulus (sebelumnya 38; alur Hapus/Koreksi memakai pembantu dua langkah; uji baru: pratinjau, jumlah/kata salah, lintas-aksi, `(kosongkan)`, ambigu angka vs Issue, `id N`, ID di kartu).
+- **Belum teruji di GitHub** (sama dengan bagian 12) ditambah alur dua langkah dengan Issue sungguhan. Menunggu uji Amal: Issue Tambah seri -> Koreksi judul `#N` (pratinjau, lalu edit dengan `KOREKSI n`) -> Hapus (pratinjau, lalu `HAPUS n`).
+- Celah yang diketahui: pratinjau tidak terkunci ke keadaan data saat pratinjau (bila data berubah di antara pratinjau dan konfirmasi, hanya jumlah yang dicocokkan).

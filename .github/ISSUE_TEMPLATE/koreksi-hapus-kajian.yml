@@ -25,8 +25,8 @@ body:
   - type: input
     id: konfirmasi
     attributes:
-      label: "Ketik HAPUS untuk konfirmasi"
-      description: "Hanya untuk Aksi = Hapus: ketik HAPUS. Kosongkan untuk Koreksi."
+      label: "Konfirmasi (diisi setelah pratinjau)"
+      description: "KOSONGKAN saat pertama kali mengirim. Sistem membalas dengan pratinjau (daftar event yang akan dihapus atau diubah). Bila sudah benar, edit Issue ini dan isi kolom ini dengan HAPUS <jumlah> atau KOREKSI <jumlah> sesuai pratinjau, mis. HAPUS 4."
     validations:
       required: false
   - type: input
@@ -290,6 +290,6 @@ body:
     id: catatan
     attributes:
       label: "Catatan (koreksi)"
-      description: "Catatan baru (menggantikan yang lama). Kosong = tidak diubah."
+      description: "Catatan baru (menggantikan yang lama). Kosong = tidak diubah. Tulis (kosongkan) untuk menghapus catatan."
     validations:
       required: false

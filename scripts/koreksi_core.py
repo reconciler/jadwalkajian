@@ -27,6 +27,32 @@ LABEL_KOLOM = [("date", "tanggal"), ("title", "judul"), ("timeLabel", "waktu"), 
                ("isRutin", "kajian rutin"), ("note", "catatan")]
 
 
+class PerluKonfirmasi(InputError):
+    """Permintaan sah tetapi belum dikonfirmasi: .pratinjau = teks komentar (tabel sasaran/selisih + cara konfirmasi)."""
+
+    def __init__(self, pratinjau):
+        super().__init__("menunggu konfirmasi")
+        self.pratinjau = pratinjau
+
+
+def periksa_konfirmasi(teks, aksi, jumlah):
+    """Konfirmasi harus 'HAPUS <jumlah>' (Hapus) atau 'KOREKSI <jumlah>' (Koreksi), jumlah = event yang terdampak.
+    -> (cocok, catatan|None). Kosong = belum dikonfirmasi (pratinjau)."""
+    t = re.sub(r"\s+", " ", str(teks or "")).strip().lower()
+    if not t:
+        return False, None
+    m = re.fullmatch(r"(hapus|koreksi)\s*(\d+)?", t)
+    if not m:
+        return False, f"Konfirmasi '{teks}' tidak dikenali; tulis persis seperti contoh di bawah."
+    if m.group(1) != aksi:
+        return False, f"Konfirmasi '{teks}' bukan untuk Aksi ini; tulis kata {aksi.upper()}."
+    if not m.group(2):
+        return False, "Konfirmasi belum memuat jumlah event."
+    if int(m.group(2)) != jumlah:
+        return False, f"Jumlah pada konfirmasi ({m.group(2)}) berbeda dengan jumlah event pada pratinjau ({jumlah})."
+    return True, None
+
+
 # ---------- target ----------
 
 def parse_target(teks, kat, events):
@@ -35,6 +61,7 @@ def parse_target(teks, kat, events):
     if not t:
         raise InputError("Target: wajib diisi (mis. #12 untuk semua event dari Issue 12, atau 747-750).")
     ada = {e["id"] for e in events}
+    nomor_issue = {d["issue"] for d in kat["diproses"]}
     ids, galat = [], []
     for tok in [x.strip() for x in re.split(r"[;,]", t) if x.strip()]:
         m = re.fullmatch(r"(?:#|issue\s*#?|isu\s*#?)\s*(\d+)", tok)
@@ -50,6 +77,10 @@ def parse_target(teks, kat, events):
                 continue
             ids += sisa
             continue
+        m = re.fullmatch(r"id\s*#?\s*(\d+)", tok)
+        if m:
+            ids.append(int(m.group(1)))
+            continue
         m = re.fullmatch(r"(\d+)\s*-\s*(\d+)", tok)
         if m:
             a, b = int(m.group(1)), int(m.group(2))
@@ -58,10 +89,15 @@ def parse_target(teks, kat, events):
                 continue
             ids += list(range(a, b + 1))
         elif tok.isdigit():
-            ids.append(int(tok))
+            n = int(tok)
+            if n in ada and n in nomor_issue:
+                galat.append(f"Target: '{n}' ambigu (id event {n} dan Issue #{n} sama-sama ada). "
+                             f"Tulis '#{n}' untuk Issue atau 'id {n}' untuk id event.")
+            else:
+                ids.append(n)
         else:
             galat.append(f"Target: '{tok}' tidak dikenali. Tulis #NomorIssue (semua event dari Issue itu) atau id event "
-                         "(747, 747-750). Id event ada di komentar Issue 'Tambah kajian'.")
+                         "(id 747, 747-750). Id event tampil di rincian kartu situs dan di komentar Issue 'Tambah kajian'.")
     if galat:
         raise InputError(galat)
     unik = list(dict.fromkeys(ids))

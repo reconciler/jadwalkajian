@@ -174,22 +174,34 @@ rancangan di `AUDIT-HANDOFF-2026-10-02-auditor.md`, penerapan di
   `data/kategori.json`, jangan diedit manual). Dikenali dari judul kolom `### Aksi` dan
   `### Target`; label kolom berakhiran "(koreksi)" agar tidak tertukar dengan formulir
   Tambah. **Target:** `#12` (semua event yang MASIH ADA dari Issue Tambah 12), id event
-  (`747`), rentang id (`747-750`), boleh digabung dengan koma; id ada di komentar Issue
-  Tambah. **Semua-atau-tidak-sama-sekali:** satu id tak ditemukan atau satu event gagal
+  (`id 747`), rentang id (`747-750`), boleh digabung dengan koma; id tampil di panel rincian
+  kartu situs (baris "ID", sejak 3 Okt 2026) dan di komentar Issue Tambah. Angka telanjang
+  (`747`) dibaca sebagai id event, **kecuali** ada Issue terproses bernomor sama: ditolak
+  sebagai ambigu (tulis `#747` atau `id 747`). **Semua-atau-tidak-sama-sekali:** satu id tak ditemukan atau satu event gagal
   validasi → tidak ada yang berubah.
-  - **Hapus:** wajib mengetik `HAPUS` di kolom konfirmasi; kolom koreksi harus kosong
+  - **Dua langkah (pratinjau + konfirmasi, 3 Okt 2026):** kirim Issue dengan kolom
+    **Konfirmasi kosong** → sistem hanya membalas pratinjau (tabel event yang akan dihapus,
+    atau tabel sebelum/sesudah), Issue tetap terbuka, tidak ada yang berubah. Lalu **edit
+    Issue** dan tulis `HAPUS <jumlah>` atau `KOREKSI <jumlah>` (jumlah = event terdampak
+    sesuai pratinjau) → baru diterapkan. Kata atau jumlah salah, atau konfirmasi untuk Aksi
+    lain, ditolak. Penolakan validasi biasa tetap muncul lebih dulu (sebelum pratinjau).
+    Pratinjau dicatat di `gagal` dengan alasan "menunggu konfirmasi".
+  - **Hapus:** konfirmasi `HAPUS <jumlah>` (lihat di atas); kolom koreksi harus kosong
     (kalau terisi ditolak: kemungkinan Aksi salah pilih). Event dihapus dari `index.html`;
     master (`kategori.json`) tidak dipangkas. Kembalikan lewat formulir Tambah (id baru).
   - **Koreksi:** isi hanya kolom yang ingin diubah (kosong atau `(tidak diubah)` = tetap).
     Kolom yang tidak diubah dipertahankan apa adanya. Yang bisa diubah: judul, tanggal
     (satu tanggal; hanya bila Target satu event), jenis waktu dan jam, pemateri, masjid
-    (dropdown, Lainnya, atau Online), audience, rutin, catatan. Id tetap. Aturan
+    (dropdown, Lainnya, atau Online), audience, rutin, catatan (ketik `(kosongkan)` untuk
+    menghapus catatan; kolom kosong = tetap). Id tetap. Aturan
     dumb-proof formulir Tambah berlaku sama (nama pengganti, kemiripan nama, jam,
     ustadzah → Akhwat, konflik isian). Koreksi yang membuat event sama dengan event lain
     ditolak (duplikat); koreksi yang tidak mengubah apa pun ditolak.
   - Hasilnya dicatat di `diproses` sebagai `{"issue": M, "id": [...], "aksi": "hapus"|"koreksi"}`
     (entri beraksi tidak dipakai untuk merujuk `#N`). Komentar balasan memuat tabel hapus
-    atau tabel sebelum/sesudah; Issue ditutup setelah situs terbit seperti formulir Tambah.
+    atau tabel sebelum/sesudah; komentar hapus memuat semua kolom (alamat, audience, rutin,
+    catatan) plus baris asli di blok `<details>` agar bisa dikembalikan lewat formulir Tambah.
+    Issue ditutup setelah situs terbit seperti formulir Tambah.
   - Tidak didukung (sengaja): koreksi massal tanggal, koreksi berdasarkan pencarian
     (tanggal/masjid) tanpa id, pembatalan (undo) otomatis.
 - **Pemateri** (keputusan Amal 3 Okt 2026): master menyimpan `nama` (bersih, untuk

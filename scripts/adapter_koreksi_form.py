@@ -20,14 +20,14 @@ JUDUL_KOREKSI = "Koreksi kajian: "
 TIDAK_DIUBAH = "(tidak diubah)"
 AKSI_KOREKSI = "Koreksi"
 AKSI_HAPUS = "Hapus"
-KATA_KONFIRMASI = "HAPUS"
+KOSONGKAN = "(kosongkan)"
 OPSI_RUTIN_K = [TIDAK_DIUBAH, RUTIN_YA, RUTIN_TIDAK]
 PENANDA_KOREKSI = ("Aksi", "Target")
 
 LABEL = {
     "aksi": "Aksi",
     "target": "Target",
-    "konfirmasi": "Ketik HAPUS untuk konfirmasi",
+    "konfirmasi": "Konfirmasi (diisi setelah pratinjau)",
     "judul": "Judul (koreksi)",
     "tanggal": "Tanggal (koreksi)",
     "jenis_waktu": "Jenis waktu (koreksi)",
@@ -64,7 +64,9 @@ def render_template(kat):
                "Boleh digabung dengan koma. Id event ada di komentar Issue 'Tambah kajian'. Semua-atau-tidak-sama-sekali.",
                "#12", wajib=True),
         _unsur("input", "konfirmasi", LABEL["konfirmasi"],
-               f"Hanya untuk Aksi = Hapus: ketik {KATA_KONFIRMASI}. Kosongkan untuk Koreksi."),
+               "KOSONGKAN saat pertama kali mengirim. Sistem membalas dengan pratinjau (daftar event yang akan dihapus atau "
+               "diubah). Bila sudah benar, edit Issue ini dan isi kolom ini dengan HAPUS <jumlah> atau KOREKSI <jumlah> "
+               "sesuai pratinjau, mis. HAPUS 4."),
         _unsur("input", "judul", LABEL["judul"], "Kosong = tidak diubah."),
         _unsur("input", "tanggal", LABEL["tanggal"],
                "Satu tanggal baru, mis. 10 Okt 2026. Hanya bila Target satu event. Kosong = tidak diubah."),
@@ -89,7 +91,8 @@ def render_template(kat):
         _unsur("checkboxes", "abaikan_mirip", LABEL["abaikan_mirip"],
                "Hanya bila sistem menolak karena nama baru mirip nama yang sudah ada dan Anda yakin nama itu baru.",
                kotak=OPSI_ABAIKAN),
-        _unsur("textarea", "catatan", LABEL["catatan"], "Catatan baru (menggantikan yang lama). Kosong = tidak diubah."),
+        _unsur("textarea", "catatan", LABEL["catatan"],
+               "Catatan baru (menggantikan yang lama). Kosong = tidak diubah. Tulis (kosongkan) untuk menghapus catatan."),
     ]
     kepala = (
         "# DIBUAT OTOMATIS oleh scripts/ingest.py dari data/kategori.json. Jangan edit manual.\n"
@@ -132,24 +135,28 @@ def ke_paket(body, kat, events, hari_ini=None):
 
     terisi = [LABEL[k] for k in KOLOM_KOREKSI
               if v(k) and v(k) != TIDAK_DIUBAH]
+    konf = v("konfirmasi").strip()
+    if konf and not konf.casefold().startswith(("hapus", "koreksi")):
+        galat.append(f"Konfirmasi: '{konf}' tidak dikenali. Tulis HAPUS <jumlah> atau KOREKSI <jumlah> sesuai pratinjau, "
+                     "atau kosongkan pada pengiriman pertama.")
     if aksi == AKSI_HAPUS:
-        if v("konfirmasi").strip().casefold() != KATA_KONFIRMASI.casefold():
-            galat.append(f"Konfirmasi: untuk Aksi = Hapus, ketik {KATA_KONFIRMASI} pada kolom '{LABEL['konfirmasi']}'.")
+        if konf.casefold().startswith("koreksi"):
+            galat.append(f"Aksi = Hapus, tetapi Konfirmasi '{konf}' untuk Koreksi. Pilih Aksi = Koreksi, atau tulis HAPUS <jumlah>.")
         if terisi:
             galat.append("Aksi = Hapus, tetapi kolom koreksi terisi (" + ", ".join(terisi) + "). "
                          "Bila maksud Anda mengubah data, pilih Aksi = Koreksi. Bila ingin menghapus, kosongkan kolom koreksi.")
         if galat:
             raise InputError(galat)
-        return {"aksi": "hapus", "ids": ids}
+        return {"aksi": "hapus", "ids": ids, "konfirmasi": konf}
 
     # Koreksi
-    if v("konfirmasi").strip():
-        galat.append(f"Aksi = Koreksi, tetapi '{LABEL['konfirmasi']}' terisi. Pilih Aksi = Hapus, atau kosongkan kolom itu.")
+    if konf.casefold().startswith("hapus"):
+        galat.append(f"Aksi = Koreksi, tetapi Konfirmasi '{konf}' untuk Hapus. Pilih Aksi = Hapus, atau tulis KOREKSI <jumlah>.")
     perub = {}
     if v("judul"):
         perub["judul"] = v("judul")
     if v("catatan"):
-        perub["catatan"] = v("catatan")
+        perub["catatan"] = "" if v("catatan").strip().casefold() in (KOSONGKAN, "kosongkan") else v("catatan")
     if v("tanggal"):
         try:
             rinci = tanggal_bebas.parse_rinci(v("tanggal"), hari_ini or sekarang_wib())
@@ -194,4 +201,5 @@ def ke_paket(body, kat, events, hari_ini=None):
     if not perub:
         raise InputError("Koreksi: tidak ada kolom koreksi yang diisi. Isi minimal satu kolom (kolom kosong atau "
                          f"'{TIDAK_DIUBAH}' berarti tidak diubah).")
-    return {"aksi": "koreksi", "ids": ids, "perubahan": perub, "abaikan_mirip": _centang(v("abaikan_mirip"))}
+    return {"aksi": "koreksi", "ids": ids, "perubahan": perub, "abaikan_mirip": _centang(v("abaikan_mirip")),
+            "konfirmasi": konf}

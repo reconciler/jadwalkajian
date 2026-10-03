@@ -97,7 +97,7 @@ def komentar_abaikan(ids):
     daftar = ", ".join(str(i) for i in ids) or "tidak ada event baru"
     return ("Issue ini **sudah diproses** (id event: " + daftar + ") dan perubahan pada isinya **tidak diterapkan**. "
             "Untuk mengoreksi atau menghapus event tersebut, minta lewat chat atau buat Issue baru "
-            "(formulir koreksi atau hapus belum tersedia).")
+            "(formulir Koreksi atau hapus kajian).")
 
 
 def _baris_event(ev, i):
@@ -105,11 +105,54 @@ def _baris_event(ev, i):
             f"{kode(ev['ustadz'])} | {kode(ev['masjid'])} | {kode(ev['area'])} |")
 
 
+def _tabel_lengkap(events):
+    """Semua kolom event (agar yang terhapus bisa dikembalikan lewat formulir Tambah)."""
+    b = ["| id | tanggal | waktu | judul | pemateri | masjid | kota | alamat | audience | rutin | catatan |",
+         "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for e in events:
+        b.append(f"| {e['id']} | {e['dayShort']} ({e['date']}) | {kode(e['timeLabel'])} | {kode(e['title'])} | "
+                 f"{kode(e['ustadz'])} | {kode(e['masjid'])} | {kode(e['area'])} | {kode(e.get('address', ''))} | "
+                 f"{kode(e['audience'])} | {'ya' if e.get('isRutin') else 'tidak'} | {kode(e.get('note', ''))} |")
+    return b
+
+
+def _blok_data_lengkap(events):
+    baris = "\n".join(core.baris_event(e, e["id"]).replace("```", "'" * 3) for e in events)
+    return ["", "<details><summary>Data lengkap (baris asli di index.html)</summary>", "", "```", baris, "```", "",
+            "</details>"]
+
+
 def komentar_hapus(dihapus):
-    b = [f"{len(dihapus)} kajian **sudah dihapus** dan tidak lagi tayang di situs:", "",
-         "| id | tanggal | waktu | judul | pemateri | masjid | kota |", "|---|---|---|---|---|---|---|"]
-    b += [_baris_event(e, e["id"]) for e in dihapus]
-    b += ["", "Bila keliru, tambahkan kembali lewat formulir Tambah kajian (id baru akan dibuat)."]
+    b = [f"{len(dihapus)} kajian **sudah dihapus** dan tidak lagi tayang di situs:", ""]
+    b += _tabel_lengkap(dihapus)
+    b += ["", "Bila keliru, tambahkan kembali lewat formulir Tambah kajian (id baru akan dibuat); "
+              "semua kolom yang dibutuhkan ada di tabel dan blok di bawah."]
+    b += _blok_data_lengkap(dihapus)
+    return "\n".join(b)
+
+
+def pratinjau_hapus(dihapus, catatan=None):
+    n = len(dihapus)
+    b = ["**Belum ada yang dihapus.** Berikut kajian yang akan dihapus dari situs:", ""]
+    b += _tabel_lengkap(dihapus)
+    if catatan:
+        b += ["", f"Catatan: {catatan}"]
+    b += ["", f"Bila sudah benar, edit Issue ini: pada kolom Konfirmasi tulis `HAPUS {n}` lalu simpan. "
+              "Bila salah, perbaiki kolom Target atau abaikan Issue ini."]
+    return "\n".join(b)
+
+
+def pratinjau_koreksi(hasil, catatan=None):
+    n = len(hasil["ganti"])
+    b = [f"**Belum ada yang diubah.** Berikut perubahan pada {n} kajian:", "",
+         "| id | kolom | sebelum | sesudah |", "|---|---|---|---|"]
+    b += [f"| {i} | {kolom} | {kode(lama)} | {kode(baru)} |" for i, kolom, lama, baru in hasil["perbedaan"]]
+    if hasil["peringatan"]:
+        b += ["", "Peringatan:"] + [f"- {p}" for p in hasil["peringatan"]]
+    if catatan:
+        b += ["", f"Catatan: {catatan}"]
+    b += ["", f"Bila sudah benar, edit Issue ini: pada kolom Konfirmasi tulis `KOREKSI {n}` lalu simpan. "
+              "Bila salah, ubah kolom koreksi atau abaikan Issue ini."]
     return "\n".join(b)
 
 
@@ -193,11 +236,17 @@ def main(argv=None):
                 pk = adapter_k.ke_paket(isi_iss, kat, events_ada, hari_ini)
                 if pk["aksi"] == "hapus":
                     dihapus = [e for e in events_ada if e["id"] in set(pk["ids"])]
+                    cocok, cat = koreksi.periksa_konfirmasi(pk["konfirmasi"], "hapus", len(dihapus))
+                    if not cocok:
+                        raise koreksi.PerluKonfirmasi(pratinjau_hapus(dihapus, cat))
                     html_baru = koreksi.hapus_baris(html, pk["ids"])
                     komentar = komentar_hapus(dihapus)
                     ringkas = f"hapus {len(dihapus)} kajian (id {', '.join(map(str, pk['ids']))})"
                 else:
                     hk = koreksi.proses_koreksi(pk, kat, events_ada, hari_ini)
+                    cocok, cat = koreksi.periksa_konfirmasi(pk["konfirmasi"], "koreksi", len(hk["ganti"]))
+                    if not cocok:
+                        raise koreksi.PerluKonfirmasi(pratinjau_koreksi(hk, cat))
                     html_baru = html
                     for i_ev, ev in hk["ganti"].items():
                         html_baru = koreksi.ganti_baris(html_baru, i_ev, ev)
@@ -205,6 +254,10 @@ def main(argv=None):
                         kat[kunci_kat] = hk["kat_kerja"][kunci_kat]
                     komentar = komentar_koreksi(hk)
                     ringkas = f"koreksi {len(hk['ganti'])} kajian (id {', '.join(map(str, pk['ids']))})"
+            except koreksi.PerluKonfirmasi as e:
+                kat["gagal"].append({"issue": n, "alasan": ["menunggu konfirmasi"]})
+                hasil_semua.append({"issue": n, "status": "gagal", "id": [], "komentar": e.pratinjau})
+                continue
             except core.InputError as e:
                 kat["gagal"].append({"issue": n, "alasan": e.pesan})
                 hasil_semua.append({"issue": n, "status": "gagal", "id": [], "komentar": komentar_gagal(e.pesan)})
