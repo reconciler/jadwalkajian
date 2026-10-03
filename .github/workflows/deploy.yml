@@ -259,6 +259,13 @@ jobs:
           BASE="${PAGE_URL%/}/"
           MARKER="Jadwal Kajian"
           INTERNAL="CLAUDE.md AUDIT-HANDOFF-2026-09-30.md scripts/prune.py data/kategori.json docs/formulir-issue.md docs/riwayat-migrasi.md"
+          # Butir B (3 Okt 2026, atas "lanjut" Amal): SEMUA AUDIT-HANDOFF-*.md dan COORDINATION-NOTE-*.md yang ada di repo
+          # ikut diuji 404, jadi handoff baru otomatis terjaga. Hanya MENAMBAH pemeriksaan; daftar tetap di atas tidak dilonggarkan.
+          for f in AUDIT-HANDOFF-*.md COORDINATION-NOTE-*.md; do
+            if [ -f "$f" ]; then INTERNAL="$INTERNAL $f"; fi
+          done
+          INTERNAL=$(printf '%s\n' $INTERNAL | sort -u | tr '\n' ' ')
+          echo "Berkas internal yang diuji 404: $(printf '%s\n' $INTERNAL | wc -l)"
           http_code() {
             curl -s -o "$2" -w '%{http_code}' --max-time 15 "${BASE}$1?v=${SHA}" || true
           }

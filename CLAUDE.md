@@ -170,7 +170,8 @@ tersalin; `docs` masuk penjaga sejak 3 Okt 2026).
   publik sampai 12 kali (jeda 10 detik): beranda 200 dan memuat teks "Jadwal
   Kajian"; setiap berkas langsung di `_site/` 200; `CLAUDE.md`,
   `AUDIT-HANDOFF-2026-09-30.md`, `scripts/prune.py`, `data/kategori.json`, `docs/formulir-issue.md`,
-  `docs/riwayat-migrasi.md` 404. Gagal = run merah dan
+  `docs/riwayat-migrasi.md` 404, **ditambah semua `AUDIT-HANDOFF-*.md` dan `COORDINATION-NOTE-*.md` yang ada di repo**
+  (dihitung otomatis tiap run; handoff baru otomatis terjaga). Gagal = run merah dan
   tag `last-deploy` tidak dipindah, jadi run berikutnya menerbitkan ulang.
   **Jangan dilonggarkan supaya hijau**; selidiki penyebabnya. Uji ini tidak
   menilai tampilan. Bila nama berkas internal di daftar `INTERNAL` pada langkah
