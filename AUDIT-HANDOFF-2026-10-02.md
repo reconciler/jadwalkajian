@@ -309,3 +309,18 @@ Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor
 ### Belum dikerjakan (menunggu "lanjut" Amal di chat PIC)
 - B1, B2, B3, Q3, Q13, Q4-workflow: satu "lanjut" membuka semuanya (bagian 8.3). Spesifikasi teknis di bagian 7.2 dan 8.3 sudah dibaca.
 
+## 18. Q3, Q13, Q4-workflow, B1-B3 setelah konfirmasi Amal di chat PIC — 3 Okt 2026
+**Dasar:** Amal mengonfirmasi LANGSUNG di chat PIC ("Silakan dilanjutkan semuanya, tapi pertimbangkan urutan pengerjaannya jika memang dirasa nantinya akan membuat crash atau conflict. Jangan langsung mengerjakan sesuai instruksi jika dirasa ada metode yang lebih aman dari error. Setelah itu laporkan ke auditor."). Ini menggantikan penahanan di bagian 16 dan 17. PIC diberi izin menyimpang dari spesifikasi bila ada metode yang lebih aman; setiap penyimpangan dicatat di bawah.
+
+### Urutan pengerjaan (keputusan PIC, dengan alasan)
+1. **Push 1 (hanya `scripts/`)**: daftar kosong dibuat aman DULU (build.py, sisipkan, simulasi), baru Q3 (prune.py). Alasan: bila prune boleh menghasilkan nol event sementara `sisipkan()` melempar `RuntimeError` pada array tanpa baris event, SEMUA Issue Tambah berikutnya gagal "kesalahan internal".
+2. **Push 2 (`deploy.yml`)**: B3 + B2/Q4-workflow (risiko rendah).
+3. **Push 3 (`deploy.yml`)**: Q13.
+4. **Push 4 (`deploy.yml`)**: B1 (satu komit bot per run) paling akhir karena menyentuh logika push. Alasan: tiap push `deploy.yml` menjalankan versi BARU alur; kesalahan di B1 paling mahal.
+
+### Push 1 (zero-state + Q3)
+- **Penyimpangan dari spesifikasi 7.2 (lebih aman):** spesifikasi Q3 menyebut "bila parser menemukan nol baris sebelum prune, pengaman lama tetap berlaku (exit 1)". Itu membuat daftar yang SUDAH kosong (setelah prune mengosongkannya) gagal di run berikutnya: terbukti di uji idempotensi (`prune.py` exit 1 pada run kedua). PIC membedakan **daftar benar-benar kosong** (struktur array utuh dan badan array hanya spasi) dari **parser rusak** (badan array berisi baris yang tidak dikenali, atau penanda hilang): yang pertama sah dan idempoten, yang kedua tetap exit 1 dengan pesan lama. Tujuan pengaman tetap terjaga.
+- `build.py`: `ARRAY_AWAL`, `ARRAY_AKHIR`, `punya_array_events()`, `array_events_kosong()`; daftar kosong menghasilkan blok statis ("Belum ada kajian mendatang.") dan JSON-LD `ItemList` kosong yang sah. `prune.py`: konstanta penanda yang sama (uji memastikan pola identik), `array_kosong()`, hasil prune boleh nol event hanya bila penanda utuh. `ingest_core.sisipkan()`: pada array kosong menyisipkan tepat setelah `const allEvents=[`. `simulasi_terbit()`: daftar kosong/tanpa kajian mendatang kini sah (`None`), gagal hanya bila baris tak dikenali atau struktur hilang.
+- **Q2 dipertahankan sebagai kebijakan** (bukan lagi karena prune menolak): Hapus lewat formulir yang menyisakan 0 kajian mendatang tetap ditolak (kemungkinan Target keliru); daftar kosong hanya terjadi otomatis saat semua kajian kedaluwarsa. Pesan penolakan diperbarui.
+- Uji: mekanisme `Dilewati` (PyYAML atau node tidak ada = dilewati, bukan gagal; relevan untuk Q13 di runner CI); uji Q3 (semua kedaluwarsa lolos dan idempoten, blok sah, JS valid, Tambah ke daftar kosong, pemulihan prune+build); uji pengaman (format baris berubah, penanda hilang, penutup hilang: tetap exit 1 dan tidak menulis); uji pola penanda prune = build. Suite 61 lulus; 3 uji baru terbukti **gagal pada kode lama**. Situs kosong dimuat di Chromium: "Tidak ada kajian", tanpa galat JS.
+

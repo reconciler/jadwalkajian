@@ -25,6 +25,27 @@ BULAN = {
 
 EVENT_RX = re.compile(r'^\s*\{id:(\d+),date:"(\d{4}-\d{2}-\d{2})"')
 STAMP_RX = re.compile(r'(Diperbarui:\s*)([^<]*)')
+# Penanda struktur array event (sama dengan build.py). Hasil prune boleh nol event HANYA bila keduanya ada.
+ARRAY_AWAL = re.compile(r"^const allEvents=\[\s*$")
+ARRAY_AKHIR = re.compile(r"^\];\s*$")
+
+
+def _batas_array(lines):
+    awal = next((i for i, l in enumerate(lines) if ARRAY_AWAL.match(l)), None)
+    if awal is None:
+        return None
+    akhir = next((i for i in range(awal + 1, len(lines)) if ARRAY_AKHIR.match(lines[i])), None)
+    return None if akhir is None else (awal, akhir)
+
+
+def struktur_array_ada(lines):
+    return _batas_array(lines) is not None
+
+
+def array_kosong(lines):
+    """Struktur utuh dan badannya hanya baris kosong: daftar benar-benar kosong (bukan parser yang gagal mengenali)."""
+    b = _batas_array(lines)
+    return b is not None and all(not l.strip() for l in lines[b[0] + 1:b[1]])
 
 
 def main() -> int:
@@ -51,14 +72,20 @@ def main() -> int:
 
     # Pengaman: jangan pernah menulis file yang kehilangan seluruh event.
     # Kalau ini terjadi, struktur file berubah dan skrip tidak lagi valid.
+    if total == 0 and not array_kosong(lines):
+        print("ERROR: tidak ada event terdeteksi padahal allEvents tidak kosong (atau strukturnya hilang) — "
+              "struktur file berubah? Tidak ada yang ditulis.", file=sys.stderr)
+        return 1
     if total == 0:
-        print("ERROR: tidak ada event terdeteksi — struktur file berubah? "
-              "Tidak ada yang ditulis.", file=sys.stderr)
-        return 1
-    if total - len(removed) == 0:
-        print("ERROR: pruning akan menghapus SEMUA event. Dibatalkan.",
-              file=sys.stderr)
-        return 1
+        print("Catatan: daftar event sudah kosong (penanda array utuh); tidak ada yang di-prune.")
+    if total > 0 and total - len(removed) == 0:
+        # Semua event memang kedaluwarsa: sah bila struktur array utuh dan parser menemukan >= 1 baris sebelum prune.
+        # Bila penanda array hilang, ini kemungkinan regex/struktur rusak: pengaman lama tetap berlaku.
+        if not struktur_array_ada(lines):
+            print("ERROR: pruning akan menghapus SEMUA event dan penanda array allEvents tidak utuh. Dibatalkan.",
+                  file=sys.stderr)
+            return 1
+        print("Catatan: semua event kedaluwarsa; daftar dikosongkan (penanda array utuh).")
 
     updated = "".join(kept)
     updated, n_stamp = STAMP_RX.subn(lambda m: m.group(1) + stamp, updated)

@@ -527,9 +527,13 @@ def id_berikutnya(html, kat=None):
 
 def sisipkan(html, baris):
     cocokan = [m for m in re.finditer(r"^ *\{id:\d+,date:.*\},\s*$", html, re.M)]
-    if not cocokan:
-        raise RuntimeError("Tidak ada baris event di index.html; tidak bisa menyisipkan.")
-    akhir = cocokan[-1].end()
+    if cocokan:
+        akhir = cocokan[-1].end()
+    else:
+        # daftar kosong (semua event kedaluwarsa): sisipkan tepat setelah baris pembuka `const allEvents=[`
+        if not build.array_events_kosong(html):
+            raise RuntimeError("Tidak ada baris event dikenali dan allEvents tidak kosong/utuh di index.html; tidak bisa menyisipkan.")
+        akhir = build.ARRAY_AWAL.search(html).end()
     return html[:akhir] + "\n" + "\n".join(baris) + html[akhir:]
 
 

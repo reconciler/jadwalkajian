@@ -19,6 +19,7 @@ import ingest_core as core  # noqa: E402
 
 TODAY = "2026-10-03"
 LULUS = []
+DILEWATI = []
 
 
 def siapkan():
@@ -104,10 +105,27 @@ def kat(d):
     return json.loads((d / "data" / "kategori.json").read_text(encoding="utf-8"))
 
 
+class Dilewati(Exception):
+    """Uji tidak bisa dijalankan di lingkungan ini (mis. PyYAML atau node tidak ada): dilaporkan, bukan gagal."""
+
+
+def butuh_yaml():
+    try:
+        import yaml
+    except ImportError:
+        raise Dilewati("PyYAML tidak terpasang")
+    return yaml
+
+
 def uji(nama):
     def deko(f):
         def w():
-            f()
+            try:
+                f()
+            except Dilewati as e:
+                DILEWATI.append(nama)
+                print(f"DILEWATI: {nama} ({e})")
+                return
             LULUS.append(nama)
             print("lulus:", nama)
         w.__name__ = f.__name__
@@ -335,7 +353,7 @@ def _():
 
 @uji("templat YAML sah: 16 unsur, id unik, opsi dropdown unik tanpa koma ASCII, label = kunci parser")
 def _():
-    import yaml
+    yaml = butuh_yaml()
     t = yaml.safe_load(ad.render_template(core.muat_kategori(REPO / "data" / "kategori.json")))
     assert t["title"] == ad.JUDUL_ISSUE and len(t["body"]) == 16
     assert next(x for x in t["body"] if x["id"] == "tanggal")["type"] == "input"
@@ -543,7 +561,7 @@ def _():
 
 @uji("tahap 2 templat: formulir Koreksi/hapus sah, labelnya tidak bentrok dengan Tambah (tidak saling dikira)")
 def _():
-    import yaml
+    yaml = butuh_yaml()
     t = yaml.safe_load(adk.render_template(core.muat_kategori(REPO / "data" / "kategori.json")))
     assert t["title"] == adk.JUDUL_KOREKSI and len(t["body"]) == len(adk.LABEL) == 18
     assert [x["attributes"]["label"] for x in t["body"]] == [adk.LABEL[k] for k in adk.LABEL]
@@ -826,6 +844,8 @@ let ok=true;
 for(const n of nama){ const lit=attr("'"+jse(n)+"'"); if(eval(lit)!==n){ok=false;console.log('BEDA',JSON.stringify(n));} }
 console.log(ok?'OK':'GAGAL');
 """ % json.dumps(nama)
+    if not shutil.which("node"):
+        raise Dilewati("node tidak ada")
     r = subprocess.run(["node", "-e", js], capture_output=True, text=True)
     assert r.stdout.strip() == "OK", (r.stdout, r.stderr)
 
@@ -923,7 +943,7 @@ def _():
 def _():
     d = siapkan(); html = (d / "index.html").read_text(encoding="utf-8")
     assert ingest.simulasi_terbit(html, core.date.fromisoformat(TODAY)) is None
-    assert "tidak ada kajian mendatang" in ingest.simulasi_terbit(html, core.date.fromisoformat("2035-01-01"))
+    assert ingest.simulasi_terbit(html, core.date.fromisoformat("2035-01-01")) is None  # semua kedaluwarsa = sah (Q3)
     assert "prune tidak mengenali" in ingest.simulasi_terbit("<html></html>", core.date.fromisoformat(TODAY))
     rusak = html.replace("<!--STATIC_EVENTS_START-->", "<!--HILANG-->", 1)
     assert "penanda blok" in ingest.simulasi_terbit(rusak, core.date.fromisoformat(TODAY))
@@ -1047,7 +1067,7 @@ def _():
 
 @uji("A2: dropdown terurut abjad (huruf besar/kecil diabaikan; pemateri menurut nama bersih); Belum ditentukan/Online/Lainnya di akhir")
 def _():
-    import yaml
+    yaml = butuh_yaml()
     kat_live = core.muat_kategori(REPO / "data" / "kategori.json")
     kat_acak = json.loads(json.dumps(kat_live))
     kat_acak["pemateri"] += [{"nama": "abu zaid", "tampil": "Ustadz abu zaid", "alias": []}, {"nama": "Zulkifli", "tampil": "Zulkifli", "alias": []},
@@ -1070,6 +1090,84 @@ def _():
     assert o.index("Aaa Awal") < o.index("abu zaid") < o.index("Zulkifli") and "Ustadz Aaa Awal" not in o
 
 
+def _jalan_skrip(d, nama):
+    r = subprocess.run([sys.executable, str(d / "scripts" / nama)], capture_output=True, text=True, cwd=d)
+    return r.returncode, r.stdout + r.stderr
+
+
+@uji("Q3: semua event kedaluwarsa -> prune dan build lolos (daftar kosong, blok sah, idempoten); Tambah ke daftar kosong berhasil")
+def _():
+    d = siapkan(); f = d / "index.html"
+    html = f.read_text(encoding="utf-8")
+    f.write_text(re.sub(r'(\{id:\d+,date:")\d{4}-\d\d-\d\d(")', r'\g<1>2020-01-01\2', html), encoding="utf-8")
+    rc, out = _jalan_skrip(d, "prune.py")
+    assert rc == 0 and "dikosongkan" in out and events(d) == [], (rc, out)
+    kosong = f.read_text(encoding="utf-8")
+    assert build.punya_array_events(kosong)
+    rc, out = _jalan_skrip(d, "build.py")
+    assert rc == 0, out
+    kosong = f.read_text(encoding="utf-8")
+    assert "Belum ada kajian mendatang" in kosong.split("<!--STATIC_EVENTS_START-->")[1].split("<!--STATIC_EVENTS_END-->")[0]
+    ld = kosong.split("<!--LD_JSON_START-->")[1].split("<!--LD_JSON_END-->")[0]
+    assert json.loads(re.search(r"<script[^>]*>(.*)</script>", ld, re.S).group(1))["itemListElement"] == []
+    if shutil.which("node"):
+        (d / "c.js").write_text(re.search(r"<script>(.*?)</script>", kosong, re.S).group(1), encoding="utf-8")
+        assert subprocess.run(["node", "--check", str(d / "c.js")], capture_output=True).returncode == 0
+    for sc in ("prune.py", "build.py"):  # idempoten
+        assert _jalan_skrip(d, sc)[0] == 0
+    assert f.read_text(encoding="utf-8") == kosong
+    # Tambah ke daftar kosong (sisipkan di array tanpa baris event), lalu prune dan build tetap lolos
+    h = jalankan(d, [iss(1100, form(Judul="Pulih dari kosong", Tanggal="10 Okt 2026"))])
+    assert h[0]["status"] == "ok" and [e["title"] for e in events(d)] == ["Pulih dari kosong"], h[0]["komentar"]
+    assert all(_jalan_skrip(d, sc)[0] == 0 for sc in ("prune.py", "build.py"))
+    assert core.sisipkan(kosong, ["  {id:1,date:\"2026-10-10\"},"]).count("{id:1,") == 1
+
+
+@uji("Q3: pengaman tetap berlaku bila parser/struktur rusak (nol baris sebelum prune, atau penanda array hilang)")
+def _():
+    html = (siapkan() / "index.html").read_text(encoding="utf-8")
+    lampau = re.sub(r'(\{id:\d+,date:")\d{4}-\d\d-\d\d(")', r'\g<1>2020-01-01\2', html)
+    tanpa_baris = "\n".join(l for l in html.split("\n") if not re.match(r"^ *\{id:\d+,date:", l))
+    format_berubah = re.sub(r"\{id:(\d+),date:", r"{ID:\1,date:", html)  # baris ada tetapi tidak dikenali parser
+    kasus = {
+        "format baris berubah (badan array tidak kosong, nol terdeteksi)": (format_berubah, "prune.py", "tidak ada event terdeteksi padahal"),
+        "build: format baris berubah": (format_berubah, "build.py", "parser rusak"),
+        "baris ada, semua lewat, penanda array hilang": (lampau.replace("const allEvents=[", "const dataEvents=[", 1), "prune.py", "tidak utuh"),
+        "penutup array hilang": (lampau.replace("\n];\n", "\n]\n", 1), "prune.py", "tidak utuh"),
+        "build: tanpa event dan tanpa array": (tanpa_baris.replace("const allEvents=[", "const dataEvents=[", 1), "build.py", "parser rusak"),
+    }
+    d0 = siapkan()  # daftar benar-benar kosong (array utuh): sah dan idempoten, tanpa error
+    (d0 / "index.html").write_text(tanpa_baris, encoding="utf-8")
+    for _ in range(2):
+        assert all(_jalan_skrip(d0, sc)[0] == 0 for sc in ("prune.py", "build.py"))
+    for nama, (isi, skrip, pesan) in kasus.items():
+        d = siapkan()
+        (d / "index.html").write_text(isi, encoding="utf-8")
+        rc, out = _jalan_skrip(d, skrip)
+        assert rc == 1 and pesan in out, (nama, rc, out)
+        assert (d / "index.html").read_text(encoding="utf-8") == isi  # tidak menulis apa pun
+    import prune as prune_mod
+    assert prune_mod.ARRAY_AWAL.pattern == build.ARRAY_AWAL.pattern and prune_mod.ARRAY_AKHIR.pattern == build.ARRAY_AKHIR.pattern
+
+
+@uji("uji ber-PyYAML dilewati (bukan gagal) bila PyYAML tidak terpasang")
+def _():
+    asli = sys.modules.get("yaml")
+    sys.modules["yaml"] = None  # import yaml -> ImportError
+    try:
+        try:
+            butuh_yaml()
+        except Dilewati:
+            pass
+        else:
+            raise AssertionError("seharusnya Dilewati")
+    finally:
+        if asli is None:
+            sys.modules.pop("yaml", None)
+        else:
+            sys.modules["yaml"] = asli
+
+
 @uji("pecah_body: heading, _No response_, centang")
 def _():
     f = ad.pecah_body("### Tanggal\n\n2026-10-10\n\n### Jam\n\n_No response_\n\n### Kajian rutin\n\n- [X] Kajian rutin atau berkala\n")
@@ -1086,5 +1184,5 @@ if __name__ == "__main__":
             gagal += 1
             import traceback
             print("GAGAL:", fn.__name__); traceback.print_exc()
-    print(f"\n{len(LULUS)} lulus, {gagal} gagal")
+    print(f"\n{len(LULUS)} lulus, {gagal} gagal" + (f", {len(DILEWATI)} dilewati" if DILEWATI else ""))
     sys.exit(1 if gagal else 0)

@@ -80,15 +80,12 @@ def simulasi_terbit(html, hari_ini):
     Mencegah satu Issue membuat prune.py/build.py gagal di langkah workflow berikutnya (yang menjatuhkan semua run)."""
     hari = hari_ini.isoformat()
     cocok = [m for m in (prune.EVENT_RX.match(l) for l in html.splitlines()) if m]
-    if not cocok:
-        return "prune tidak mengenali satu pun baris event"
-    if not any(m.group(2) >= hari for m in cocok):
-        return "tidak ada kajian mendatang (prune dan build menolak daftar tanpa kajian mendatang)"
+    if not cocok and not build.array_events_kosong(html):
+        return "prune tidak mengenali baris event, padahal allEvents tidak kosong (format berubah?) atau strukturnya hilang"
+    # Daftar kosong / tanpa kajian mendatang sah (prune dan build kini menerimanya bila struktur array utuh).
     try:
         events = build.parse_events(html)
         upcoming = sorted((e for e in events if e["date"] >= hari), key=lambda e: (e["date"], e["timeOrder"]))
-        if not upcoming:
-            return "build tidak menemukan kajian mendatang"
         keluar = build.replace_between(html, "<!--STATIC_EVENTS_START-->", "<!--STATIC_EVENTS_END-->",
                                        build.build_static_html(upcoming))
         keluar = build.replace_between(keluar, "<!--LD_JSON_START-->", "<!--LD_JSON_END-->",
@@ -320,8 +317,9 @@ def main(argv=None):
                                 if e["id"] not in set(pk["ids"]) and e["date"] >= hari_ini.isoformat()]
                         if not sisa:
                             raise core.InputError(
-                                "Penghapusan ini menyisakan 0 kajian mendatang. Situs tidak boleh kosong "
-                                "(prune dan build menolak daftar kosong). Kurangi Target, atau tambahkan kajian lain dulu.")
+                                "Penghapusan ini menyisakan 0 kajian mendatang. Situs tidak boleh dikosongkan lewat formulir "
+                                "(kebijakan: kemungkinan Target keliru; daftar kosong hanya terjadi otomatis saat semua kajian "
+                                "kedaluwarsa). Kurangi Target, atau tambahkan kajian lain dulu.")
                         periksa_kunci(pk["konfirmasi"], "hapus", len(dihapus), sidik_pratinjau("hapus", dihapus),
                                       gagal_lama[0].get("pratinjau") if gagal_lama else None,
                                       lambda cat: pratinjau_hapus(dihapus, cat))

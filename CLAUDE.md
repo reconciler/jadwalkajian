@@ -209,6 +209,9 @@ Bulan singkat: Jan Feb Mar Apr Mei Jun Jul Agu Sep Okt Nov Des
 6. **Jangan ubah `index.html` dengan cara yang merusak regex `scripts/prune.py`:**
    - baris event tetap diawali `{id:<angka>,date:"YYYY-MM-DD"` — satu event satu baris
    - string `Diperbarui:` di footer harus tetap ada
+   - `const allEvents=[` dan penutupnya `];` harus tetap masing-masing di barisnya sendiri. Daftar event boleh
+     **kosong** (semua kedaluwarsa; Q3, 3 Okt 2026) hanya bila penanda itu utuh dan badan array benar-benar
+     kosong; badan berisi baris yang tidak dikenali parser tetap membuat `prune.py`/`build.py` gagal
 7. **Data baru ditambahkan, bukan ditahan.** Lokasi, masjid, ustadz, atau area
    yang belum ada di dashboard tetap dimasukkan (aturan Amal, 2 Okt 2026).
    Laporkan hanya pilihan yang tidak tertulis di flyer (mis. nama area baru).

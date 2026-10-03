@@ -28,6 +28,27 @@ FILE = Path(__file__).resolve().parent.parent / "index.html"
 TZ = ZoneInfo("Asia/Jakarta")
 SITE_URL = "https://reconciler.github.io/jadwalkajian/"
 
+# Penanda struktur array event di index.html (sama dengan prune.py). Daftar kosong hanya sah bila keduanya ada.
+ARRAY_AWAL = re.compile(r"^const allEvents=\[\s*$", re.M)
+ARRAY_AKHIR = re.compile(r"^\];\s*$", re.M)
+
+
+def punya_array_events(html):
+    """True bila `const allEvents=[` ada dan disusul penutup `];` (struktur utuh, walau tanpa baris event)."""
+    m = ARRAY_AWAL.search(html)
+    return bool(m and ARRAY_AKHIR.search(html, m.end()))
+
+
+def array_events_kosong(html):
+    """True bila struktur array utuh DAN badannya hanya spasi/baris kosong (daftar benar-benar kosong).
+    Badan berisi baris yang tidak dikenali parser = format berubah/parser rusak, BUKAN daftar kosong."""
+    m = ARRAY_AWAL.search(html)
+    if not m:
+        return False
+    a = ARRAY_AKHIR.search(html, m.end())
+    return bool(a and html[m.end():a.start()].strip() == "")
+
+
 EVENT_LINE_RX = re.compile(r'^\s*\{id:\d+,date:"\d{4}-\d{2}-\d{2}".*\},\s*$')
 KNOWN_KEYS = ["id", "date", "dayShort", "timeLabel", "timeOrder", "title",
               "ustadz", "masjid", "area", "address", "audience", "note", "isRutin"]
@@ -98,6 +119,8 @@ def render_static_card(ev):
 
 
 def build_static_html(events):
+    if not events:
+        return '<p class="empty">Belum ada kajian mendatang.</p>'
     return "".join(render_static_card(e) for e in events)
 
 
@@ -151,8 +174,12 @@ def main():
     html = FILE.read_text(encoding="utf-8")
     events = parse_events(html)
     if not events:
-        print("ERROR: tidak ada event terdeteksi — parser rusak?", file=sys.stderr)
-        return 1
+        # Daftar kosong sah (semua event kedaluwarsa) HANYA bila struktur array utuh; selain itu parser/berkas rusak.
+        if not array_events_kosong(html):
+            print("ERROR: tidak ada event terdeteksi padahal allEvents tidak kosong (atau strukturnya hilang) — parser rusak?",
+                  file=sys.stderr)
+            return 1
+        print("Catatan: daftar event kosong (semua kedaluwarsa); membuat blok statis dan JSON-LD kosong.")
 
     today = today_iso()
     upcoming = sorted(
