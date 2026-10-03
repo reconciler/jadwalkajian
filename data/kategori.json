@@ -18,6 +18,12 @@
       "tampil": "Baitusyaakiriin Depok"
     },
     {
+      "nama": "belum ditentukan (Online)",
+      "kota": "Online",
+      "alamat": "Online (belum ditentukan)",
+      "tampil": "belum ditentukan (Online)"
+    },
+    {
       "nama": "Kupinami Cafe",
       "kota": "Jakarta",
       "alamat": "Jl. Bina Marga No. 44, Jakarta Timur",
@@ -665,5 +671,16 @@
       "alias": []
     }
   ],
-  "diproses": []
+  "diproses": [
+    {
+      "issue": 2,
+      "id": [
+        747,
+        748,
+        749,
+        750
+      ]
+    }
+  ],
+  "gagal": []
 }
