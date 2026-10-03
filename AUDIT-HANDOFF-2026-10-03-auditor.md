@@ -236,3 +236,47 @@ Cakupan sumber: transkrip sesi Auditor (79 pesan Amal), seluruh handoff dan `CLA
 1. Butir L1-L12 mana yang masuk `CLAUDE.md` (saran Auditor: L1-L7 dan L10 sebagai aturan; L8, L9, L11, L12 sebagai catatan singkat).
 2. Perbaikan 10.3 (dokumen saja, tidak mengubah fungsi) boleh dikerjakan Auditor sekarang.
 3. Bentuk penulisan: bagian "Aturan lintas-repo" bersama di ketiga `CLAUDE.md`, dengan teks identik (menjaga simetri L10).
+
+## 11. Perubahan Auditor 3 Okt 2026 (atas keputusan Amal: "eksekusi semua usulanmu")
+
+- `CLAUDE.md` mendapat bagian **"Aturan lintas-repo"** (13 butir; teks **identik** di ketiga repo, diverifikasi dengan diff).
+  Baca bagian itu sebelum bekerja; ia berlaku sebagai aturan tetap.
+- `CLAUDE.md` jadwalkajian: risiko dropdown yang diterima Amal dicatat di bagian formulir Issue.
+
+### 11.1 Butir untuk PIC jadwalkajian
+- **Butir A (dokumen, boleh langsung):** tugas ekstraksi di 11.2.
+- **Butir B (menunggu "lanjut" Amal di chat PIC, menyentuh `deploy.yml`):** samakan uji 404 pasca-terbit dengan bikin-cv-taaruf:
+  periksa **semua** `AUDIT-HANDOFF-*.md` (dan `COORDINATION-NOTE-*.md` bila ada) 404, bukan satu nama tetap pada daftar `INTERNAL`.
+  Alasan: simetri (aturan lintas-repo butir 9) dan handoff baru otomatis terjaga. Jangan melonggarkan uji lain.
+- **Butir C (uji, boleh langsung):** jalankan axe-core di Chromium terhadap beranda (terang/gelap bila ada, lebar 320 dan 430)
+  sebagai garis dasar (aturan lintas-repo butir 13). Laporkan temuannya. Perbaikan yang hanya menambah atribut aksesibilitas
+  tanpa efek visual boleh langsung dan dilaporkan; perbaikan yang mengubah tampilan/fungsi menunggu Amal. Bila axe-core tidak
+  bisa dipasang di sesi kerja (jaringan), katakan itu.
+
+### 11.2. Tugas: ekstrak aturan berguna dari obrolan Anda dengan Amal
+
+Amal meminta tiap PIC mengekstrak aturan dan keputusan yang berguna dari obrolannya dengan Anda dan belum tertulis
+formal. Auditor sudah melakukannya untuk sesi Auditor dan dokumen di git; **chat langsung Amal dengan Anda tidak
+terjangkau dari sesi Auditor**, jadi hanya Anda yang bisa melakukannya.
+
+**Sumber:** seluruh riwayat percakapan sesi Anda dengan Amal (termasuk bagian sebelum pemadatan konteks), pesan
+komit, dan handoff Anda.
+
+**Yang dicari:** keputusan, aturan, atau preferensi Amal yang **berlaku ke depan** dan belum ada di `CLAUDE.md`
+repo ini dan `docs/`. Abaikan keputusan sekali pakai yang sudah selesai dan status pekerjaan.
+
+**Format tiap butir** (tabel di handoff Anda): aturan (satu kalimat) | sumber (kutipan pendek Amal + tanggal, atau
+"praktik" bila belum diputuskan Amal) | cakupan (repo ini saja atau lintas-repo) | status (sudah tertulis di mana,
+atau belum) | usulan teks (maksimal dua baris).
+
+**Cara memproses:**
+- Butir yang **keputusan eksplisit Amal dan khusus repo ini**: tambahkan langsung ke `CLAUDE.md` repo ini, ringkas
+  (rincian panjang ke `docs/` bila repo punya), dan catat di handoff Anda.
+- Butir **lintas-repo** atau yang hanya **praktik** (belum diputuskan Amal): jangan ditulis ke `CLAUDE.md`; cukup
+  didaftar di handoff. Auditor yang menyatukan supaya bagian "Aturan lintas-repo" tetap identik di ketiga repo, lalu
+  Amal memutuskan.
+- Jangan mengubah kode atau workflow untuk tugas ini. Jaga `CLAUDE.md` tetap ringkas (tambahan sekitar 30 baris
+  paling banyak).
+- **Jangan menyalin data pribadi atau sensitif** (isi CV, kontak, kredensial, token); kutip seperlunya.
+
+**Lapor:** commit ke repo (jalur utama). Beri tahu Auditor lewat pesan hanya sebagai tambahan.

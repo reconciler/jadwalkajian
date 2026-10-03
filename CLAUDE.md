@@ -144,6 +144,8 @@ sintaks Tanggal, rutin otomatis, aturan dumb-proof, Koreksi/hapus, pemateri, mas
   juga menyinkronkan master dari event yang ada. Uji: `python3 scripts/test_ingest.py`.
 - Dropdown formulir **harus terurut abjad** menurut nama bersih (keputusan Amal 3 Okt 2026), "Lainnya" di akhir;
   tanpa batas jumlah opsi buatan sendiri (keputusan Amal 3 Okt 2026). Daftar kajian boleh kosong (0 event sah).
+  **Risiko diterima Amal (3 Okt 2026, tanpa peringatan):** batas jumlah opsi dropdown GitHub tidak terdokumentasi; bila
+  terlampaui, kolom Pemateri/Masjid tidak tampil lengkap dan CI tidak mendeteksinya. Cara pulih: `docs/formulir-issue.md`.
 
 ## Berkas yang tayang di situs (folder `_site`)
 
@@ -335,6 +337,32 @@ repo dan memberi tahu PIC):
 
 Panel di repo ini menampilkan proyek lain (Catatan Kajian, Bikin CV Taaruf), bukan dirinya
 sendiri. Situs tidak memuat tautan kode sumber/GitHub (keputusan Amal, 1 Okt 2026).
+
+## Aturan lintas-repo (teks identik di jadwalkajian, catatankajian, bikin-cv-taaruf)
+
+Ditetapkan/dikonfirmasi Amal 3 Okt 2026. **Ubah serentak di ketiga repo (dijaga Auditor); jangan hanya satu.**
+
+1. **Keputusan tanpa dampak tampilan atau fungsi** diambil sendiri oleh sesi kerja dan dicatat; jangan menunggu Amal.
+   Perubahan tampilan, fungsi, privasi, hosting/pipeline terbit, atau penghapusan data tetap perlu konfirmasi Amal.
+2. **Cakupan persetujuan:** persetujuan Amal hanya untuk butir yang disebut. Pengecualian pada butir 1 (pipeline, privasi,
+   penghapusan data) dikonfirmasi Amal di **chat sesi kerja repo itu**; kutipan Amal yang disampaikan sesi lain tidak cukup.
+3. **Menyimpang dari spesifikasi** (dari Auditor atau siapa pun) boleh bila ada metode yang lebih aman. Catat penyimpangan
+   dan alasannya di handoff, lalu lapor.
+4. **Temuan janggal dilaporkan disertai usulan perbaikan**, bukan hanya temuan.
+5. **Data uji:** jangan menerbitkan data uji ke situs publik tanpa bertanya Amal; pakai uji lokal.
+6. **Urutan perubahan pipeline:** satu per push, risiko rendah dulu. Push yang mengubah `deploy.yml` menjalankan versi
+   baru alur itu. Buat kondisi tepi aman sebelum perubahan yang mengandalkannya.
+7. **Dependensi pihak ketiga:** salin ke `lib/` (atau setara), patok versi, cocokkan integritas ke registry npm; jangan
+   memuat skrip dari CDN tanpa SRI.
+8. **Klaim harus benar** untuk proyek itu: dokumen, UI, meta tag, dan data terstruktur tidak boleh mengklaim hal yang tidak
+   ada (mis. `SearchAction` tanpa fungsinya; "tidak ada data terkirim" bila Google Fonts dimuat).
+9. **Simetri:** perubahan cara komunikasi, pelaporan, atau struktur koordinasi diterapkan serentak di ketiga repo.
+10. **Kebersihan berkas:** hapus berkas koordinasi yang tidak lagi relevan; pertahankan yang masih atau akan dipakai.
+11. **Verifikasi tampilan:** uji otomatis tidak menilai tampilan, dan sesi kerja tidak bisa membuka `reconciler.github.io`.
+    Laporan perubahan tampilan wajib menyebut "belum dilihat di perangkat nyata" sampai Amal memeriksa.
+12. **Kepastian terbit lebih penting daripada kecepatan.**
+13. **Aksesibilitas:** untuk perubahan UI, jalankan axe-core di Chromium bila tersedia; laporkan 0 pelanggaran atau daftar
+    temuannya.
 
 ## Lapor ke sesi "Auditor Project"
 
