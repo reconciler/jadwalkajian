@@ -278,16 +278,6 @@ benar — commit hasilnya sekalian. Urutan penting: jalankan `build.py`
 **setelah** `prune.py`, supaya HTML statis tidak memuat event yang baru saja
 dihapus.
 
-## Preferensi Amal saat melapor
-
-- Bahasa Indonesia, nada faktual dan formal. Tanpa emoji. Jangan memperhalus masalah.
-- Gunakan poin dan tabel, bukan paragraf panjang.
-- **Selalu tandai** mana yang tervalidasi dari sumber dan mana yang kesimpulan sendiri.
-- Kalau ada yang gagal atau keliru, sebut terus terang — termasuk kekeliruan sendiri
-  di giliran sebelumnya.
-- Jangan mengarang angka sebagai pengisi tabel. Kalau tidak ada datanya, katakan
-  tidak ada datanya.
-
 ## Zona waktu
 
 Semua tanggal dan jam dalam WIB (Asia/Jakarta, UTC+7). `prune.py` memakai
@@ -343,7 +333,7 @@ sendiri. Situs tidak memuat tautan kode sumber/GitHub (keputusan Amal, 1 Okt 202
 
 ## Aturan lintas-repo (teks identik di jadwalkajian, catatankajian, bikin-cv-taaruf)
 
-Ditetapkan/dikonfirmasi Amal 3 Okt 2026. **Ubah serentak di ketiga repo (dijaga Auditor); jangan hanya satu.**
+Ditetapkan/dikonfirmasi Amal 3 Okt 2026 (butir 14-19: 5 Okt 2026). **Ubah serentak di ketiga repo (dijaga Auditor); jangan hanya satu.**
 
 1. **Keputusan tanpa dampak tampilan atau fungsi** diambil sendiri oleh sesi kerja dan dicatat; jangan menunggu Amal.
    Perubahan tampilan, fungsi, privasi, hosting/pipeline terbit, atau penghapusan data tetap perlu konfirmasi Amal.
@@ -366,6 +356,29 @@ Ditetapkan/dikonfirmasi Amal 3 Okt 2026. **Ubah serentak di ketiga repo (dijaga 
 12. **Kepastian terbit lebih penting daripada kecepatan.**
 13. **Aksesibilitas:** untuk perubahan UI, jalankan axe-core di Chromium bila tersedia; laporkan 0 pelanggaran atau daftar
     temuannya.
+14. **Konteks kurang:** baca riwayat chat, handoff, dan git dulu; baru sumber eksternal.
+15. **Status ragu** (termasuk klaim "sukses" dari jalur otomatis): verifikasi manual sendiri, lalu konfirmasi ke Amal dan
+    Auditor lewat chat + git.
+16. **Batas buatan:** jangan pasang tanpa dasar platform yang terverifikasi (kecuali keamanan); catat risikonya.
+17. **Pembagian kerja:** kerjakan sendiri yang bisa; minta Amal hanya untuk akses yang sesi tak punya. Settings Pages hanya
+    Amal yang ubah: PIC siapkan workflow + langkahnya, dan beri jalur kembali satu langkah sebelum mengalihkan pipeline.
+18. **Repo publik:** jangan commit data pribadi (isi CV, kontak, kredensial), termasuk di handoff dan kutipan chat.
+19. **Praktik uji** (bukan aturan keras): uji deterministik (data beku, jam terkunci); simulasikan skrip workflow lokal
+    (jalur sukses + gagal) sebelum push; UI: screenshot 320/375/430 px, font asli, jaringan luar diblokir.
+
+## Preferensi melapor (teks identik di jadwalkajian, catatankajian, bikin-cv-taaruf)
+
+Berlaku untuk laporan, handoff, dan chat. Ditetapkan Amal 5 Okt 2026.
+
+- **Bahasa:** Indonesia, campur English untuk istilah yang populer (mis. deploy, commit, workflow). **Concise, simpel,
+  spesifik**: hemat token dan mudah dipahami Amal.
+- Faktual dan formal, tanpa emoji; pakai poin/tabel, bukan paragraf panjang. Jangan memperhalus masalah.
+- Tandai mana yang **tervalidasi** (sumber) vs **kesimpulan sendiri**. Jangan mengarang hasil atau angka; bila tak ada
+  data, atau alat/akses tak tersedia, katakan.
+- Gagal atau keliru (termasuk kesalahan sendiri) disebut terus terang.
+- Penjelasan "awam": analogi + tabel kecil, tanpa jargon.
+- Akhiri pekerjaan besar dengan "yang perlu diketahui": belum terbukti, perubahan perilaku, kejadian otomatis, keputusan
+  yang menunggu.
 
 ## Lapor ke sesi "Auditor Project"
 

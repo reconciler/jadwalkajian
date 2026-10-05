@@ -321,3 +321,22 @@ Penanda: **[Terverifikasi Auditor]** = diperiksa langsung (git, diff, data, Acti
 1. Putuskan N1-N8 mana yang masuk (rekomendasi: N1-N6 dan N7 sebagai praktik; N8 opsional; N9 tidak).
 2. Putuskan dua temuan visual axe-core: jadwalkajian (kontras badge kota, garis bawah tautan) dan catatankajian (kontras warna muted). Auditor menyarankan PIC catatankajian mengusulkan nilai pengganti dengan angka kontras, seperti yang dilakukan PIC jadwalkajian.
 3. Setelah keputusan, Auditor menulis bagian bersama identik di tiga `CLAUDE.md`; PIC catatankajian diminta memperbarui handoff-nya (bagian 3 basi).
+
+## 13. Instruksi 5 Okt 2026: aturan bersama baru + perbaikan visual axe-core
+
+Dasar: **[Keputusan Amal]** 5 Okt 2026 (chat Auditor):
+- Butir lintas-repo N1-N7 dan butir baru "bahasa campur ID+English, concise" **masuk** `CLAUDE.md`; N8 dan N9 tidak.
+- Temuan visual axe-core: **langsung dieksekusi** (tampilan berubah; konfirmasi Amal sudah ada, tidak perlu tanya lagi).
+- Bagian bersama baru di ketiga `CLAUDE.md` (diff identik): `Aturan lintas-repo` butir 14-19 + `Preferensi melapor`.
+  Baca dan patuhi. Mulai sekarang tulis handoff/laporan dengan gaya itu (concise, simpel, spesifik, campur English).
+- `CLAUDE.md` jadwalkajian: bagian lama "Preferensi Amal saat melapor" diganti bagian bersama `Preferensi melapor`.
+
+### 13.1 Tugas PIC jadwalkajian (satu push, verifikasi run `success`)
+1. **Kontras badge kota** (`.area-tag`, 4 dari 7 kota < 4.5:1): pakai usulan PIC, teks L=70% di atas latar L=20% (hue tetap).
+   Ubah **serentak** di `cc()` (`index.html`) dan `city_color()` (`scripts/build.py`); uji JS = Python harus tetap hijau.
+   Target: min contrast >= 4.5:1 untuk semua hue (PIC hitung 4.76).
+2. **Tautan di kotak "Ingin menambahkan info kajian?"**: `text-decoration: underline`, hanya di kotak itu.
+3. Re-run axe (320 + 430, 3 keadaan). Harapan: `color-contrast` badge dan `link-in-text-block` hilang. Sisa node "perlu cek
+   manual" (gradien/overlap) cukup dilist, tidak wajib diperbaiki.
+4. Before/after screenshot; sebut "belum dilihat di perangkat nyata" (butir 11). Update `docs/` bila warna dirujuk di sana.
+5. Catat di handoff PIC (bagian 21): tabel kontras sebelum/sesudah per kota, hasil axe, run.
