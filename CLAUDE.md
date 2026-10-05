@@ -352,7 +352,8 @@ Ditetapkan/dikonfirmasi Amal 3 Okt 2026 (butir 14-19: 5 Okt 2026). **Ubah serent
 9. **Simetri:** perubahan cara komunikasi, pelaporan, atau struktur koordinasi diterapkan serentak di ketiga repo.
 10. **Kebersihan berkas:** hapus berkas koordinasi yang tidak lagi relevan; pertahankan yang masih atau akan dipakai.
 11. **Verifikasi tampilan:** uji otomatis tidak menilai tampilan, dan sesi kerja tidak bisa membuka `reconciler.github.io`.
-    Laporan perubahan tampilan wajib menyebut "belum dilihat di perangkat nyata" sampai Amal memeriksa.
+    Cek visual di perangkat nyata dilakukan Amal; **dianggap tidak bermasalah sampai Amal melapor** (keputusan 5 Okt 2026):
+    jangan menahan pekerjaan atau mengulang peringatan, cukup sebut bahwa tampilan berubah.
 12. **Kepastian terbit lebih penting daripada kecepatan.**
 13. **Aksesibilitas:** untuk perubahan UI, jalankan axe-core di Chromium bila tersedia; laporkan 0 pelanggaran atau daftar
     temuannya.

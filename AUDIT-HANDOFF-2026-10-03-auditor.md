@@ -340,3 +340,9 @@ Dasar: **[Keputusan Amal]** 5 Okt 2026 (chat Auditor):
    manual" (gradien/overlap) cukup dilist, tidak wajib diperbaiki.
 4. Before/after screenshot; sebut "belum dilihat di perangkat nyata" (butir 11). Update `docs/` bila warna dirujuk di sana.
 5. Catat di handoff PIC (bagian 21): tabel kontras sebelum/sesudah per kota, hasil axe, run.
+
+## 14. Keputusan Amal 5 Okt 2026 (chat Auditor): cek visual dianggap OK; `.credit` dieksekusi
+
+- Cek visual di perangkat nyata: **dianggap tidak bermasalah sampai Amal melapor** (aturan lintas-repo butir 11 diperbarui di 3 repo, diff identik). Tidak perlu lagi menulis "belum dilihat di perangkat nyata" sebagai blocker.
+- **Tugas PIC jadwalkajian:** `.credit{color:#6a7e98}` (4.72:1, usulan PIC bagian 21; persetujuan Amal ada). Re-run axe (320 + 430): harapan `color-contrast` `.credit` hilang. Satu push, verifikasi run `success`, catat singkat di handoff (bagian 22). Sisa node "perlu cek manual" tetap hanya di-list.
+- Rekap catatankajian: tidak diubah (final). Tidak ada tugas lain.
