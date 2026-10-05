@@ -63,7 +63,7 @@ def city_color(name):
         x ^= byte
         x = (x * 16777619) & 0xFFFFFFFF
     hue = x % 360
-    return {"accent": f"hsl({hue},58%,62%)", "badge": f"hsl({hue},36%,25%)"}
+    return {"accent": f"hsl({hue},58%,70%)", "badge": f"hsl({hue},36%,20%)"}
 
 def esc(s):
     return (str(s).replace("&", "&amp;").replace("<", "&lt;")

@@ -879,6 +879,40 @@ console.log(ok?'OK':'GAGAL');
     assert r.stdout.strip() == "OK", (r.stdout, r.stderr)
 
 
+@uji("Warna kota: cc() di index.html = city_color() di build.py, dan kontras teks/latar badge >= 4,5:1 untuk 360 hue")
+def _():
+    html = (REPO / "index.html").read_text(encoding="utf-8")
+    m = re.search(r"function cc\(a\)\{.*?\}\n", html)
+    assert m, "cc() tidak ditemukan"
+    nama = ["Depok", "Jakarta", "Bandung", "Online", "Tangerang Selatan", "Yogyakarta", "Kota \u00c9", "x", "Jakarta Barat"]
+    if not shutil.which("node"):
+        raise Dilewati("node tidak ada")
+    js = "const CK={};\n" + m.group(0) + "\nfor(const n of %s){const c=cc(n);console.log(JSON.stringify([n,c.accent,c.badge,c.dot]));}" % json.dumps(nama)
+    r = subprocess.run(["node", "-e", js], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    for baris in r.stdout.strip().splitlines():
+        n, accent, badge, dot = json.loads(baris)
+        py = build.city_color(n)
+        assert (accent, badge) == (py["accent"], py["badge"]) and dot == accent, (n, accent, badge, py)
+
+    def lin(v):
+        return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+
+    def lum(h, s, l):
+        import colorsys
+        r_, g_, b_ = colorsys.hls_to_rgb(h / 360, l / 100, s / 100)
+        return 0.2126 * lin(r_) + 0.7152 * lin(g_) + 0.0722 * lin(b_)
+
+    rx = re.compile(r"hsl\((\d+),(\d+)%,(\d+)%\)")
+    terendah = 99
+    for nm in nama + [f"Kota{i}" for i in range(400)]:
+        py = build.city_color(nm)
+        t = rx.fullmatch(py["accent"]); b = rx.fullmatch(py["badge"])
+        lt = lum(int(t[1]), int(t[2]), int(t[3])); lb = lum(int(b[1]), int(b[2]), int(b[3]))
+        terendah = min(terendah, (max(lt, lb) + 0.05) / (min(lt, lb) + 0.05))
+    assert terendah >= 4.5, terendah
+
+
 @uji("Q8: judul pengganti/terlalu pendek dan nama baru generik/angka ditolak; nama wajar (termasuk organisasi) diterima")
 def _():
     d = siapkan(); n0 = len(events(d))
