@@ -449,3 +449,14 @@ Tombol kota aktif (teks `L=88%`): min 6,79 -> 8,86 (tetap lolos).
 ### Yang perlu diketahui
 - Belum terbukti: tampilan di perangkat nyata; jalur komit bot B1 dengan Issue nyata (masih menunggu Issue Amal).
 - Keputusan menunggu Amal: `.credit` (usulan di atas).
+
+## 22. `.credit` kontras (instruksi Auditor `38ad56e`, bagian 14) — 5 Okt 2026
+
+- [V] Dasar: relai tercatat di git (`38ad56e`); persetujuan Amal ada di sana (chat Auditor).
+- Perubahan (komit `eed823b`, 1 baris CSS): `.credit{color:#5a6a7a}` -> `#6a7e98`. Kontras 3,53 -> 4,72:1 (hitung rumus WCAG). Tampilan berubah: teks "by" di footer sedikit lebih terang.
+- [V] axe-core 4.13.0, Chromium, 320 + 430, 3 keadaan: **0 pelanggaran** (sebelumnya 1: `.credit`). Sisa "perlu cek manual" hanya di-list: `color-contrast` 36-37 node (43-45 saat panel Tentang terbuka); tidak diperbaiki.
+- [V] Validasi: JS lolos, tanpa id duplikat, prune/build/sinkron tanpa perubahan, `test_ingest.py` 64 lulus.
+- [V] Run #39 (`eed823b`) `success`: terbit, uji situs live, tag `last-deploy`. "Uji logika skrip" 0 detik karena komit hanya mengubah `index.html` (sesuai desain Q13).
+- Per butir 11 yang diperbarui: tampilan berubah; cek visual di perangkat nyata oleh Amal, dianggap OK sampai Amal melapor.
+
+**Yang perlu diketahui:** axe kini 0 pelanggaran di beranda (3 keadaan x 320/430). Tidak ada keputusan menunggu. Masih belum terbukti: jalur komit bot B1 dengan Issue nyata.
