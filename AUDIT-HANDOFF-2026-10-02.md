@@ -406,3 +406,46 @@ Approval diverifikasi PIC di git (komit `d523995`, hanya mengubah berkas Auditor
 - **Perubahan (7 baris tambahan, tidak ada yang dikurangi):** pada langkah "Uji situs live setelah terbit", daftar `INTERNAL` tetap dipertahankan; ditambah semua `AUDIT-HANDOFF-*.md` dan `COORDINATION-NOTE-*.md` yang ada di repo (glob, dihitung tiap run), diurutkan unik, dengan `if` eksplisit (langkah dijalankan `bash -e`) dan jumlah berkas yang diuji dicetak ke log. **Penyimpangan lebih aman dari spesifikasi:** daftar tetap lama tidak dilonggarkan dan nama tetap `AUDIT-HANDOFF-2026-09-30.md` dipertahankan; pola `docs/*.md` sengaja **tidak** ditambahkan (di luar lingkup persetujuan; dapat dibuka bila diinginkan).
 - **Simulasi (server HTTP lokal yang hanya menyajikan 5 berkas situs; skrip lama HEAD dibanding baru):** tanpa kebocoran: kedua lulus, 11 berkas internal diuji; handoff yang sudah ada bocor: lama lulus (tidak terdeteksi), **baru gagal** dengan nama berkas; handoff baru ada di repo tanpa bocor: lulus (tanpa alarm palsu), bocor: **baru gagal**; `COORDINATION-NOTE-*.md` idem; enam berkas dari daftar tetap bocor satu per satu: keduanya gagal (**tidak dilonggarkan**).
 - **Verifikasi di GitHub (data log Actions):** komit `c6ebff4`, run #35 `success`: "Uji logika skrip" (karena `deploy.yml` berubah) `success`, "Terbitkan ke GitHub Pages" dan "Uji situs live setelah terbit" `success` dengan daftar 404 baru, tag `last-deploy` dipindah, langkah komentar `success`. Tidak ada komit bot (tidak ada selisih data). Jumlah berkas internal yang diuji di CI tidak saya baca dari log (hanya status langkah); simulasi lokal mencetak 11.
+
+## 21. Perbaikan visual axe-core (instruksi Auditor `7105581`, bagian 13.1) — 5 Okt 2026
+
+Format baru (butir 14-19 + Preferensi melapor). Penanda: **[V]** = terverifikasi (log/alat), **[S]** = kesimpulan/usulan sendiri.
+
+**Dasar:** [V] relai Auditor tercatat di git (`7105581`); konfirmasi Amal "sudah ada" tercatat di sana (chat Auditor). Perubahan tampilan tidak termasuk pengecualian butir 2 (pipeline/privasi/hapus data), jadi dieksekusi langsung.
+
+### Perubahan (komit `11f4e5c`, satu push ke `main`)
+- `cc()` di `index.html` dan `city_color()` di `scripts/build.py`: teks/accent `L=62%` -> `70%`, latar `L=25%` -> `20%` (hue, saturasi tetap).
+- `.submit-body a`: `text-decoration: underline` (rule `:hover` dihapus karena identik). Hanya kotak "Ingin menambahkan info kajian?".
+- Uji baru di `test_ingest.py`: `cc()` (dijalankan di node) = `city_color()` untuk 9 nama (termasuk Unicode), plus kontras >= 4,5:1 (409 nama). Suite: 64 lulus, 0 gagal.
+- [S] Efek samping: `accent` juga dipakai titik warna filter dan border tombol aktif, jadi ikut sedikit lebih terang (L 62 -> 70). Tidak ada rujukan warna di `docs/`.
+
+### Kontras badge kota (WCAG, dihitung dari rumus; [V] angka "sebelum" cocok dengan axe)
+| Kota | Sebelum | Sesudah |
+|---|---|---|
+| Bandung | 3,73 (gagal) | 5,73 |
+| Bekasi | 4,61 | 6,65 |
+| Bogor | 3,60 (gagal) | 5,51 |
+| Depok | 4,71 | 6,76 |
+| Jakarta | 3,81 (gagal) | 5,82 |
+| Online | 4,69 | 6,77 |
+| Tangerang | 3,04 (gagal) | 4,98 |
+| Se-360 hue | min 2,87; 216 hue gagal | min 4,76; 0 gagal |
+
+Tombol kota aktif (teks `L=88%`): min 6,79 -> 8,86 (tetap lolos).
+
+### axe-core 4.13.0 (Chromium, 320 + 430 px, 3 keadaan: awal, kartu terbuka, panel Tentang; situs tidak punya tema gelap)
+- [V] `color-contrast` pada `.area-tag` (32 node): **hilang**. `link-in-text-block` (2 node): **hilang**. Landmark: sudah 0 sejak `4768063`.
+- [V] **Sisa 1 pelanggaran `color-contrast`: `.credit` ("by" di footer), 3,53:1** (`#5a6a7a` di atas `#070c10`). CSS ini tidak berubah di komit ini, jadi sudah ada sebelumnya. Tidak ada di instruksi, jadi **tidak diperbaiki**.
+- [S] Usulan (butuh konfirmasi Amal, perubahan tampilan): `.credit{color:#6a7e98}` = 4,72:1, sama dengan warna `.update-stamp` yang sudah ada.
+- Perlu cek manual (incomplete, hanya dilist): `color-contrast` 36-37 node (45 saat panel Tentang terbuka); gradien/overlap, tidak diperbaiki.
+
+### Screenshot
+- Before/after full page 320 + 430 px (Chromium, `file://`), dibandingkan visual: tata letak identik; badge Bogor/Jakarta tampak lebih terang; tautan footer bergaris bawah. Stempel footer berubah ke "5 Okt 2026" karena prune ikut jalan (normal).
+- **Belum dilihat di perangkat nyata** (butir 11). Berkas screenshot tidak di-commit (ada di scratchpad sesi).
+
+### Verifikasi terbit
+- [V] Run #38 (komit `11f4e5c`) `success`: "Uji logika skrip", "Terbitkan ke GitHub Pages", "Uji situs live setelah terbit", tag `last-deploy` semua `success`.
+
+### Yang perlu diketahui
+- Belum terbukti: tampilan di perangkat nyata; jalur komit bot B1 dengan Issue nyata (masih menunggu Issue Amal).
+- Keputusan menunggu Amal: `.credit` (usulan di atas).
