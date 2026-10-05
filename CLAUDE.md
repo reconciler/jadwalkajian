@@ -54,8 +54,8 @@ saat validasi lokal sebelum commit (lihat bagian Validasi di bawah), supaya
 
 Meta tag statis (`description`, `og:*`, `twitter:*`, `canonical`) ditulis
 manual sekali di `<head>`, tidak berubah tiap event — tidak perlu diupdate
-rutin. **Belum ada `og:image`** (butuh aset gambar banner asli dari Amal,
-belum dibuat).
+rutin. `og:image` sudah ada: `og-image.png` (2400x1260, dibuat 22 Sep 2026 via Playwright, bukan aset dari Amal;
+tag `og:image`/`twitter:image` di `<head>`). Ganti bila Amal menyediakan banner asli.
 
 `index.html` **wajib** di root dengan nama persis itu — GitHub Pages
 menyajikannya sebagai homepage.
