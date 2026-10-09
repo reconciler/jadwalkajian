@@ -195,6 +195,11 @@
       "alias": []
     },
     {
+      "nama": "Abdullah Askar",
+      "tampil": "Ustadz Abdullah Askar, Lc., M.A.",
+      "alias": []
+    },
+    {
       "nama": "Abdullah Taslim",
       "tampil": "Abdullah Taslim, M.A.",
       "alias": []
@@ -262,6 +267,11 @@
     {
       "nama": "Ali Hasan Bawazier",
       "tampil": "Ustadz Ali Hasan Bawazier",
+      "alias": []
+    },
+    {
+      "nama": "Ali Musri Semjan Putra",
+      "tampil": "Prof. Dr. Ali Musri Semjan Putra, Lc., M.A.",
       "alias": []
     },
     {
@@ -416,6 +426,11 @@
       "alias": []
     },
     {
+      "nama": "Ilham Taufiq Al Makki",
+      "tampil": "Ustadz Ilham Taufiq Al Makki, B.Sh",
+      "alias": []
+    },
+    {
       "nama": "Imamuddin Mukhtar",
       "tampil": "Ustadz Imamuddin Mukhtar, B.Sh., M.SI",
       "alias": []
@@ -438,6 +453,11 @@
     {
       "nama": "Joni Qodariyanto",
       "tampil": "Ustadz Joni Qodariyanto, Lc.",
+      "alias": []
+    },
+    {
+      "nama": "Kak Yogi Kusprayogi",
+      "tampil": "Kak Yogi Kusprayogi, M.Psi., Psikolog",
       "alias": []
     },
     {
@@ -692,5 +712,6 @@
       "aksi": "hapus"
     }
   ],
-  "gagal": []
+  "gagal": [],
+  "id_tertinggi": 0
 }
