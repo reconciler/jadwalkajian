@@ -240,6 +240,11 @@
       "alias": []
     },
     {
+      "nama": "Abu Ihsan Al Atsary",
+      "tampil": "Ustadz Abu Ihsan Al Atsary, MA",
+      "alias": []
+    },
+    {
       "nama": "Abu Jarir Ari Triono",
       "tampil": "Ustadz Dr. Abu Jarir Ari Triono, Lc., M.A.",
       "alias": []
@@ -260,13 +265,28 @@
       "alias": []
     },
     {
+      "nama": "Agus Setiawan",
+      "tampil": "Ustadz Dr. Agus Setiawan, Lc., M.A.",
+      "alias": []
+    },
+    {
       "nama": "Ahmad Ba'mualim",
       "tampil": "Ustadz Dr. Ahmad Ba'mualim, Lc., M.Pd.",
       "alias": []
     },
     {
+      "nama": "Ahmad Faris BQ",
+      "tampil": "Ustadz Ahmad Faris BQ, Lc., M.Si.",
+      "alias": []
+    },
+    {
       "nama": "Ahmad Fathoni",
       "tampil": "Ust. Ahmad Fathoni, M.E.",
+      "alias": []
+    },
+    {
+      "nama": "Ahmad Sudrajat",
+      "tampil": "K.H. Dr. Ahmad Sudrajat, M.A.",
       "alias": []
     },
     {
@@ -356,6 +376,11 @@
     {
       "nama": "Budi Utomo",
       "tampil": "Dr. Budi Utomo, Lc., M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Cecep Rahmat",
+      "tampil": "Ustadz DR. Cecep Rahmat, Lc., M.Ag",
       "alias": []
     },
     {
@@ -563,6 +588,11 @@
       "alias": []
     },
     {
+      "nama": "Mufy Hanif Thalib",
+      "tampil": "Ustadz Mufy Hanif Thalib, Lc., MA",
+      "alias": []
+    },
+    {
       "nama": "Muhammad Ardiansyah",
       "tampil": "Dr. Muhammad Ardiansyah",
       "alias": []
@@ -607,6 +637,11 @@
     {
       "nama": "Mulawarman Hannase",
       "tampil": "Dr. H. Mulawarman Hannase, Lc., M.Hum.",
+      "alias": []
+    },
+    {
+      "nama": "Muslim Arif",
+      "tampil": "Ust. Muslim Arif, Lc",
       "alias": []
     },
     {
@@ -658,6 +693,11 @@
     {
       "nama": "Rahmat Hidayat Syamsurizal",
       "tampil": "Ustadz Rahmat Hidayat Syamsurizal, Lc., MA",
+      "alias": []
+    },
+    {
+      "nama": "Rahmat Ilahi Abu Rido",
+      "tampil": "Ustadz Rahmat Ilahi Abu Rido, M.A., M.Pd.",
       "alias": []
     },
     {
@@ -715,6 +755,11 @@
       "tampil": "Ustadzaat Pengajar Tahsin",
       "alias": [],
       "perempuan": true
+    },
+    {
+      "nama": "Ustd. Ilham Prayogo",
+      "tampil": "Ustd. Ilham Prayogo",
+      "alias": []
     },
     {
       "nama": "Yovin Abu Hammam",
