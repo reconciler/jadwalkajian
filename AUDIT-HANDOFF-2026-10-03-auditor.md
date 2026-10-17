@@ -346,3 +346,53 @@ Dasar: **[Keputusan Amal]** 5 Okt 2026 (chat Auditor):
 - Cek visual di perangkat nyata: **dianggap tidak bermasalah sampai Amal melapor** (aturan lintas-repo butir 11 diperbarui di 3 repo, diff identik). Tidak perlu lagi menulis "belum dilihat di perangkat nyata" sebagai blocker.
 - **Tugas PIC jadwalkajian:** `.credit{color:#6a7e98}` (4.72:1, usulan PIC bagian 21; persetujuan Amal ada). Re-run axe (320 + 430): harapan `color-contrast` `.credit` hilang. Satu push, verifikasi run `success`, catat singkat di handoff (bagian 22). Sisa node "perlu cek manual" tetap hanya di-list.
 - Rekap catatankajian: tidak diubah (final). Tidak ada tugas lain.
+
+## 15. Pengukuran 17 Okt 2026 dan keputusan Amal: opsi A (pertahankan, bekukan)
+
+Dasar: **[Keputusan Amal]** 17 Okt 2026 (chat Auditor): "Oke jalankan opsi A", setelah laporan pengukuran (usulan efisiensi no. 2).
+
+### 15.1 Hasil pengukuran (Auditor, 3-17 Okt; terverifikasi dari git dan Actions)
+
+| Metrik | Hasil |
+|---|---|
+| Issue nyata (Tambah, Koreksi/hapus) | 0 |
+| Issue uji | #2-#5 (3 Okt), semua closed |
+| Komit "Ingest dari Issue GitHub" | 4, semuanya dari Issue uji (3 Okt 03:26-04:48 UTC) |
+| Komit manual penambah event | 3 (9, 10, 16 Okt): 8 + 20 + 17 = 45 event, id 749-793 |
+| Issue gagal/ditolak (nyata) | 0 |
+| Run gagal | 0 dari 30 (#25-#54: 16 push, 14 cron). Cron tidak melewatkan hari; telat 2j34m-5j43m dari 20:17 UTC (inferensi dari jam run) |
+
+Status paket pipeline:
+- **Terbukti:** Q3 (uji lokal; daftar kosong belum pernah terjadi di produksi), Q13 (langkah uji 9 dtk pada push kode, 1 dtk pada push data, di-skip pada cron), B3, A1 (`sinkron_master.py --cek` exit 0), A2 (uji lulus), B1 pada push tanpa Issue (satu komit bot per run, 3 kali).
+- **Belum terbukti:** B1 dan B2 pada jalur Issue. Empat Issue uji lebih awal daripada Push 4 (`9f39a66`, 06:36 UTC).
+
+### 15.2 Keputusan: opsi A
+- Formulir Tambah **dan** Koreksi/hapus **dipertahankan** sebagai jalur cadangan (satu-satunya jalur tanpa sesi Claude).
+- **Pengembangan dibekukan:** tidak ada kolom, formulir, atau fitur baru. Opsi B (buang Koreksi/hapus) dan C (ubah) tidak dipilih.
+- Perbaikan bug dan pemeliharaan otomatis tetap boleh. Pengukuran ulang **17 Nov 2026** (metrik sama).
+- Pembuktian B1/B2 menunggu Issue nyata pertama dari Amal. Usulan (opsional): satu flyer nyata kecil lewat formulir. Itu data nyata, bukan data uji (butir 5).
+
+### 15.3 Temuan untuk PIC (perbaikan bug, bukan fitur baru)
+Dasar: butir 1 aturan lintas-repo. Tidak ada efek tampilan dan tidak menyentuh `deploy.yml`, jadi **keputusan ada di PIC**
+tanpa menunggu Amal. Bila PIC menilai tidak perlu, catat alasannya di handoff PIC.
+
+**T1. `id_tertinggi` di `data/kategori.json` selalu 0.**
+- Fakta (kode + data `main` 17 Okt): satu-satunya penulis adalah `ingest.py` (sekitar baris 371 dan 395), dan hanya bila run itu
+  mengubah `index.html` atau master. Jalur flyer manual dan run push tanpa Issue tidak pernah menulisnya.
+- Proteksi id sekarang hanya dari id tertinggi di `index.html` (793) dan `diproses` (748). Id nyata sejauh ini aman
+  (749-756, 757-776, 777-793 berurutan, tanpa pemakaian ulang).
+- Risiko (inferensi): daftar kosong, atau event ber-id tertinggi di-prune lebih dulu, lalu id dipakai ulang; `Target #N` di
+  Koreksi/hapus bisa menunjuk event yang salah.
+- Usulan: (a) `ingest.py` menyimpan `id_tertinggi` bila `core.id_tertinggi(awal_html, kat)` lebih besar dari nilai tersimpan,
+  walau tidak ada perubahan lain (tulis hanya bila berubah, supaya tidak ada komit kosong); (b) `sinkron_master.py` ikut
+  memperbaruinya; (c) satu uji: nilai naik setelah event ber-id lebih tinggi muncul tanpa Issue.
+
+**T2. Uji "integritas data nyata" memakai master beku.**
+- Fakta: `scripts/test_ingest.py` (uji dengan label "integritas data nyata", sekitar baris 272-291) membaca
+  `FIX / "kategori.json"` (beku), bukan `data/kategori.json`, lalu membandingkannya dengan `index.html` nyata. Hasil: CI
+  selalu memperingatkan "master belum sinkron (+13 pemateri)" padahal master nyata sudah sinkron.
+- Dampak: peringatan palsu makin besar seiring data tumbuh, lalu diabaikan; master nyata tidak diperiksa.
+- Usulan: ganti ke `REPO / "data" / "kategori.json"`. Tetap hanya peringatan (keputusan Q13).
+
+Tata cara: satu push (mengubah `scripts/**`, jadi CI menjalankan uji), `python3 scripts/test_ingest.py` hijau lebih dulu,
+verifikasi run `success`, catat singkat di handoff PIC.

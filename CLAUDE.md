@@ -148,6 +148,11 @@ sintaks Tanggal, rutin otomatis, aturan dumb-proof, Koreksi/hapus, pemateri, mas
   tanpa batas jumlah opsi buatan sendiri (keputusan Amal 3 Okt 2026). Daftar kajian boleh kosong (0 event sah).
   **Risiko diterima Amal (3 Okt 2026, tanpa peringatan):** batas jumlah opsi dropdown GitHub tidak terdokumentasi; bila
   terlampaui, kolom Pemateri/Masjid tidak tampil lengkap dan CI tidak mendeteksinya. Cara pulih: `docs/formulir-issue.md`.
+- **Status pemakaian (keputusan Amal 17 Okt 2026, opsi A: pertahankan, bekukan).** Pengukuran 3-17 Okt: 0 Issue nyata,
+  45 event semuanya lewat flyer manual. Formulir (Tambah dan Koreksi/hapus) **dipertahankan sebagai cadangan; pengembangan
+  dibekukan**: tidak ada kolom, formulir, atau fitur baru, dan Koreksi/hapus tidak dibuang. Perbaikan bug dan pemeliharaan
+  otomatis (master, templat) tetap boleh. Jalur Issue di GitHub (B1/B2) **belum terbukti** dengan Issue nyata. Ukur ulang
+  17 Nov 2026. Rincian: `AUDIT-HANDOFF-2026-10-03-auditor.md` bagian 15.
 
 ## Berkas yang tayang di situs (folder `_site`)
 
