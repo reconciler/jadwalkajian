@@ -29,7 +29,10 @@ def main(argv=None):
     for w in baru["peringatan"]:
         print(f"PERINGATAN: {w}", file=sys.stderr)
     ringkas = core.ringkas_sinkron(baru)
-    if not ringkas:
+    # T1 (Auditor, AUDIT-HANDOFF-2026-10-03-auditor.md bagian 15.3): ikut memperbarui id_tertinggi, supaya event yang
+    # ditambah lewat jalur flyer manual juga terekam walau tidak ada kota/masjid/pemateri baru untuk disinkronkan.
+    id_naik = core.perbarui_id_tertinggi(kat, html)
+    if not ringkas and not id_naik:
         print("Master sudah sama dengan event di index.html. Tidak ada perubahan.")
         return 0
     for k in baru["kota"]:
@@ -38,11 +41,13 @@ def main(argv=None):
         print(f"  + masjid: {m['tampil']} ({m['kota']})")
     for p in baru["pemateri"]:
         print(f"  + pemateri: {p['tampil']} (nama bersih: {p['nama']})")
+    if id_naik:
+        print(f"  + id_tertinggi: {kat['id_tertinggi']}")
     if a.cek:
-        print(f"Selisih: {ringkas} (tidak ditulis: --cek).")
+        print(f"Selisih: {ringkas or '(tanpa kota/masjid/pemateri baru)'}; id_tertinggi {kat['id_tertinggi']} (tidak ditulis: --cek).")
         return 0
     core.simpan_kategori(f_kat, kat)
-    print(f"data/kategori.json diperbarui: {ringkas}.")
+    print(f"data/kategori.json diperbarui: {ringkas or 'id_tertinggi saja'}.")
     return 0
 
 

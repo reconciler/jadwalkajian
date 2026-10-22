@@ -390,9 +390,12 @@ def main(argv=None):
 
     if html != awal_html:
         f_html.write_text(html, encoding="utf-8")
-    if json.dumps(kat, sort_keys=True, ensure_ascii=False) != awal_kat or html != awal_html:
-        # Simpan id tertinggi yang pernah ada (termasuk event yang baru dihapus) agar id tidak pernah dipakai ulang.
-        kat["id_tertinggi"] = max(core.id_tertinggi(awal_html, kat), core.id_tertinggi(html, kat))
+    # T1 (Auditor, AUDIT-HANDOFF-2026-10-03-auditor.md bagian 15.3): perbarui id_tertinggi pada SETIAP run, ada Issue
+    # atau tidak, memakai `html` SEBELUM prune.py (langkah terpisah sesudahnya) sempat menghapus event kedaluwarsa --
+    # ini satu-satunya titik id event yang akan di-prune masih terlihat. Tanpa ini id_tertinggi tetap 0 pada run tanpa
+    # Issue (push data manual, cron tanpa Issue), dan id bisa dipakai ulang setelah event ber-id tertinggi di-prune.
+    id_naik = core.perbarui_id_tertinggi(kat, html)
+    if json.dumps(kat, sort_keys=True, ensure_ascii=False) != awal_kat or html != awal_html or id_naik:
         core.simpan_kategori(f_kat, kat)
 
     # templat formulir selalu dibuat ulang dari daftar induk (ditulis hanya bila berubah)

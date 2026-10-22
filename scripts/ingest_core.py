@@ -525,6 +525,19 @@ def id_berikutnya(html, kat=None):
     return id_tertinggi(html, kat) + 1
 
 
+def perbarui_id_tertinggi(kat, html):
+    """Set kat['id_tertinggi'] ke id tertinggi yang terlihat (html + kat sendiri + diproses), bila lebih besar dari
+    nilai tersimpan. Dipanggil di SETIAP run (ada Issue atau tidak) dan oleh sinkron_master.py, supaya id event yang
+    ditambah lewat jalur manual (flyer) atau yang akan di-prune tetap terekam -- bukan hanya saat ingest.py memproses
+    Issue (Auditor, AUDIT-HANDOFF-2026-10-03-auditor.md bagian 15.3, T1). Mengembalikan True bila nilainya berubah."""
+    lama = int(kat.get("id_tertinggi") or 0)
+    baru = id_tertinggi(html, kat)
+    if baru > lama:
+        kat["id_tertinggi"] = baru
+        return True
+    return False
+
+
 def sisipkan(html, baris):
     cocokan = [m for m in re.finditer(r"^ *\{id:\d+,date:.*\},\s*$", html, re.M)]
     if cocokan:

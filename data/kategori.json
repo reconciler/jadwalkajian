@@ -757,11 +757,6 @@
       "perempuan": true
     },
     {
-      "nama": "Ustd. Ilham Prayogo",
-      "tampil": "Ustd. Ilham Prayogo",
-      "alias": []
-    },
-    {
       "nama": "Yovin Abu Hammam",
       "tampil": "Ustadz Yovin Abu Hammam",
       "alias": []
@@ -813,5 +808,5 @@
     }
   ],
   "gagal": [],
-  "id_tertinggi": 0
+  "id_tertinggi": 793
 }

@@ -272,7 +272,9 @@ def _():
 @uji("integritas data nyata (HANYA PERINGATAN, tidak memblokir): sinkronisasi master tidak menghasilkan selisih; entri master unik")
 def _():
     # Keputusan Auditor/Amal 3 Okt 2026: data dari flyer manual tidak boleh ditahan; jalankan python3 scripts/sinkron_master.py.
-    k = core.muat_kategori(FIX / "kategori.json")
+    # T2 (Auditor, AUDIT-HANDOFF-2026-10-03-auditor.md bagian 15.3): data/kategori.json NYATA, bukan fixture beku --
+    # dibandingkan dengan fixture, master nyata selalu dilaporkan "belum sinkron" walau sudah sinkron.
+    k = core.muat_kategori(REPO / "data" / "kategori.json")
     html = (REPO / "index.html").read_text(encoding="utf-8")
     ev = build.parse_events(html)
     selisih = core.sinkronkan_master(html, json.loads(json.dumps(k)))
@@ -858,6 +860,28 @@ def _():
     k = kat(d); k.pop("id_tertinggi"); core.simpan_kategori(d / "data" / "kategori.json", k)
     ids4 = seri(d, n=935, judul="Seri empat", Jenis_waktu="Ba'da Ashar")
     assert min(ids4) > max(ids3)
+
+
+@uji("T1 (Auditor, AUDIT-HANDOFF-2026-10-03-auditor.md bagian 15.3): id_tertinggi diperbarui pada run TANPA Issue "
+     "(push data manual, cron) dan oleh sinkron_master.py, bukan hanya saat ingest.py memproses Issue")
+def _():
+    d = siapkan()
+    k = kat(d); k["id_tertinggi"] = 0; core.simpan_kategori(d / "data" / "kategori.json", k)
+    assert jalankan(d, []) == []  # run tanpa Issue (push data manual / cron tanpa Issue baru)
+    assert kat(d)["id_tertinggi"] == max(e["id"] for e in events(d)), "harus terangkat ke id tertinggi di index.html, bukan tetap 0"
+
+    # event baru ditambah lewat jalur flyer manual (bukan Issue), id lebih tinggi lagi
+    i = _event_manual(d, title="Manual id tinggi")
+    assert i > kat(d)["id_tertinggi"]
+    assert jalankan(d, []) == []
+    assert kat(d)["id_tertinggi"] == i
+
+    # sinkron_master.py CLI juga mengangkatnya, lewat jalur yang sama sekali tidak memanggil ingest.py
+    k = kat(d); k["id_tertinggi"] = 0; core.simpan_kategori(d / "data" / "kategori.json", k)
+    r = subprocess.run([sys.executable, str(d / "scripts" / "sinkron_master.py"), "--root", str(d), "--cek"], capture_output=True, text=True)
+    assert r.returncode == 0 and kat(d)["id_tertinggi"] == 0, r.stdout  # --cek tidak menulis
+    r = subprocess.run([sys.executable, str(d / "scripts" / "sinkron_master.py"), "--root", str(d)], capture_output=True, text=True)
+    assert r.returncode == 0 and kat(d)["id_tertinggi"] == i, r.stdout
 
 
 @uji("Q7: jse() mengubah nama apa pun menjadi literal JS yang bernilai sama setelah entitas atribut HTML didekode")
