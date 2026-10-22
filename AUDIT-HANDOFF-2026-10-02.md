@@ -460,3 +460,29 @@ Tombol kota aktif (teks `L=88%`): min 6,79 -> 8,86 (tetap lolos).
 - Per butir 11 yang diperbarui: tampilan berubah; cek visual di perangkat nyata oleh Amal, dianggap OK sampai Amal melapor.
 
 **Yang perlu diketahui:** axe kini 0 pelanggaran di beranda (3 keadaan x 320/430). Tidak ada keputusan menunggu. Masih belum terbukti: jalur komit bot B1 dengan Issue nyata.
+
+## 23. Proyek keempat Kenali Calon: Gelombang 1-2 (instruksi Auditor `c041941`) — 22 Okt 2026
+
+Dasar: [V] relai Auditor tercatat di git (`c041941`, `AUDIT-HANDOFF-2026-10-22-auditor.md`); persetujuan Amal untuk tautan tampilan sudah ada di sana. Gelombang 3 (penjaga aset `deploy.yml`) **[DITAHAN]**, menunggu konfirmasi Amal di chat PIC — belum dikerjakan.
+
+### Gelombang 1: tautan Kenali Calon (komit `e173c0f`)
+- `index.html` panel Tentang: tambah `<a href="https://reconciler.github.io/kenalicalon/" ...>Kenali Calon</a>` setelah Bikin CV Taaruf.
+- [V] axe-core 4.13.0, 320+430 px, panel tertutup/terbuka: **0 pelanggaran**.
+- [V] Tinggi `.header` (panel tertutup) 320/375/430 px: 152,0 / 120,0 / 106,0 — identik sebelum dan sesudah.
+- [V] Panel terbuka di 320 px: `right` 308 px < lebar viewport 320 px, tidak terpotong (sama sebelum/sesudah; panel lebih tinggi 33 px karena satu baris tautan baru, wajar).
+- Tampilan berubah (butir 11); cek di perangkat nyata oleh Amal, tidak menahan laporan ini.
+- [V] Run `success`: terbit, uji situs live, tag `last-deploy`.
+- Catatan: push ini juga menjalankan `prune.py`/`build.py` seperti biasa (24 event 16-18 Okt sudah lewat, terhapus). **Temuan:** cron harian (`schedule`) hanya menjalankan prune/build bila `ingest.py` memproses Issue nyata (tidak ada sejak opsi A); tanpa Issue, event lewat menumpuk di `index.html`/JSON-LD sampai push manual berikutnya — ini konsekuensi B1/Q13 yang sudah diketahui (CLAUDE.md bagian Publikasi), bukan bug baru.
+
+### Gelombang 2: T1 dan T2 (komit `f0bf184`)
+- **T1:** `ingest_core.perbarui_id_tertinggi(kat, html)` baru — dipanggil di `ingest.py` pada SETIAP run (ada Issue atau tidak) dan di `sinkron_master.py`, memakai `html` sebelum `prune.py` (langkah terpisah) menghapus event kedaluwarsa. Uji baru ("T1 ...") membuktikan nilai naik pada run tanpa Issue dan lewat CLI `sinkron_master.py`.
+- **T2:** uji "integritas data nyata" sekarang baca `data/kategori.json` asli, bukan `scripts/fixtures/kategori.json` beku.
+- **[V] Celah nyata ditemukan saat validasi:** `id_tertinggi` di `data/kategori.json` memang 0 (sesuai dugaan T1). Setelah prune menghapus id 758-793 (event 17-18 Okt, ditambah manual 16 Okt, belum pernah lewat `ingest.py`) pada push Gelombang 1 di atas, `id_tertinggi` otomatis hanya terangkat ke 757 (id tertinggi yang **masih ada** di `index.html`) — id 758-793 sempat **tidak** terlindungi (tidak ada di `index.html`, tidak di `kat["id_tertinggi"]`, tidak di `diproses`). Dikoreksi manual ke 793 (id tertinggi yang pernah dipakai, dari riwayat commit `e10cf79`) sebelum commit. Risiko ini sudah berlalu; tidak ada id yang terlanjur dipakai ulang (dicek: tidak ada id duplikat).
+- Id 791 "Ustd. Ilham Prayogo": event sudah ter-prune sebelum sempat diedit tayang (lewat sejak 18 Okt); entri sisa di master dihapus. Tidak ada lagi event bernama itu untuk diperbaiki tampilannya.
+- [V] `python3 scripts/test_ingest.py`: 65 lulus, 0 gagal (naik dari 64, +1 uji T1).
+- [V] Run `success`; langkah terbit **skipped** (benar: komit ini hanya `scripts/**` dan `data/kategori.json`, bukan `WATCH`, jadi tidak perlu re-deploy). "Uji logika skrip" `success` di CI (bukan cuma lokal).
+
+### Yang perlu diketahui
+- Gelombang 3 menunggu jawaban Amal di chat PIC ("Boleh tambah penjaga aset di deploy.yml, berjalan setelah terbit?").
+- Celah `id_tertinggi` yang ditemukan hari ini murni historis (sebelum perbaikan T1 ada); tidak ada dampak pada data tayang saat ini.
+- Pertanyaan lama dari batch 9 Okt (teks "AI MANAN" di flyer Ustadz Rahmat, status rutin Ayyub id 751) sudah tidak relevan — kedua event itu sudah lewat dan ter-prune.
