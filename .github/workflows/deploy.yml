@@ -266,6 +266,33 @@ jobs:
           done
           INTERNAL=$(printf '%s\n' $INTERNAL | sort -u | tr '\n' ' ')
           echo "Berkas internal yang diuji 404: $(printf '%s\n' $INTERNAL | wc -l)"
+          # Celah [Terverifikasi Auditor 22 Okt 2026, ditemukan PIC Kenali Calon, diterapkan lebih dulu di
+          # catatankajian/kenalicalon]: cek "setiap berkas di _site/" di bawah hanya memeriksa apa yang SUDAH
+          # ada di _site/ -- aset yang DIRUJUK index.html (favicon, og-image) tapi lupa ditambah ke daftar
+          # `cp` di langkah "Siapkan folder situs" tidak pernah masuk daftar itu, jadi run tetap hijau walau
+          # situsnya 404. Di sini: ambil daftar aset lokal dari index.html SUMBER (bukan dari isi _site/),
+          # lalu wajib 200 di bawah. Dibuktikan lewat simulasi lokal (lihat handoff) sebelum diterapkan.
+          ASET_RUJUK=$(python3 - <<'PY'
+          import re
+          h = open("index.html", encoding="utf-8").read()
+          refs = set()
+          for tag, attrs in re.findall(r'<(link|img|script)\b([^>]*)>', h):
+              if 'rel="canonical"' in attrs:
+                  continue  # URL kanonis situs sendiri, bukan aset; sudah diuji lewat cek beranda di atas
+              m = re.search(r'\b(?:href|src)="([^"#?]+)"', attrs)
+              if m and not re.match(r'(?:https?:|data:|mailto:|#)', m.group(1)):
+                  refs.add(m.group(1))
+          for m in re.finditer(r'<meta (?:property|name)="(?:og:image|twitter:image)" content="https://reconciler\.github\.io/jadwalkajian/([^"]*)"', h):
+              if m.group(1):
+                  refs.add(m.group(1))
+          print("\n".join(sorted(refs)))
+          PY
+          )
+          if [ -z "$ASET_RUJUK" ]; then
+            echo "::error::Ekstraksi aset dari index.html kosong (seharusnya minimal favicon.svg, og-image.png); regex mungkin rusak."
+            exit 1
+          fi
+          echo "Aset dirujuk index.html yang diuji 200: $(printf '%s\n' $ASET_RUJUK | wc -l)"
           http_code() {
             curl -s -o "$2" -w '%{http_code}' --max-time 15 "${BASE}$1?v=${SHA}" || true
           }
@@ -283,6 +310,10 @@ jobs:
             for f in $INTERNAL; do
               code=$(http_code "$f" /dev/null)
               if [ "$code" != "404" ]; then echo "  $f: HTTP $code (harus 404, berkas internal)"; fail=1; fi
+            done
+            for f in $ASET_RUJUK; do
+              code=$(http_code "$f" /dev/null)
+              if [ "$code" != "200" ]; then echo "  $f: HTTP $code (harus 200, aset dirujuk index.html)"; fail=1; fi
             done
             return $fail
           }
