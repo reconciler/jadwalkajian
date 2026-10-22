@@ -48,3 +48,13 @@ Auditor di git/Actions/hitungan), **[Usulan Auditor]** (kesimpulan Auditor).
 
 ## 3. Lapor
 Handoff PIC bagian baru: tabel gelombang, hasil uji (angka), run, hal yang menunggu Amal. Setelah selesai, beri tahu Auditor.
+
+## 4. Verifikasi Auditor atas hasil PIC (22 Okt 2026, sore) **[Terverifikasi: git, Actions, uji ulang Auditor]**
+
+| Butir | Hasil |
+|---|---|
+| Gelombang 1 (`e173c0f`) | Diff `index.html` di luar baris event hanya satu tautan Kenali Calon, `rel="noopener noreferrer"`, `target="_blank"`. Tinggi header 112/112/100 px (320/375/430) sama sebelum dan sesudah; axe dengan panel terbuka 0 pelanggaran di 320 dan 430. |
+| Gelombang 2 (`f0bf184`) | Suite 65 lulus, 0 gagal (naik dari 64). `data/kategori.json` di `main`: `id_tertinggi` 793 (index.html tertinggi 757). T2: uji integritas membaca `REPO/data/kategori.json`; peringatan palsu hilang. `sinkron_master.py --cek` exit 0. |
+| Run | #60 dan #61 success. |
+| Temuan PIC | Penyebaran `id_tertinggi` ke 757 pada push gelombang 1 (id 758-793 sempat tak terlindungi) dikoreksi manual ke 793 sebelum komit: **diterima**. Ini bukti T1 nyata, bukan teori. |
+| Gelombang 3 | Tetap **DITAHAN** sampai Amal menjawab di chat PIC. Catatan: catatankajian sudah mendapat "ya" Amal di chat PIC-nya dan menerapkan uji aset (komit `b66c872`, run #33 success); pola itu dapat dijadikan acuan di samping `kenalicalon`. |
