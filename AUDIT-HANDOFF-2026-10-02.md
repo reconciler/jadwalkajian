@@ -486,3 +486,23 @@ Dasar: [V] relai Auditor tercatat di git (`c041941`, `AUDIT-HANDOFF-2026-10-22-a
 - Gelombang 3 menunggu jawaban Amal di chat PIC ("Boleh tambah penjaga aset di deploy.yml, berjalan setelah terbit?").
 - Celah `id_tertinggi` yang ditemukan hari ini murni historis (sebelum perbaikan T1 ada); tidak ada dampak pada data tayang saat ini.
 - Pertanyaan lama dari batch 9 Okt (teks "AI MANAN" di flyer Ustadz Rahmat, status rutin Ayyub id 751) sudah tidak relevan — kedua event itu sudah lewat dan ter-prune.
+
+## 24. Gelombang 3: penjaga aset `deploy.yml` (instruksi Auditor `c041941`, bagian 2) — 22 Okt 2026
+
+**Dasar:** Amal menjawab di chat PIC ("silakan lanjutkan apa yang sudah diminta auditor") setelah saya laporkan pertanyaan Gelombang 3. Ditafsirkan sebagai persetujuan untuk pertanyaan yang sudah disiapkan ("Boleh tambah penjaga aset di deploy.yml, berjalan setelah terbit?"). [S] Penafsiran ini kesimpulan sendiri, bukan jawaban "ya" eksplisit kata per kata — dicatat sesuai butir 2 (konfirmasi di chat PIC repo ini).
+
+### Langkah
+1. **Celah dibuktikan lokal dulu** (sesuai instruksi): simulasi `_site` dengan `og-image.png` sengaja tidak di-`cp`. Uji LAMA (loop "setiap berkas di `_site/`") tetap **HIJAU** walau `og-image.png` 404 di server simulasi — celah nyata, sama seperti temuan di `catatankajian`/`kenalicalon`.
+2. **Implementasi:** tambah ekstraksi aset lokal dari `index.html` SUMBER (bukan isi `_site/`) ke langkah "Uji situs live setelah terbit" — pola `href`/`src` relatif (link/img/script, bukan `rel="canonical"`) + `og:image`/`twitter:image` milik domain sendiri. Diadaptasi dari pola `catatankajian`/`kenalicalon` (bukan disalin mentah — struktur jadwalkajian beda, satu step `check_once()` dengan retry, bukan step terpisah).
+3. **Simulasi ulang dengan skrip final** (diekstrak dari YAML yang sudah jadi, bukan draf): jalur gagal (aset hilang) → exit 1; jalur sukses (aset lengkap) → exit 0. Keduanya sesuai harapan.
+4. **Bug ditemukan+diperbaiki saat simulasi:** indentasi blok Python di `run: |` YAML harus ikut level indentasi block-literal (10 spasi) atau parser YAML menolaknya ("could not find expected ':'"). Diperbaiki sebelum push (bukti: `yaml.safe_load` dan `bash -n` lolos lokal).
+
+### Hasil
+- [V] Untuk situs nyata saat ini, aset yang dirujuk hanya `favicon.svg` dan `og-image.png` (dicek dengan regex yang sama terhadap `index.html` asli).
+- [V] `python3 scripts/test_ingest.py`: 65 lulus (push ini menyentuh `deploy.yml`, jadi CI menjalankan uji logika skrip juga — `success`).
+- [V] Run `success` (komit `334572f`); **log live run mengonfirmasi:** `Aset dirujuk index.html yang diuji 200: 2` lolos terhadap situs sungguhan, tag `last-deploy` pindah.
+- Tidak menahan terbit (berjalan sesudah langkah "Terbitkan ke GitHub Pages", sama seperti semua cek lain di step itu).
+
+### Yang perlu diketahui
+- Semua Gelombang 1-3 dari instruksi Auditor 22 Okt selesai dan terbukti `success` di run live.
+- Tidak ada keputusan yang menunggu dari batch ini.
