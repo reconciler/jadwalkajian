@@ -3,8 +3,10 @@
 Dashboard jadwal kajian Jabodetabek & sekitarnya.
 Live: https://reconciler.github.io/jadwalkajian/ · Pemilik: Amal (@amalwoodworking)
 
-Migrasi dari Netlify ke GitHub Pages: **29 September 2026**. URL lama
-(`jadwalkajian.netlify.app`) sudah tidak dipakai.
+Migrasi dari Netlify ke GitHub Pages: **29 September 2026**. Project Netlify lama
+(`jadwalkajian.netlify.app`) ternyata masih menerima deploy otomatis dari tiap push ke `main`
+(ditemukan Auditor 22 Okt 2026) dan **ditangguhkan Amal (keterangan Amal 23 Okt 2026; belum dihapus)**.
+Jangan memakai atau menautkan URL itu.
 
 ## Struktur
 

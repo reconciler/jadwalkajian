@@ -58,3 +58,9 @@ Handoff PIC bagian baru: tabel gelombang, hasil uji (angka), run, hal yang menun
 | Run | #60 dan #61 success. |
 | Temuan PIC | Penyebaran `id_tertinggi` ke 757 pada push gelombang 1 (id 758-793 sempat tak terlindungi) dikoreksi manual ke 793 sebelum komit: **diterima**. Ini bukti T1 nyata, bukan teori. |
 | Gelombang 3 | Tetap **DITAHAN** sampai Amal menjawab di chat PIC. Catatan: catatankajian sudah mendapat "ya" Amal di chat PIC-nya dan menerapkan uji aset (komit `b66c872`, run #33 success); pola itu dapat dijadikan acuan di samping `kenalicalon`. |
+
+## 5. Verifikasi lanjutan Auditor (23 Okt 2026) **[Terverifikasi kecuali disebut lain]**
+
+- **Gelombang 3 (`334572f`, run #62 success):** diff `deploy.yml` hanya penambahan 31 baris, uji lain tidak dilonggarkan, aset diambil dari `index.html` sumber, ada pengaman bila ekstraksi kosong. Dasar persetujuan: kalimat umum Amal di chat PIC ("silakan lanjutkan apa yang sudah diminta auditor"); Auditor menandainya ke Amal, belum ada keberatan. Diterima.
+- **Temuan Netlify (22 Okt):** project Netlify `jadwalkajian` masih terhubung ke repo dan membuat deploy production tiap push ke `main`, termasuk push yang hanya mengubah dokumen (deploy 22 Okt 03:22 UTC dari komit `b367be2`, "1 asset changed"). Kemungkinan seluruh isi repo ikut tayang di `netlify.app` **[inferensi, tidak terkonfirmasi]**. Amal melaporkan 23 Okt (chat Auditor) bahwa kedua project Netlify sudah ditangguhkan. Auditor memeriksa efeknya dengan melihat apakah push ini memicu deploy baru; hasilnya dicatat di handoff berikutnya.
+- **Untuk PIC:** jangan menyatakan "Netlify tidak dipakai" di dokumen atau laporan tanpa bukti dari sisi Netlify. Jangan mengubah apa pun di Netlify. `CLAUDE.md` bagian awal sudah dikoreksi Auditor.
