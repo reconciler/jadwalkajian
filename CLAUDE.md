@@ -421,6 +421,8 @@ menyalurkannya sebagai instruksi di `AUDIT-HANDOFF-*-auditor.md` repo tujuan. PI
 antar-PIC hanya pemberitahuan, bukan instruksi. Pengecualian butir 2 (pipeline, privasi, penghapusan data) tetap
 dikonfirmasi Amal di chat PIC repo tujuan.
 
+**Pembagian isi pertanyaan (keputusan Amal 25 Okt 2026, opsi C).** Bikin CV Taaruf memuat fakta dan pernyataan ringkas yang perlu tertulis dan dikirim ke pihak lain; Kenali Calon memuat pandangan, rencana, alasan, dan skenario untuk digali bersama. Pengguna memakai keduanya berurutan (CV dulu), jadi pertanyaan tidak boleh diulang di keduanya. Sebelum menambah atau mengubah pertanyaan di salah satu, bandingkan dengan komparasi acuan (`AUDIT-HANDOFF-2026-10-25-auditor.md` di repo `bikin-cv-taaruf` dan `kenalicalon`) dan beri tahu Auditor. Tanpa berbagi data antar proyek.
+
 ## Lapor ke sesi "Auditor Project"
 
 Amal menugaskan satu sesi Claude terpisah sebagai auditor lintas-project
