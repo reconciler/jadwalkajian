@@ -374,6 +374,8 @@ Ditetapkan/dikonfirmasi Amal 3 Okt 2026 (butir 14-19: 5 Okt 2026; cakupan keempa
 18. **Repo publik:** jangan commit data pribadi (isi CV, kontak, kredensial), termasuk di handoff dan kutipan chat.
 19. **Praktik uji** (bukan aturan keras): uji deterministik (data beku, jam terkunci); simulasikan skrip workflow lokal
     (jalur sukses + gagal) sebelum push; UI: screenshot 320/375/430 px, font asli, jaringan luar diblokir.
+    Elemen yang ditampilkan/disembunyikan lewat `hidden`: ukur `getComputedStyle(el).display`, bukan hanya atribut
+    (aturan CSS `display` pada elemen yang sama mengalahkan `[hidden]`; bug accordion catatankajian, 28 Okt 2026).
 
 ## Preferensi melapor (teks identik di jadwalkajian, catatankajian, bikin-cv-taaruf, kenalicalon)
 
