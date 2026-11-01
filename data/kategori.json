@@ -195,6 +195,11 @@
       "alias": []
     },
     {
+      "nama": "Abdulbarr Kaisinda",
+      "tampil": "Ustadz Abdulbarr Kaisinda",
+      "alias": []
+    },
+    {
       "nama": "Abdullah Achmad Zawawi",
       "tampil": "Ustadz Dr. Abdullah Achmad Zawawi, B.IL., CIFP.",
       "alias": []
@@ -222,6 +227,11 @@
     {
       "nama": "Abdurrahman Bustomi",
       "tampil": "KH. Abdurrahman Bustomi, M.A.",
+      "alias": []
+    },
+    {
+      "nama": "Abu Ayyub Ramadhan",
+      "tampil": "Ustadz Abu Ayyub Ramadhan, MA",
       "alias": []
     },
     {
@@ -451,6 +461,11 @@
       "alias": []
     },
     {
+      "nama": "Hamdi Solah Al-Bakry",
+      "tampil": "Ustadz Hamdi Solah Al-Bakry, Lc",
+      "alias": []
+    },
+    {
       "nama": "Hamka Hasan",
       "tampil": "Prof. Dr. H. Hamka Hasan, Lc., M.A.",
       "alias": []
@@ -588,6 +603,11 @@
       "alias": []
     },
     {
+      "nama": "Muflih Safitra",
+      "tampil": "Ustadz Muflih Safitra, M.Sc",
+      "alias": []
+    },
+    {
       "nama": "Mufy Hanif Thalib",
       "tampil": "Ustadz Mufy Hanif Thalib, Lc., MA",
       "alias": []
@@ -706,6 +726,11 @@
       "alias": []
     },
     {
+      "nama": "Ruslan Nurhadi",
+      "tampil": "Ustadz Ruslan Nurhadi, Lc",
+      "alias": []
+    },
+    {
       "nama": "Sholeh Asri",
       "tampil": "Dr. (HC) H. Sholeh Asri, M.A.",
       "alias": []
@@ -808,5 +833,5 @@
     }
   ],
   "gagal": [],
-  "id_tertinggi": 793
+  "id_tertinggi": 812
 }
